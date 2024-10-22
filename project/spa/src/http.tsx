@@ -1,0 +1,6 @@
+import axios from 'axios';
+
+axios.defaults.baseURL = 'http://localhost:8000/api/v1/';
+const http = axios;
+
+export default http;

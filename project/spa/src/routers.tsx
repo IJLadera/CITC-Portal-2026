@@ -1,11 +1,24 @@
 import { createBrowserRouter } from "react-router-dom";
 import Login from "./pages/authentication/Login";
-import Home from "./pages/home";
+import Application from "./pages/Application";
+import { AuthProvider } from "./pages/authentication/providers";
+import Post from "./pages/Application/pages/posts";
+import LMS from "./pages/Application/pages/lms";
 
 const router = createBrowserRouter([
     {
         path: '/',
-        element: <Home />
+        element: <Application />,
+        children: [
+            {
+                path: "",
+                element: <Post />
+            },
+            {
+                path: "lms",
+                element: <LMS />
+            }
+        ]
     },
     {
         path: "/login",

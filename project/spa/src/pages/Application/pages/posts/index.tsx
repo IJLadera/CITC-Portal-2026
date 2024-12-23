@@ -9,7 +9,7 @@ export default function Post () {
                 <div className="p-5">
                     <Friends />
                 </div>
-                <div className="max-h-screen overflow-y-scroll px-5 pb-20 pt-5">
+                <div className="max-h-screen overflow-y-scroll px-5 pb-28 pt-5">
                     <PostMain />
                     <PostMain />
                 </div>

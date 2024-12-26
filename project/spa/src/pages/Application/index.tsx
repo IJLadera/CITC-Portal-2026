@@ -2,8 +2,6 @@ import { useEffect } from "react"
 import { useAppSelector } from "../../hooks"
 import { Outlet, useNavigate } from "react-router-dom"
 import SideBar from "./components/SideBar"
-import Friends from "./components/Friends"
-import Post from "./pages/posts"
 
 
 export default function Application () {

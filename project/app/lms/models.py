@@ -46,6 +46,8 @@ class Section(models.Model):
 class Subject(models.Model):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=10)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
+    year_level = models.ForeignKey(YearLevel, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         super().__str__()

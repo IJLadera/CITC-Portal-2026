@@ -21,10 +21,10 @@ class User(AbstractUser):
     uuid = models.UUIDField(unique=True, primary_key=True, default=uuid.uuid4, editable=False)
     first_name = models.CharField(max_length=255, blank=True)
     last_name = models.CharField(max_length=255, blank=True)
-    middle_name = models.CharField(max_length=100, blank=True)
+    middle_name = models.CharField(max_length=100, blank=True, null=True)
     suffix = models.CharField(max_length=10, blank=True)
     id_number = models.CharField(max_length=50)
-    date_of_birth = models.DateField()
+    date_of_birth = models.DateField(null=True)
     avatar = models.ImageField(null=True, upload_to='avatar/')
 
     is_student = models.BooleanField(default=False)
@@ -41,7 +41,8 @@ class User(AbstractUser):
     REQUIRED_FIELDS = [
         'first_name',
         'last_name',
-        'id_number'
+        'id_number',
+        # 'date_of_birth'
     ]
 
     objects = CustomUserManager()

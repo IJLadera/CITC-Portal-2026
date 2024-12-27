@@ -25,7 +25,7 @@ class User(AbstractUser):
     suffix = models.CharField(max_length=10, blank=True)
     id_number = models.CharField(max_length=50)
     date_of_birth = models.DateField(null=True)
-    avatar = models.ImageField(null=True, upload_to='avatar/')
+    avatar = models.ImageField(null=True, upload_to='avatar/', blank=True)
 
     is_student = models.BooleanField(default=False)
     is_employee = models.BooleanField(default=False)

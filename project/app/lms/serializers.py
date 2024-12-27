@@ -51,6 +51,12 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class StatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Status
+        fields = "__all__"
+
+
 class AttendanceSerializer(serializers.ModelSerializer):
     
     student = serializers.CharField(write_only=True)

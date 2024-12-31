@@ -43,6 +43,7 @@ class User(AbstractUser):
         'first_name',
         'last_name',
         'id_number',
+        'department'
     ]
 
     objects = CustomUserManager()

@@ -10,6 +10,14 @@ export const getDepartments = (token:string) => {
     })
 }
 
+export const getSchoolYear = (token:string) => {
+    return http.get('lms/school-year/', {
+        headers: {
+            Authorization : `Token ${token}`
+        }
+    })
+}
+
 export const getYearLevel = (token:string) => {
     return http.get('lms/year-level/', {
         headers: {

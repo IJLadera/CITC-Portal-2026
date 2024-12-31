@@ -35,6 +35,7 @@ class User(AbstractUser):
     is_superuser = models.BooleanField(default=False)
     roles = models.ManyToManyField(Role, through='UserRole')
     date_joined = models.DateTimeField(default=timezone.now)
+    department = models.ForeignKey('lms.Department', on_delete=models.SET_NULL, null=True)
 
 
     USERNAME_FIELD = "email"
@@ -42,7 +43,6 @@ class User(AbstractUser):
         'first_name',
         'last_name',
         'id_number',
-        # 'date_of_birth'
     ]
 
     objects = CustomUserManager()

@@ -3,8 +3,9 @@ import '../../../App.css'
 import { SyntheticEvent, useState } from 'react';
 import { LoginModel } from './model';
 import { useAppDispatch } from '../../../hooks';
-import { mutateLoggedIn } from './slice';
+import { mutateLoggedIn, storeToken } from './slice';
 import { useNavigate } from 'react-router-dom';
+import { loginAPI } from './api';
 
 
 function Login() {
@@ -22,10 +23,15 @@ function Login() {
         })
     }
 
-    const onSubmitForm = (event:SyntheticEvent) => {
+    const onSubmitForm = async (event:SyntheticEvent) => {
         event.preventDefault();
-        dispatch(mutateLoggedIn(true))
-        navigate('/')
+        const result = await loginAPI(auth)
+        if (result.status == 200) {
+            dispatch(storeToken(result.data.auth_token))
+            dispatch(mutateLoggedIn(true))
+            navigate('/')
+        }
+        
     }
 
     return (

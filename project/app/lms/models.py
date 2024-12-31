@@ -1,8 +1,5 @@
 from django.db import models
-from django.contrib.auth import get_user_model
-
-
-User = get_user_model()
+# from app.users.models import User
 
 # Create your models here.
 class College(models.Model):
@@ -60,8 +57,8 @@ class Class(models.Model):
     year_level = models.ForeignKey(YearLevel, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='teacher')
-    students = models.ManyToManyField(User, related_name='student')
+    teacher = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='teacher')
+    students = models.ManyToManyField('users.User', related_name='student')
     is_active = models.BooleanField(default=True)
 
 
@@ -76,7 +73,7 @@ class Status(models.Model):
 
 
 class Attendance(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    student = models.ForeignKey('users.User', on_delete=models.CASCADE)
     classroom = models.ForeignKey(Class, on_delete=models.CASCADE, null=True)
     status = models.ForeignKey(Status, on_delete=models.CASCADE, null=True)
     is_present = models.BooleanField(default=False)

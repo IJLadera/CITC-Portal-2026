@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'djoser',
 
     'app.users',
+    'app.lms',
+    'app.univentify.event',
 ]
 
 AUTH_USER_MODEL = "users.User"

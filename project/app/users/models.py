@@ -23,7 +23,7 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=255, blank=True)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     suffix = models.CharField(max_length=10, blank=True)
-    id_number = models.CharField(max_length=50)
+    id_number = models.CharField(max_length=50, unique=True)
     date_of_birth = models.DateField(null=True)
     avatar = models.ImageField(null=True, upload_to='avatar/', blank=True)
 

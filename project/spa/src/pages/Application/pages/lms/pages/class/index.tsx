@@ -6,6 +6,7 @@ import { useAppSelector } from "../../../../../../hooks";
 import { useDispatch } from "react-redux";
 import { storeDeparments, storeSchoolYear, storeSections, storeSubjects, storeYearLevel } from "../../slice";
 import { ClassType } from "../../models";
+import { onFileInput } from "./resources";
 
 export default function Class () {
 
@@ -144,7 +145,7 @@ export default function Class () {
                     </div>
                     <div className="flex flex-col w-full mt-5">
                         <Label>Upload Students:</Label>
-                        <FileInput disabled={data.subject === null} accept=".csv" helperText="Please upload file with .csv" />
+                        <FileInput disabled={data.subject === null} accept=".csv" helperText="Please upload file with .csv" onChange={onFileInput} />
                     </div>
                 </Modal.Body>
                 <Modal.Footer>

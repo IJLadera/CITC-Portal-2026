@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Invitation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 20px auto;
+            width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, p {
+            margin: 0 0 15px;
+            color: #333333;
+        }
+        h1 {
+            font-size: 24px;
+            color: #4CAF50;
+        }
+        h2 {
+            font-size: 20px;
+            color: #333333;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .event-details {
+            margin-bottom: 30px;
+        }
+        .footer {
+            text-align: center;
+            color: #777777;
+            font-size: 12px;
+        }
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <h1>You're Invited to an Event: <strong>{{ event.eventName }}</strong></h1>
+        
+        <div class="event-details">
+            <h2>Event Details</h2>
+            <!-- Render the rich-text event description as HTML -->
+            <p>{{ event_description_html|safe }}</p>
+
+            <p><strong>Start Date and Time:</strong> {{ event.startDateTime }}</p>
+            <p><strong>End Date and Time:</strong> {{ event.endDateTime }}</p>
+
+            {% if event.venue %}
+                <p><strong>Venue:</strong> {{ event.venue }}</p>
+            {% endif %}
+
+            {% if event.meetinglink %}
+                <p><strong>Meeting Link:</strong> <a href="{{ event.meetinglink }}" target="_blank">Join the Meeting</a></p>
+            {% endif %}
+        </div>
+
+        <p>We look forward to your participation. Please ensure to mark this date in your calendar and be prepared for the event. If you have any questions, feel free to contact us.</p>
+
+        <p>Best Regards,<br><strong>The UniEventify Team</strong></p>
+    </div>
+
+    <div class="footer">
+        <p>If you no longer wish to receive these emails, you can <a href="#">unsubscribe here</a>.</p>
+    </div>
+</body>
+</html>

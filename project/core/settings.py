@@ -49,7 +49,7 @@ INSTALLED_APPS = [
 
     'app.users',
     'app.lms',
-    'app.univentify.event',
+    'app.unieventify',
 ]
 
 AUTH_USER_MODEL = "users.User"

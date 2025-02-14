@@ -10,10 +10,14 @@ from .managers import CustomUserManager
 class Role(models.Model):
     uuid = models.UUIDField(unique=True, primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
+    rank = models.IntegerField(default=0, null=True, blank=True)
     
     def __str__(self):
-        super.__str__()
+        # super.__str__()
         return self.name
+    
+    def can_override(self, other_user):
+        return self.role.rank <= other_user.role.rank
 
 class User(AbstractUser):
     username = None
@@ -36,6 +40,9 @@ class User(AbstractUser):
     roles = models.ManyToManyField(Role, through='UserRole')
     date_joined = models.DateTimeField(default=timezone.now)
     department = models.ForeignKey('lms.Department', on_delete=models.SET_NULL, null=True)
+
+    section = models.ForeignKey('lms.Section',on_delete=models.SET_NULL, null=True, blank=True)
+    organization = models.ForeignKey('unieventify.tblstudentOrg',on_delete=models.SET_NULL, null=True, blank=True)
 
 
     USERNAME_FIELD = "email"

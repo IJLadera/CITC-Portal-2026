@@ -5,26 +5,48 @@ from django.db import IntegrityError, transaction
 from rest_framework import serializers
 from rest_framework.settings import api_settings
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from .models import Role
+from app.unieventify.serializers import tblstudentOrgSerializer
 from djoser.conf import settings
 
 User = get_user_model()
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = '__all__'
 
 class CreateUserSerializer(UserCreateSerializer):
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     confirm = serializers.CharField(write_only=True),
     avatar = serializers.ImageField(read_only=True)
+    roles = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), many=True)
 
     class Meta:
         model = User
         fields = tuple(User.REQUIRED_FIELDS) + (
             "first_name",
             "last_name",
+            "middle_name",
+            "suffix",
+            "id_number",
             settings.LOGIN_FIELD,
             settings.USER_ID_FIELD,
             "password",
             "confirm",
-            "avatar"
+            "avatar",
+            "is_student",
+            "is_employee",
+            "is_develop",
+            "is_active",
+            "is_staff",
+            "is_superuser",
+            "roles",
+            "date_joined",
+            "department",
+            "section",
+            "organization"
         )
 
     def validate(self, attrs):
@@ -59,6 +81,9 @@ class CreateUserSerializer(UserCreateSerializer):
 
 
 class CustomUserSerializer(UserSerializer):
+    organization = tblstudentOrgSerializer(read_only=True)
+    roles = RoleSerializer(many=True, read_only=True)
+
     class Meta:
         model = User
         fields = tuple(User.REQUIRED_FIELDS) + (
@@ -66,11 +91,24 @@ class CustomUserSerializer(UserSerializer):
             settings.LOGIN_FIELD,
             'first_name',
             'last_name',
+            'middle_name',
+            'suffix',
             'id_number',
             'avatar',
-            'is_student'
+            'is_student',
+            'is_employee',
+            'is_develop',
+            'is_active',
+            'is_staff',
+            'is_superuser',
+            'roles',
+            'date_joined',
+            'department',
+            'section',
+            'organization'
+
         )
-        read_only_fields = (settings.LOGIN_FIELD,'first_name', 'last_name', 'id_number', 'avatar', 'is_student')
+        read_only_fields = (settings.LOGIN_FIELD,'first_name', 'last_name', 'id_number', 'avatar', 'is_student', 'is_employee', 'is_develop', 'is_active', 'is_staff', 'is_superuser', 'roles', 'date_joined', 'department', 'section', 'organization')
 
 
 class StudentSerializers(serializers.ModelSerializer):

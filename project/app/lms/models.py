@@ -21,6 +21,8 @@ class Department(models.Model):
 
 class SchoolYear(models.Model):
     name = models.CharField(max_length=50)
+    startYear = models.IntegerField(null=True)
+    endYear = models.IntegerField(null=True)
 
     def __str__(self):
         return self.name
@@ -34,6 +36,7 @@ class YearLevel(models.Model):
         return self.level
 
 class Section(models.Model):
+    tblYearLevel = models.ForeignKey(YearLevel, on_delete=models.CASCADE, null=True, blank=True)
     section = models.CharField(max_length=10)
 
     def __str__(self):

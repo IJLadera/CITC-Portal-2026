@@ -1,4 +1,4 @@
-import axios, {AxiosRequestConfig} from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 // import { useSelector } from 'react-redux';
 // import { RootState } from './store';
 

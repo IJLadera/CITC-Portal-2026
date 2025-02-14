@@ -1,9 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from .models import Role
+from .models import Role, UserRole
 # Register your models here.
 
 User = get_user_model()
 
 admin.site.register(User)
 admin.site.register(Role)
+admin.site.register(UserRole)

@@ -1,0 +1,71 @@
+/* Default layout for larger screens */
+.fc-header-toolbar {
+    display: flex;
+    flex-direction: row;  /* Keep buttons horizontally aligned on larger screens */
+    justify-content: space-between;
+    gap: 10px;  /* Space between button groups and title */
+    align-items: center;  /* Center-align items vertically */
+  }
+  
+  .fc-toolbar-chunk {
+    display: flex;
+    align-items: center; /* Vertically center-align items in each chunk */
+  }
+  
+  .fc-button-group {
+    display: flex;
+    gap: 5px;  /* Space between buttons in a button group */
+  }
+  
+  .fc-today-button,
+  .fc-button {
+    font-size: 14px;  /* Adjust font size for larger screens */
+    padding: 10px 15px; /* Adjust padding for buttons */
+    border-radius: 5px;
+  }
+  
+  .fc-button-primary {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .fc-button-primary:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Layout for smaller screens (less than 768px) */
+  @media (max-width: 768px) {
+    /* Stack the entire header vertically */
+    .fc-header-toolbar {
+      flex-direction: column;  /* Stack buttons and title vertically */
+      align-items: stretch;     /* Make buttons stretch to full width */
+      gap: 10px;  /* Reduced space between elements for a more compact layout */
+    }
+  
+    .fc-toolbar-chunk {
+      display: block;  /* Make each chunk stack vertically */
+      width: 100%;
+    }
+  
+    .fc-button-group {
+      flex-direction: column;  /* Stack buttons vertically within the button group */
+      width: 100%;
+    }
+  
+    .fc-button {
+      width: 100%;  /* Make buttons take up full width on small screens */
+      margin-bottom: 8px;  /* Reduced space between buttons */
+      font-size: 10px;  /* Smaller font size for buttons */
+      padding: 6px 10px;  /* Smaller padding for buttons */
+    }
+  
+    .fc-button:last-child {
+      margin-bottom: 0;  /* Remove margin from the last button */
+    }
+  
+    .fc-toolbar-title {
+      font-size: 12px;  /* Adjust font size for the title */
+      text-align: center;  /* Center-align the title */
+    }
+  }
+  

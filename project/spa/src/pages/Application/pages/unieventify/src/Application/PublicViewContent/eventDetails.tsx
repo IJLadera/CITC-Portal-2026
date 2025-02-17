@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
-import http from '../../axios';
+import http from '../../../../../../../http';
 import Eventskeleton from '../../Components/eventComponents/eventskeleton'
 import EventDetailsPublic from '../../Components/eventComponents/eventDetails';
 

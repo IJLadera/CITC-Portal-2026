@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "../../axios";
+import http from "../../../../../../../http";
 import {
   Container,
   Typography,
@@ -64,7 +64,7 @@ const AnnouncementsPage = () => {
 
   const fetchUserDepartment = async () => {
     try {
-      const response = await axios.get("auth/users/me/", {
+      const response = await http.get("auth/users/me/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -78,7 +78,7 @@ const AnnouncementsPage = () => {
 
   const fetchAnnouncements = async () => {
     try {
-      const response = await axios.get("events/", {
+      const response = await http.get("events/", {
         headers: {
           Authorization: `Token ${token}`,
         },

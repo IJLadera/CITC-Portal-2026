@@ -15,7 +15,6 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import Badge from "@mui/material/Badge";
-import http from "../axios";
 import { CircularProgress } from "@mui/material";
 
 import TextSnippetIcon from "@mui/icons-material/TextSnippet";
@@ -31,7 +30,7 @@ import colors from "./colors";
 
 import { Accordion } from "flowbite-react";
 
-import axios from "../axios";
+import http from "../../../../../../http";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 
@@ -330,7 +329,7 @@ function SideBar(props: SideBarProps) {
         const token = Cookies.get("auth_token");
         if (!token) throw new Error("No auth token found");
 
-        const response = await axios.get("auth/users/me/", {
+        const response = await http.get("auth/users/me/", {
           headers: {
             Authorization: `Token ${token}`,
           },
@@ -348,7 +347,7 @@ function SideBar(props: SideBarProps) {
         const token = Cookies.get("auth_token");
         if (!token) throw new Error("No auth token found");
 
-        const response = await axios.get("notifications/", {
+        const response = await http.get("notifications/", {
           headers: {
             Authorization: `Token ${token}`,
           },

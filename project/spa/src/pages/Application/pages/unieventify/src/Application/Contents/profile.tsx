@@ -3,7 +3,7 @@ import Profileloadingskeleton from "../../Components/profile/profileloadingskele
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import React, { useEffect, useState } from "react";
-import axios from "../../axios";
+import http from "../../../../../../../http";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import {
@@ -72,7 +72,7 @@ export default function Profile() {
       // const token = Cookies.get("auth_token");
       if (!token) throw new Error("No authentication token found");
 
-      const response = await axios.get("auth/users/me/", {
+      const response = await http.get("auth/users/me/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -91,13 +91,13 @@ export default function Profile() {
       fetchProfile();
     }
 
-    axios
+    http
       .get("colleges/")
       .then((response) => {
         setColleges(response.data);
       })
       .catch((error) => console.log(error));
-    axios
+    http
       .get("yearlevel/")
       .then((response) => {
         setYearLevels(response.data);

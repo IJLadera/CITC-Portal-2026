@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import EditEvent from "../../../Components/eventComponents/editevent";
-import http from "../../../axios";
+import http from "../../../../../../../../http";
 import Cookies from "js-cookie";
 import { CircularProgress, Box } from "@mui/material";
 

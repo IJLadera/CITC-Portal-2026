@@ -1,7 +1,7 @@
 import Editprofile from "../../Components/profile/editprofile";
 import Profileloadingskeleton from "../../Components/profile/profileloadingskeleton";
 import React, { useEffect, useState } from "react";
-import axios from "../../axios";
+import http from "../../../../../../../http";
 import Cookies from "js-cookie";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -74,7 +74,7 @@ export default function UserDetails() {
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get(`/users/${id}/`, {
+      const response = await http.get(`/users/${id}/`, {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -89,7 +89,7 @@ export default function UserDetails() {
 
   const fetchColleges = async () => {
     try {
-      const response = await axios.get("colleges/");
+      const response = await http.get("colleges/");
       setColleges(response.data);
     } catch (error) {
       console.error("Error fetching colleges:", error);
@@ -98,7 +98,7 @@ export default function UserDetails() {
 
   const fetchYearLevel = async () => {
     try {
-      const response = await axios.get("yearlevel/");
+      const response = await http.get("yearlevel/");
       setYearLevels(response.data);
     } catch (error) {
       console.error("Error fetching colleges:", error);
@@ -107,7 +107,7 @@ export default function UserDetails() {
 
   const fetchUserRole = async () => {
     try {
-      const response = await axios.get("auth/users/me/", {
+      const response = await http.get("auth/users/me/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -136,7 +136,7 @@ export default function UserDetails() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`users/${id}/`, {
+      await http.delete(`users/${id}/`, {
         headers: {
           Authorization: `Token ${token}`,
         },

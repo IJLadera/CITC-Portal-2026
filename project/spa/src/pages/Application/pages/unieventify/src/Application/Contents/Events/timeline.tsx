@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "../../../axios";
+import http from "../../../../../../../../http";
 import Cookies from "js-cookie";
 import { Box, Paper, Button, Stack, TextField, Typography } from "@mui/material";
 import { DataGrid, GridRowParams  } from '@mui/x-data-grid';
@@ -89,7 +89,7 @@ export default function EventTimeline() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await axios.get("timeline/", {
+        const response = await http.get("timeline/", {
           headers: {
             Authorization: `Token ${token}`,
           },

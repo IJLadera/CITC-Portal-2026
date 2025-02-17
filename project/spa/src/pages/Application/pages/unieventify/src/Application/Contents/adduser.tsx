@@ -13,7 +13,7 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import axios from "../../axios";
+import http from "../../../../../../../http";
 import Cookies from "js-cookie";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -87,7 +87,7 @@ export default function AddUser() {
         const headers = { Authorization: `Token ${authToken}` };
 
         // Check admin credentials
-        const userResponse = await axios.get("auth/users/me/", { headers });
+        const userResponse = await http.get("auth/users/me/", { headers });
         setIsAdmin(userResponse.data.is_staff);
 
         if (!userResponse.data.is_staff) {
@@ -98,8 +98,8 @@ export default function AddUser() {
 
         // Fetch roles, colleges, and departments
         const [rolesResponse, collegesResponse] = await Promise.all([
-          axios.get("userroles/", { headers }),
-          axios.get("departmentsbycollege/", {
+          http.get("userroles/", { headers }),
+          http.get("departmentsbycollege/", {
             headers,
           }),
         ]);
@@ -171,7 +171,7 @@ export default function AddUser() {
     const authToken = Cookies.get("auth_token");
     const headers = { Authorization: `Token ${authToken}` };
   
-    axios
+    http
       .post("auth/users/", data, { headers })
       .then((response) => {
         console.log("User added successfully", response.data);

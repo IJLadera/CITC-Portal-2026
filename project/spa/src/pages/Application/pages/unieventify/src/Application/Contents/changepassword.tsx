@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Button, Card, Label, TextInput } from "flowbite-react";
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
-import http from '../../axios';
+import http from '../../../../../../../http';
 import { HiMail } from 'react-icons/hi';
 import 'react-toastify/dist/ReactToastify.css';
-import axios from "../../axios";
 import Cookies from "js-cookie";
 import { FaEye } from "react-icons/fa";
 import { Navigation } from '@mui/icons-material';
@@ -34,7 +33,7 @@ export default function Changepassword() {
                 // const token = Cookies.get("auth_token");
                 if (!token) throw new Error("No authentication token found");
 
-                const response = await axios.get("auth/users/me/", {
+                const response = await http.get("auth/users/me/", {
                     headers: {
                         Authorization: `Token ${token}`,
                     },

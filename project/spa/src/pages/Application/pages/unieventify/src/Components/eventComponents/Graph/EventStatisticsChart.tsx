@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { LineChart, lineElementClasses } from "@mui/x-charts/LineChart";
 import Cookies from "js-cookie";
-import http from "../../../axios"
+import http from "../../../../../../../../http";
 
 
 export default function EventStatisticsChart() {

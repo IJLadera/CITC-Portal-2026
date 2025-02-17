@@ -1,7 +1,7 @@
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import React, { useEffect, useState } from "react";
-import axios from "../../axios";
+import http from "../../../../../../../http"
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import {
@@ -125,7 +125,7 @@ export default function Editprofile({
   const [isDisabled, setIsDisabled] = useState(false);
 
   useEffect(() => {
-    axios
+    http
       .get("userroles/")
       .then((response) => {
         setRole(response.data);
@@ -134,14 +134,14 @@ export default function Editprofile({
       })
       .catch((error) => console.log(error));
 
-    axios
+    http
       .get("colleges/")
       .then((response) => {
         setColleges(response.data);
       })
       .catch((error) => console.log(error));
 
-    axios
+    http
       .get("departments/")
       .then((response) => {
         setDepartments(response.data);
@@ -152,7 +152,7 @@ export default function Editprofile({
       })
       .catch((error) => console.log(error));
 
-    axios
+    http
       .get("sections/")
       .then((response) => {
         setSections(response.data);
@@ -163,7 +163,7 @@ export default function Editprofile({
       })
       .catch((error) => console.log(error));
 
-    axios
+    http
       .get("studentorgs/")
       .then((response) => {
         setOrganizations(response.data);
@@ -172,7 +172,7 @@ export default function Editprofile({
       })
       .catch((error) => console.log(error));
 
-    axios
+    http
       .get("yearlevel/")
       .then((response) => {
         setYearLevel(response.data);
@@ -304,7 +304,7 @@ export default function Editprofile({
       formData.append("organization", editProfileInfo.organization);
     if (selectedFile) formData.append("image", selectedFile);
 
-    axios
+    http
       .patch(`update_profile/${profile.id}/`, formData, {
         headers: {
           Authorization: `Token ${token}`,

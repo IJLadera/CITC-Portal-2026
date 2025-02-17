@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import Cookies from "js-cookie";
 import {
   Container,
@@ -14,7 +13,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import colors from "../../Components/colors";
-import http from "../../axios";
+import http from "../../../../../../../http";
 import { useNavigate } from "react-router-dom";
 import { Editor, EditorState, convertFromRaw, ContentState } from "draft-js";
 

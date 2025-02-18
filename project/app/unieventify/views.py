@@ -15,9 +15,9 @@ from app.lms.serializers import CollegeSerializer, DepartmentSerializer, Section
 
 from .models import (
     tblstudentOrg, tblEventType, tblEventCategory, 
-    tblVenue, tblSetup, tblStatus, tblEvent, tblEventLog,
+    tblVenue, tblSetup, tblEvent, tblEventLog,
     tblEventSchoolYearAndSemester, tblSemester, tblEventRemarks)
-from app.lms.models import Department, College, YearLevel, Section, SchoolYear
+from app.lms.models import Department, College, YearLevel, Section, SchoolYear, Status
 
 from app.users.models import User, UserRole, Role
 
@@ -183,12 +183,12 @@ class SetupInfoView(RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
 class StatusListView(ListCreateAPIView):
-    queryset = tblStatus.objects.all()
+    queryset = Status.objects.all()
     serializer_class = tblStatusSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
 class StatusInfoView(RetrieveUpdateDestroyAPIView):
-    queryset = tblStatus.objects.all()
+    queryset = Status.objects.all()
     serializer_class = tblStatusSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
@@ -290,13 +290,13 @@ class EventInfoView(RetrieveUpdateDestroyAPIView):
     def update(self, request, *args, **kwargs):
         # Get the current instance of the event
         instance = self.get_object()
-        old_status = instance.status.statusName  # Save the old status name
+        old_status = instance.status.name  # Save the old status name
 
         # Call the parent `update` method to save the new data
         response = super().update(request, *args, **kwargs)
 
         # Check if the status has changed to "postponed"
-        new_status = response.data.get('status', {}).get('statusName')
+        new_status = response.data.get('status', {}).get('name')
         if old_status != 'postponed' and new_status == 'postponed':
             # Send email notification
             self.send_postponed_email(instance.id)
@@ -349,12 +349,12 @@ class EventStatisticsView(APIView):
 
     def get_queryset(self):
         user = self.request.user
-        user_role = user.roles.order_by('rank').first()
+        user_role = user.roles.order_by('rank').first().name
         
         # Base query to exclude personal events and draft statuses
         queryset = tblEvent.objects.exclude(
             eventCategory__eventCategoryName__iexact='personal'
-        ).exclude(status__statusName__iexact='draft').exclude(status__statusName__iexact='disapproved')
+        ).exclude(status__name__iexact='draft').exclude(status__name__iexact='disapproved')
 
         # Apply role-based restrictions
         if user_role == 'Admin':
@@ -377,7 +377,7 @@ class EventStatisticsView(APIView):
             )
         elif user_role == 'Unit Org':
             return queryset.filter(
-                (Q(department=user.department) & Q(created_by__role__name__in=['Mother Org', 'Unit Org'])) |
+                (Q(department=user.department.id) & Q(created_by__role__name__in=['Mother Org', 'Unit Org'])) |
                 Q(created_by__role__name='Mother Org')
             )
         return tblEvent.objects.none()
@@ -396,7 +396,7 @@ class EventStatisticsView(APIView):
             if semester_start <= event_date <= semester_end:
                 return {
                     "semester": semester.semesterName,
-                    "schoolYear": semester.schoolYear.schoolYearName
+                    "schoolYear": semester.schoolYear.name
                 }
         return {"semester": "Unknown", "schoolYear": "Unknown"}
 
@@ -424,11 +424,11 @@ class EventStatisticsView(APIView):
                             'name': e.eventName,
                             'category': e.eventCategory.eventCategoryName,
                             'type': e.eventType.eventTypeName,
-                            'status': e.status.statusName,
+                            'status': e.status.name if e.status else 'Unknown',
                             'startDateTime': e.startDateTime,
                             'endDateTime': e.endDateTime,
                             'description': e.eventDescription,
-                            'created_by': f"{e.created_by.first_name} {e.created_by.last_name} ({e.created_by.role.name})",
+                            'created_by': f"{e.created_by.first_name} {e.created_by.last_name} ({e.created_by.roles.order_by('rank').first().name})",
                             'participants': [f"{p.first_name} {p.last_name}" for p in e.participants.all()],
                             'departments': [d.name for d in e.department.all()],
                             'semesterInfo': self.get_semester_for_date(e.startDateTime),
@@ -457,7 +457,7 @@ class EventStatisticsCreatedView(APIView):
             if semester_start <= event_date <= semester_end:
                 return {
                     "semester": semester.semesterName,
-                    "schoolYear": semester.schoolYear.schoolYearName
+                    "schoolYear": semester.schoolYear.name
                 }
         return {"semester": "Unknown", "schoolYear": "Unknown"}
 
@@ -487,7 +487,7 @@ class EventStatisticsCreatedView(APIView):
                             'name': e.eventName,
                             'category': e.eventCategory.eventCategoryName,
                             'type': e.eventType.eventTypeName,
-                            'status': e.status.statusName,
+                            'status': e.status.name if e.status else 'Unknown',
                             'startDateTime': e.startDateTime,
                             'endDateTime': e.endDateTime,
                             'description': e.eventDescription,
@@ -526,11 +526,11 @@ class EventStatisticsByCategoryView(APIView):
 
     def get_queryset(self):
         user = self.request.user
-        user_role = user.roles.order_by('rank').first()
+        user_role = user.roles.order_by('rank').first().name
 
 
         # Base query to exclude personal events and draft statuses
-        queryset = tblEvent.objects.exclude(eventCategory__eventCategoryName__iexact='personal').exclude(status__statusName__iexact='draft').exclude(eventCategory__isnull=True).exclude(eventCategory__eventCategoryName='').exclude(status__statusName__iexact='disapproved')
+        queryset = tblEvent.objects.exclude(eventCategory__eventCategoryName__iexact='personal').exclude(status__name__iexact='draft').exclude(eventCategory__isnull=True).exclude(eventCategory__eventCategoryName='').exclude(status__name__iexact='disapproved')
 
         # Apply role-based restrictions
         if user_role == 'Admin':
@@ -600,11 +600,11 @@ class EventStatisticsByCategoryView(APIView):
                                 'name': e.eventName,
                                 'category': e.eventCategory.eventCategoryName,
                                 'type': e.eventType.eventTypeName,
-                                'status': e.status.statusName,
+                                'status': e.status.name,
                                 'startDateTime': e.startDateTime,
                                 'endDateTime': e.endDateTime,
                                 'description': e.eventDescription,
-                                'created_by': f"{e.created_by.first_name} {e.created_by.last_name} ({e.created_by.role.name})",
+                                'created_by': f"{e.created_by.first_name} {e.created_by.last_name} ({e.created_by.roles.order_by('rank').first().name})",
                                 'participants': [f"{p.first_name} {p.last_name}" for p in e.participants.all()],
                                 'departments': [d.name for d in e.department.all()],
                                 'semesterInfo': self.get_semester_for_date(e.startDateTime),
@@ -641,14 +641,14 @@ class EventStatisticsByDepartmentView(APIView):
 
     def get_queryset(self):
         user = self.request.user
-        user_role = user.roles.order_by('rank').first()
+        user_role = user.roles.order_by('rank').first().name
 
         # Base query to exclude personal events and draft statuses
         queryset = tblEvent.objects.exclude(eventCategory__eventCategoryName__iexact='personal') \
-                                   .exclude(status__statusName__iexact='draft') \
+                                   .exclude(status__name__iexact='draft') \
                                    .exclude(department__isnull=True) \
                                    .exclude(department__name='') \
-                                   .exclude(status__statusName__iexact='disapproved')
+                                   .exclude(status__name__iexact='disapproved')
 
         # Apply role-based restrictions
         if user_role == 'Admin':
@@ -718,11 +718,11 @@ class EventStatisticsByDepartmentView(APIView):
                                 'name': e.eventName,
                                 'category': e.eventCategory.eventCategoryName,
                                 'type': e.eventType.eventTypeName,
-                                'status': e.status.statusName,
+                                'status': e.status.name,
                                 'startDateTime': e.startDateTime,
                                 'endDateTime': e.endDateTime,
                                 'description': e.eventDescription,
-                                'created_by': f"{e.created_by.first_name} {e.created_by.last_name} ({e.created_by.role.name})",
+                                'created_by': f"{e.created_by.first_name} {e.created_by.last_name} ({e.created_by.roles.order_by('rank').first().name})",
                                 'participants': [f"{p.first_name} {p.last_name}" for p in e.participants.all()],
                                 'departments': [d.name for d in e.department.all()],
                                 'semesterInfo': self.get_semester_for_date(e.startDateTime),
@@ -753,16 +753,16 @@ class EventStatisticsCancelledView(APIView):
             if semester_start <= event_date <= semester_end:
                 return {
                     "semester": semester.semesterName,
-                    "schoolYear": semester.schoolYear.schoolYearName
+                    "schoolYear": semester.schoolYear.name
                 }
         return {"semester": "Unknown", "schoolYear": "Unknown"}
 
     def get_queryset(self):
         user = self.request.user
-        user_role = user.roles.order_by('rank').first()
+        user_role = user.roles.order_by('rank').first().name
 
         # Base query to include only events with 'Cancelled' status and exclude personal events
-        queryset = tblEvent.objects.filter(status__statusName='cancelled').exclude(eventCategory__eventCategoryName__iexact='personal') 
+        queryset = tblEvent.objects.filter(status__name='cancelled').exclude(eventCategory__eventCategoryName__iexact='personal') 
 
         # Apply role-based restrictions
         if user_role == 'Admin':
@@ -821,11 +821,11 @@ class EventStatisticsCancelledView(APIView):
                             'name': e.eventName,
                             'category': e.eventCategory.eventCategoryName,
                             'type': e.eventType.eventTypeName,
-                            'status': e.status.statusName,
+                            'status': e.status.name,
                             'startDateTime': e.startDateTime,
                             'endDateTime': e.endDateTime,
                             'description': e.eventDescription,
-                            'created_by': f"{e.created_by.first_name} {e.created_by.last_name} ({e.created_by.role.name})",
+                            'created_by': f"{e.created_by.first_name} {e.created_by.last_name} ({e.created_by.roles.order_by('rank').first().name})",
                             'participants': [f"{p.first_name} {p.last_name}" for p in e.participants.all()],
                             'departments': [d.name for d in e.department.all()],
                             'semesterInfo': self.get_semester_for_date(e.startDateTime),
@@ -931,9 +931,9 @@ class CSVUploadView(APIView):
                     error_messages.append("Invalid endDateTime format.")
 
             now = timezone.now()
-            upcoming_status = tblStatus.objects.get(statusName='upcoming')
-            ongoing_status = tblStatus.objects.get(statusName='ongoing')
-            done_status = tblStatus.objects.get(statusName='done')
+            upcoming_status = Status.objects.get(name='upcoming')
+            ongoing_status = Status.objects.get(name='ongoing')
+            done_status = Status.objects.get(name='done')
 
             eventStatus = None
             if startDateTime and endDateTime:
@@ -1136,7 +1136,7 @@ class PublicEventsView(ListAPIView):
             Q(eventCategory__eventCategoryName__iexact='university') |
             Q(eventCategory__eventCategoryName__iexact='college') |
             Q(eventCategory__eventCategoryName__iexact='exam')
-        ).exclude(status__statusName__iexact='draft').exclude(status__statusName__iexact='disapproved')
+        ).exclude(status__name__iexact='draft').exclude(status__name__iexact='disapproved')
         
 class PublicEventsInfoView(RetrieveAPIView):
     serializer_class = tblEventSerializer
@@ -1163,7 +1163,7 @@ class PublicEventsInfoView(RetrieveAPIView):
             Q(eventCategory__eventCategoryName__iexact='university') |
             Q(eventCategory__eventCategoryName__iexact='college') |
             Q(eventCategory__eventCategoryName__iexact='exam')
-        ).exclude(status__statusName__iexact='draft').exclude(status__statusName__iexact='disapproved')
+        ).exclude(status__name__iexact='draft').exclude(status__name__iexact='disapproved')
     
 class CollegeDetailView(ListAPIView):
     queryset = College.objects.all()
@@ -1192,7 +1192,7 @@ class ApprovalEvent(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        user_role = user.roles.order_by('rank').first()
+        user_role = user.roles.order_by('rank').first().name
 
         # Check if the user has the required designation
         if user_role=="Dean":
@@ -1202,7 +1202,7 @@ class ApprovalEvent(ListAPIView):
                 tblEvent.objects.filter(
                     ~Q(eventCategory__eventCategoryName="Personal"),
                     Q(created_by__role__name__in=["Mother Org", "Unit Org"]),
-                    Q(status__statusName="draft"),
+                    Q(status__name="draft"),
                 )
             )
         
@@ -1214,7 +1214,7 @@ class ApprovalEvent(ListAPIView):
                     ~Q(eventCategory__eventCategoryName="Personal"),
                     Q(created_by__role__name__in=["Unit Org", "Faculty"]),
                     Q(created_by__department=user.department.id),
-                    Q(status__statusName="draft")
+                    Q(status__name="draft")
                 )
             )
         
@@ -1280,7 +1280,7 @@ class UnavailablesSlotNonPersonalView(APIView):
 
     def get(self, request, *args, **kwargs):
         # Exclude personal and announcement events
-        other_events = tblEvent.objects.exclude(eventCategory__eventCategoryName__iexact='personal').exclude(isAnnouncement=True).exclude(status__statusName__iexact='cancelled').exclude(status__statusName__iexact='draft').exclude(status__statusName__iexact='postponed').exclude(status__statusName__iexact='disapproved')
+        other_events = tblEvent.objects.exclude(eventCategory__eventCategoryName__iexact='personal').exclude(isAnnouncement=True).exclude(status__name__iexact='cancelled').exclude(status__name__iexact='draft').exclude(status__name__iexact='postponed').exclude(status__name__iexact='disapproved')
         # Call helper function to create time slots
         available_slots = self.create_time_slots(other_events)
         return Response(available_slots, status=status.HTTP_200_OK)
@@ -1311,8 +1311,8 @@ class UnavailablesSlotNonPersonalView(APIView):
                 'id_number': event.created_by.id_number,
                 'first_name': event.created_by.first_name,
                 'last_name': event.created_by.last_name,
-                'designation': event.created_by.roles.order_by('rank').first().name if event.created_by.roles.order_by('rank').first() else None,
-                'rank': event.created_by.roles.order_by('rank').first().rank if event.created_by.roles.order_by('rank').first() else None,
+                'designation': event.created_by.roles.order_by('rank').first().name if event.created_by.roles else None,
+                'rank': event.created_by.roles.order_by('rank').first().rank if event.created_by.roles else None,
                 'department': event.created_by.department.name if event.created_by.department else None
             }
 
@@ -1414,7 +1414,7 @@ class UnavalaibleSlotPersonalView(APIView):
         # Get events only from the personal category
         personal_events = tblEvent.objects.filter(
             eventCategory__eventCategoryName__iexact='personal'
-        ).exclude(isAnnouncement=True).exclude(status__statusName__iexact='cancelled').exclude(status__statusName__iexact='draft').exclude(status__statusName__iexact='postponed').exclude(status__statusName__iexact='disapproved')
+        ).exclude(isAnnouncement=True).exclude(status__name__iexact='cancelled').exclude(status__name__iexact='draft').exclude(status__name__iexact='postponed').exclude(status__name__iexact='disapproved')
         
         # Call helper function to create time slots
         available_slots = self.create_time_slots(personal_events)
@@ -1447,8 +1447,8 @@ class UnavalaibleSlotPersonalView(APIView):
                 'id_number': event.created_by.id_number,
                 'first_name': event.created_by.first_name,
                 'last_name': event.created_by.last_name,
-                'designation': event.created_by.role.name if event.created_by.role else None,
-                'rank': event.created_by.role.rank if event.created_by.role else None,
+                'designation': event.created_by.roles.order_by('rank').first().name if event.created_by.roles else None,
+                'rank': event.created_by.roles.order_by('rank').first().rank if event.created_by.roles else None,
                 'department': event.created_by.department.name if event.created_by.department else None
             }
 
@@ -1633,10 +1633,10 @@ class ApproveDocumentsListView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        user_role = user.roles.order_by('rank').first()
+        user_role = user.roles.order_by('rank').first().name
 
         # Base query to exclude empty or null approveDocuments
-        queryset = tblEvent.objects.exclude(approveDocuments__isnull=True).exclude(approveDocuments='').exclude(status__statusName__iexact='draft').exclude(status__statusName__iexact='disapproved')
+        queryset = tblEvent.objects.exclude(approveDocuments__isnull=True).exclude(approveDocuments='').exclude(status__name__iexact='draft').exclude(status__name__iexact='disapproved')
 
         # Admin and Dean roles: Access all approveDocuments
         if user_role == 'Admin':
@@ -1724,7 +1724,7 @@ class FilteredEventsByCurrentSemesterView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        user_role = user.roles.order_by('rank').first()
+        user_role = user.roles.order_by('rank').first().name
         today = date.today()
 
         # Get the current semester based on today's date

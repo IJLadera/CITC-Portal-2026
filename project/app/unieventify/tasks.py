@@ -4,8 +4,9 @@ from celery import shared_task
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import tblEvent, tblStatus, tblSemester
+from .models import tblEvent, tblSemester
 from app.users.models import User
+from app.lms.models import Status
 from django.db.models import Q
 from django.utils.timezone import make_aware, localtime
 from django.template.loader import render_to_string
@@ -22,8 +23,8 @@ def update_event_status_task():
     end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
 
     # Fetch the status instances for 'ongoing' and 'done'
-    ongoing_status = tblStatus.objects.get(statusName='ongoing')
-    done_status = tblStatus.objects.get(statusName='done')
+    ongoing_status = Status.objects.get(name='ongoing')
+    done_status = Status.objects.get(name='done')
 
     # Fetch only relevant events for today
     eventsfiltered = tblEvent.objects.filter(
@@ -83,7 +84,7 @@ def send_event_reminder_emails():
         Q(endDateTime__gte=start_of_day) &  # Events that haven't ended before today
         Q(startDateTime__lte=end_of_day) &  # Events that start today or earlier
         ~Q(isAnnouncement=True) &  # Exclude announcements
-        ~Q(status__statusName="draft")  # Exclude draft status
+        ~Q(status__name="draft")  # Exclude draft status
     )
     # Create a dictionary to store emails and their events
     email_event_map = {}

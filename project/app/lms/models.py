@@ -69,7 +69,7 @@ class Class(models.Model):
         return '{}-{} ({})'.format(self.year_level, self.section, self.subject)
 
 class Status(models.Model):
-    name = models.CharField(max_length=10)
+    name = models.CharField(max_length=15)
 
     def __str__(self) -> str:
         return self.name

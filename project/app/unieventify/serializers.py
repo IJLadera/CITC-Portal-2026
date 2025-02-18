@@ -8,9 +8,9 @@ from rest_framework.settings import api_settings
 from djoser.conf import settings
 from .models import (
     tblstudentOrg, tblEventType, tblEventCategory, 
-    tblVenue, tblSetup, tblStatus, tblEvent, tblEventLog,
+    tblVenue, tblSetup, tblEvent, tblEventLog,
     tblEventSchoolYearAndSemester, tblSemester, tblEventRemarks)
-from app.lms.models import College, Department, Section, SchoolYear, YearLevel
+from app.lms.models import College, Department, Section, SchoolYear, YearLevel, Status
 from app.users.models import UserRole, Role
 from django.core.exceptions import ValidationError
 from auditlog.models import LogEntry
@@ -65,7 +65,7 @@ class tblVenueSerializer(serializers.ModelSerializer):
 
 class tblStatusSerializer(serializers.ModelSerializer):
     class Meta:
-        model = tblStatus
+        model = Status
         fields = '__all__'
 
 class CustomUserSerializer(UserSerializer):
@@ -154,7 +154,7 @@ class tblEventSerializer(serializers.ModelSerializer):
 
     eventType = serializers.PrimaryKeyRelatedField(queryset=tblEventType.objects.all(), allow_null=True, required=False)
 
-    status = serializers.PrimaryKeyRelatedField(queryset=tblStatus.objects.all(), allow_null=True, required=False)
+    status = serializers.PrimaryKeyRelatedField(queryset=Status.objects.all(), allow_null=True, required=False)
 
     venue = serializers.PrimaryKeyRelatedField(queryset=tblVenue.objects.all(), allow_null=True, required=False)
 
@@ -192,7 +192,7 @@ class tblEventSerializer(serializers.ModelSerializer):
         if status:
             status_representation = {
                 'id': status.id,
-                'statusName': status.statusName
+                'name': status.name
             }
         else:
             status_representation = ""
@@ -297,7 +297,7 @@ class tblEventLogSerializer(serializers.ModelSerializer):
             'eventDescription': event.eventDescription,
             'startDateTime': event.startDateTime,
             'endDateTime': event.endDateTime,
-            'status': event.status.statusName if event.status else None,
+            'status': event.status.name if event.status else None,
             'created_by_designation': created_by_designation,
             'created_by_department': created_by_department_representation,
         }

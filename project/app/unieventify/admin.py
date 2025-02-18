@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import (
     tblEvent, 
     tblEventType, tblEventCategory, tblEventLog,
-    tblSetup,tblStatus, tblstudentOrg,
+    tblSetup, tblstudentOrg,
     tblVenue, tblEventSchoolYearAndSemester, tblSemester, tblEventRemarks
     )
 
@@ -16,7 +16,6 @@ admin.site.register(tblEventType)
 admin.site.register(tblEventCategory)
 admin.site.register(tblEventLog)
 admin.site.register(tblSetup)
-admin.site.register(tblStatus)
 admin.site.register(tblstudentOrg)
 admin.site.register(tblEventSchoolYearAndSemester)
 admin.site.register(tblSemester)

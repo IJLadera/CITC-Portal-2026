@@ -15,7 +15,7 @@ import os
 import bleach
 from auditlog.registry import auditlog
 from app.users.models import User
-from app.lms.models import Department, SchoolYear
+from app.lms.models import Department, SchoolYear, Status
 
 # from .managers import CustomUserManager
 import logging
@@ -71,15 +71,6 @@ class tblSetup(models.Model):
         except Exception as e:
             return f'Invalid Data ({self.pk}): {e}'
     
-class tblStatus(models.Model):
-    statusName = models.CharField(max_length=255)
-
-    def __str__(self):
-        try:
-            return f'{self.statusName}'
-        except Exception as e:
-            return f'Invalid Data ({self.pk}): {e}'
-    
 
 def get_image_upload_path(instance, filename):
     # Get current date
@@ -100,7 +91,7 @@ class tblEvent(models.Model):
     eventCategory = models.ForeignKey(tblEventCategory, on_delete=models.CASCADE, null=True, blank=True)
     venue = models.ForeignKey(tblVenue, on_delete=models.CASCADE, null=True, blank=True)
     setup = models.ForeignKey(tblSetup, on_delete=models.CASCADE, null=True, blank=True)
-    status = models.ForeignKey(tblStatus, on_delete=models.CASCADE, null=True, blank=True)
+    status = models.ForeignKey(Status, on_delete=models.CASCADE, null=True, blank=True)
     department = models.ManyToManyField(Department, blank=True, null=True)
     meetinglink = models.TextField(null=True, blank=True)
     participants = models.ManyToManyField(User, related_name='event_participants', blank=True, null=True)

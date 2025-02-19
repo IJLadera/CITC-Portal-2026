@@ -16,9 +16,16 @@ export default function Application () {
     const dispatch = useDispatch()
 
     useEffect(() => {
+        if (token) {
+            navigate('/');
+        }
+    }, [token, navigate]);
+
+    useEffect(() => {
         if (!loggedIn) {
             navigate('/login')
-        } else {
+        }
+        else {
             if (user.first_name == '' && user.last_name == '' && user.uuid == '' && user.email == '') {
                 getProfile(token).then(response => {
                     dispatch(storeUser(response.data))
@@ -27,6 +34,7 @@ export default function Application () {
                 })
             }
         }
+
     }, [])
 
     return <div className="bg-[#1A1851] h-screen flex justify-center">

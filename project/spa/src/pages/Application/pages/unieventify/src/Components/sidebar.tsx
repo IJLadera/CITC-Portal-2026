@@ -1,3 +1,4 @@
+import {Role, User} from './models'
 import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -33,10 +34,10 @@ import { Accordion } from "flowbite-react";
 import http from "../../../../../../http";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import { useAppSelector } from '../../../../../../hooks';
 
 const drawerWidth = 210;
 
-import {Role, User} from './models'
 
 // interface UserRole {
 //   id: number;
@@ -67,7 +68,7 @@ function SideBar(props: SideBarProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [role, setRole] = useState<number | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token)
   const [isAdmin, setIsAdmin] = useState(false);
   const [activePath, setActivePath] = useState("");
   const ADMIN_PANEL_API = "https://unieventify.duckdns.org/admin/";
@@ -80,6 +81,8 @@ function SideBar(props: SideBarProps) {
 
   const dashboardRole = ["Student", "Faculty", "Mother Org", "Unit Org"];
 
+  console.log("token", token);
+
   useEffect(() => {
     http
       .get("auth/users/me/", {
@@ -90,6 +93,7 @@ function SideBar(props: SideBarProps) {
       .then((response) => {
         setRole(response.data.role.rank);
         setCurrentUser(response.data);
+        console.log("current user", response)
         if (response.data.is_staff) {
           setIsAdmin(true);
         }
@@ -187,7 +191,7 @@ function SideBar(props: SideBarProps) {
           <Accordion.Content
             className="pt-1 ml-12 border-none cursor-pointer"
             onClick={(event) => {
-              onClickToNavigate(event, "/auth/app/");
+              onClickToNavigate(event, "events/");
             }}
             style={getItemStyle("/auth/app/")}
           >
@@ -196,7 +200,7 @@ function SideBar(props: SideBarProps) {
           <Accordion.Content
             className="pt-1 ml-12 border-none cursor-pointer"
             onClick={(event) => {
-              onClickToNavigate(event, "/auth/app/userevents");
+              onClickToNavigate(event, "userevents");
             }}
             style={getItemStyle("/auth/app/userevents")}
           >
@@ -206,7 +210,7 @@ function SideBar(props: SideBarProps) {
             <Accordion.Content
               className="pt-1 ml-12 border-none cursor-pointer"
               onClick={(event) => {
-                onClickToNavigate(event, "/auth/app/timeline");
+                onClickToNavigate(event, "timeline");
               }}
               style={getItemStyle("/auth/app/timeline")}
             >
@@ -252,7 +256,7 @@ function SideBar(props: SideBarProps) {
         <ListItem disablePadding>
           <ListItemButton
             onClick={(event) => {
-              onClickToNavigate(event, "/auth/app/notification");
+              onClickToNavigate(event, "notifications");
             }}
             style={getItemStyle("/auth/app/notification")}
           >
@@ -269,7 +273,7 @@ function SideBar(props: SideBarProps) {
         <ListItem disablePadding>
           <ListItemButton
             onClick={(event) => {
-              onClickToNavigate(event, "/auth/app/announcement");
+              onClickToNavigate(event, "announcement");
             }}
             style={getItemStyle("/auth/app/announcement")}
           >
@@ -284,7 +288,7 @@ function SideBar(props: SideBarProps) {
         <ListItem disablePadding>
           <ListItemButton
             onClick={(event) => {
-              onClickToNavigate(event, "/auth/app/profile");
+              onClickToNavigate(event, "profile");
             }}
             style={getItemStyle("/auth/app/profile")}
           >
@@ -326,7 +330,6 @@ function SideBar(props: SideBarProps) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = Cookies.get("auth_token");
         if (!token) throw new Error("No auth token found");
 
         const response = await http.get("auth/users/me/", {
@@ -344,10 +347,9 @@ function SideBar(props: SideBarProps) {
 
     const fetchUnreadCount = async () => {
       try {
-        const token = Cookies.get("auth_token");
         if (!token) throw new Error("No auth token found");
 
-        const response = await http.get("notifications/", {
+        const response = await http.get("unieventify/notifications/", {
           headers: {
             Authorization: `Token ${token}`,
           },
@@ -366,7 +368,7 @@ function SideBar(props: SideBarProps) {
     fetchUnreadCount();
   }, []);
 
-  if (!(profile && currentUser))
+  if (!(profile ))
     return (
       <Box
         sx={{

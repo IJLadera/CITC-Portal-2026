@@ -19,6 +19,7 @@ import {
 import SideBar from "../../Components/sidebar";
 
 import {User, College, YearLevel} from "../../Components/models";
+import { useAppSelector } from "../../../../../../../hooks";
 
 // interface YearLevel {
 //   id: string | number;  // Assuming `id` is either string or number
@@ -62,7 +63,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token)
   const [editProfile, setEditProfile] = useState(false);
   const [colleges, setColleges] = useState<College[]>([]);
   const [yearLevels, setYearLevels] = useState<YearLevel | null>(null);
@@ -92,13 +93,13 @@ export default function Profile() {
     }
 
     http
-      .get("colleges/")
+      .get("unieventify/colleges/")
       .then((response) => {
         setColleges(response.data);
       })
       .catch((error) => console.log(error));
     http
-      .get("yearlevel/")
+      .get("unieventify/yearlevel/")
       .then((response) => {
         setYearLevels(response.data);
       })

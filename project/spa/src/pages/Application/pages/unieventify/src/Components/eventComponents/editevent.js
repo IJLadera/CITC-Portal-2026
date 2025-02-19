@@ -32,7 +32,7 @@ import {
   Paper,
 } from "@mui/material";
 import Cookies from "js-cookie";
-import axios from "../../axios";
+import http from "../../../../../../../http";
 import colors from "../colors";
 import { DateTime } from "luxon";
 import { FileInput, Label, Alert } from "flowbite-react";
@@ -178,14 +178,14 @@ const EditEvent = ({
     event?.recurrence_days
       ? event?.recurrence_days
       : {
-        monday: false,
-        tuesday: false,
-        wednesday: false,
-        thursday: false,
-        friday: false,
-        saturday: false,
-        sunday: false,
-      }
+          monday: false,
+          tuesday: false,
+          wednesday: false,
+          thursday: false,
+          friday: false,
+          saturday: false,
+          sunday: false,
+        }
   );
   const [checkedEvents, setCheckedEvents] = useState([]);
   const [showContinueButton, setShowContinueButton] = useState(false);
@@ -217,22 +217,22 @@ const EditEvent = ({
   };
 
   useEffect(() => {
-    axios
+    http
       .get(API_VENUES, { headers: { Authorization: `Token ${token}` } })
       .then((response) => setVenues(response.data))
       .catch((error) => console.error("Error fetching venues:", error));
 
-    axios
+    http
       .get(API_SETUPS, { headers: { Authorization: `Token ${token}` } })
       .then((response) => setSetups(response.data))
       .catch((error) => console.error("Error fetching setups:", error));
 
-    axios
+    http
       .get(API_STATUS, { headers: { Authorization: `Token ${token}` } })
       .then((response) => setStatuses(response.data))
       .catch((error) => console.error("Error fetching status:", error));
 
-    axios
+    http
       .get(API_EVENTTYPES, { headers: { Authorization: `Token ${token}` } })
       .then((response) => {
         setEventType(response.data);
@@ -241,14 +241,14 @@ const EditEvent = ({
         console.error("Error fetching event types:", error);
       });
 
-    axios
+    http
       .get(API_EVENT_CATEGORIES, {
         headers: { Authorization: `Token ${token}` },
       })
       .then((response) => setCategories(response.data))
       .catch((error) => console.error("Error fetching categories:", error));
 
-    axios
+    http
       .get(API_USERS, { headers: { Authorization: `Token ${token}` } })
       .then((response) => {
         const filteredUsers = response.data.filter(
@@ -258,22 +258,22 @@ const EditEvent = ({
       })
       .catch((error) => console.error("Error fetching users:", error));
 
-    axios
+    http
       .get(API_DEPARTMENTS, { headers: { Authorization: `Token ${token}` } })
       .then((response) => setDepartments(response.data))
       .catch((error) => console.error("Error fetching departments:", error));
 
-    axios
+    http
       .get(API_USER_ROLES, { headers: { Authorization: `Token ${token}` } })
       .then((response) => setRoles(response.data))
       .catch((error) => console.error("Error fetching roles:", error));
 
-    axios
+    http
       .get(API_COLLEGES, { headers: { Authorization: `Token ${token}` } })
       .then((response) => setColleges(response.data))
       .catch((error) => console.error("Error fetching colleges:", error));
 
-    axios
+    http
       .get(API_UNAVAILABLE_PERSONAL, {
         headers: { Authorization: `Token ${token}` },
       })
@@ -282,7 +282,7 @@ const EditEvent = ({
         console.error("Error fetching personal unavailable slots:", error)
       );
 
-    axios
+    http
       .get(API_UNAVAILABLE_NONPERSONAL, {
         headers: { Authorization: `Token ${token}` },
       })
@@ -291,15 +291,15 @@ const EditEvent = ({
         console.error("Error fetching nonpersonal unavailable slots:", error)
       );
 
-    axios
+    http
       .get(API_PARTICIPANTS, { headers: { Authorization: `Token ${token}` } })
       .then((response) => setParticipants(response.data))
       .catch((error) => console.error("Error fetching participants:", error));
-    axios
+    http
       .get(API_COLLEGES, { headers: { Authorization: `Token ${token}` } })
       .then((response) => setColleges(response.data))
       .catch((error) => console.error("Error fetching participants:", error));
-    axios
+    http
       .get(API_DEPARTMENTS, { headers: { Authorization: `Token ${token}` } })
       .then((response) => setDepartments(response.data))
       .catch((error) => console.error("Error fetching participants:", error));
@@ -591,8 +591,8 @@ const EditEvent = ({
           findcategory?.eventCategoryName.toLowerCase()
         )
           ? timeConflict &&
-          (eventInSelectedDepartments(slot) ||
-            slot.category.toLowerCase() === examCategory)
+              (eventInSelectedDepartments(slot) ||
+                slot.category.toLowerCase() === examCategory)
           : timeConflict;
       });
     }
@@ -741,7 +741,8 @@ const EditEvent = ({
       if (setup) formData.append("setup", setup);
       if (meetingLink) formData.append("meetinglink", meetingLink);
       if (category) formData.append("eventCategory", category);
-      if (approveDocuments) formData.append("approveDocuments", approveDocuments);
+      if (approveDocuments)
+        formData.append("approveDocuments", approveDocuments);
       if (images) formData.append("images", images);
       if (selectedParticipants.length > 0) {
         selectedParticipants?.forEach((participant) =>
@@ -760,7 +761,7 @@ const EditEvent = ({
         );
         formData.append("recurrence_days", JSON.stringify(selectedDays));
       }
-      axios
+      http
         .patch(`events/${eventID}/`, formData, {
           headers: {
             Authorization: `Token ${token}`,
@@ -829,7 +830,8 @@ const EditEvent = ({
       if (setup) formData.append("setup", setup);
       if (meetingLink) formData.append("meetinglink", meetingLink);
       if (category) formData.append("eventCategory", category);
-      if (approveDocuments) formData.append("approveDocuments", approveDocuments);
+      if (approveDocuments)
+        formData.append("approveDocuments", approveDocuments);
       if (images) formData.append("images", images);
       if (selectedParticipants.length > 0) {
         selectedParticipants?.forEach((participant) =>
@@ -848,7 +850,7 @@ const EditEvent = ({
         );
         formData.append("recurrence_days", JSON.stringify(selectedDays));
       }
-      axios
+      http
         .post(API_EVENTS, formData, {
           headers: {
             Authorization: `Token ${token}`,
@@ -1060,7 +1062,7 @@ const EditEvent = ({
       const findstatus = statuses?.find(
         (stat) => stat.statusName === postponed
       );
-      await axios.patch(
+      await http.patch(
         `events/${eventId}/`,
         {
           status: findstatus?.id,
@@ -1150,8 +1152,9 @@ const EditEvent = ({
         selectedDepartments.includes(user.department?.id);
 
       const searchFields = [
-        `${user.first_name} ${user.middle_name || ""} ${user.last_name
-          }`.toLowerCase(),
+        `${user.first_name} ${user.middle_name || ""} ${
+          user.last_name
+        }`.toLowerCase(),
         user.idNumber?.toLowerCase() || "",
         user.role?.designation?.toLowerCase() || "",
         user.department?.departmentName?.toLowerCase() || "",
@@ -1451,45 +1454,45 @@ const EditEvent = ({
         {departmentCategory.includes(
           findcategory?.eventCategoryName?.toLowerCase()
         ) && (
-            <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel>Select Departments</InputLabel>
-                <Select
-                  multiple
-                  disabled={currentUser.is_staff ? false : isEdit}
-                  value={selectedDepartments}
-                  onChange={handleDepartmentChange}
-                  renderValue={(selected) => (
-                    <div>
-                      {selected.map((value) => {
-                        const department = departments.find(
-                          (dep) => dep.id === value
-                        );
-                        return department ? (
-                          <Chip key={value} label={department.departmentName} />
-                        ) : null;
-                      })}
-                    </div>
-                  )}
-                >
-                  {/* Add MenuItem for All CITC Department but don't show it in the selected items */}
-                  <MenuItem value="CITC" key="CITC">
-                    All CITC Department
-                  </MenuItem>
+          <Grid item xs={6}>
+            <FormControl fullWidth>
+              <InputLabel>Select Departments</InputLabel>
+              <Select
+                multiple
+                disabled={currentUser.is_staff ? false : isEdit}
+                value={selectedDepartments}
+                onChange={handleDepartmentChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => {
+                      const department = departments.find(
+                        (dep) => dep.id === value
+                      );
+                      return department ? (
+                        <Chip key={value} label={department.departmentName} />
+                      ) : null;
+                    })}
+                  </div>
+                )}
+              >
+                {/* Add MenuItem for All CITC Department but don't show it in the selected items */}
+                <MenuItem value="CITC" key="CITC">
+                  All CITC Department
+                </MenuItem>
 
-                  {/* Render other departments, excluding those starting with 'All' */}
-                  {departments.map(
-                    (department) =>
-                      !department.departmentName.startsWith("All") && ( // Exclude departments starting with "All"
-                        <MenuItem key={department.id} value={department.id}>
-                          {department.departmentName}
-                        </MenuItem>
-                      )
-                  )}
-                </Select>
-              </FormControl>
-            </Grid>
-          )}
+                {/* Render other departments, excluding those starting with 'All' */}
+                {departments.map(
+                  (department) =>
+                    !department.departmentName.startsWith("All") && ( // Exclude departments starting with "All"
+                      <MenuItem key={department.id} value={department.id}>
+                        {department.departmentName}
+                      </MenuItem>
+                    )
+                )}
+              </Select>
+            </FormControl>
+          </Grid>
+        )}
         {currentUser.role?.designation.toLowerCase() !== student && (
           <Grid item xs={12}>
             <FormControlLabel
@@ -1750,7 +1753,7 @@ const EditEvent = ({
               </TextField>
             </Grid>
             {findsetup?.setupName === bothSetup ||
-              findsetup?.setupName === ftf ? (
+            findsetup?.setupName === ftf ? (
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -1793,7 +1796,7 @@ const EditEvent = ({
             )}
 
             {findsetup?.setupName === bothSetup ||
-              findsetup?.setupName === online ? (
+            findsetup?.setupName === online ? (
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -2058,12 +2061,12 @@ const EditEvent = ({
                                     indeterminate={
                                       checkedParticipants.length > 0 &&
                                       checkedParticipants.length <
-                                      selectedParticipants.length
+                                        selectedParticipants.length
                                     }
                                     checked={
                                       selectedParticipants.length > 0 &&
                                       checkedParticipants.length ===
-                                      selectedParticipants.length
+                                        selectedParticipants.length
                                     }
                                     onChange={handleSelectAllparticipants}
                                   />
@@ -2133,12 +2136,12 @@ const EditEvent = ({
                                     indeterminate={
                                       checkedParticipants.length > 0 &&
                                       checkedParticipants.length <
-                                      selectedParticipants.length
+                                        selectedParticipants.length
                                     }
                                     checked={
                                       selectedParticipants.length > 0 &&
                                       checkedParticipants.length ===
-                                      selectedParticipants.length
+                                        selectedParticipants.length
                                     }
                                     onChange={handleSelectAllparticipants}
                                   />

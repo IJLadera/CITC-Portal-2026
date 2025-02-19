@@ -3,13 +3,15 @@ import BaseTheme from "../Components/baseTheme";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
-import http from "../axios"; // Replace with your Axios instance
+import http from "../../../../../../http"; // Replace with your Axios instance
 import { CircularProgress, Box } from "@mui/material";
+import { useAppSelector } from "../../../../../../hooks";
 
-export default function Application() {
+export default function UniEvntifyApplication() {
   const location = useLocation();
-  const token = Cookies.get("auth_token");
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const token = useAppSelector(state => state.auth.token)
+  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
+  console.log("isauthenticated",token)
 
   useEffect(() => {
     if (token) {
@@ -54,16 +56,13 @@ export default function Application() {
       <SideBar />
       <div
         className="h-full w-full p-5 flex justify-center"
-        style={{ marginTop: 64 }}
       >
         <Outlet />
       </div>
     </BaseTheme>
   ) : (
-    <Navigate
-      to="/auth"
-      replace
-      state={{ from: location }} // pass current location to redirect back
-    />
+    <Box>
+      <p>Not signed</p>
+    </Box>
   );
 }

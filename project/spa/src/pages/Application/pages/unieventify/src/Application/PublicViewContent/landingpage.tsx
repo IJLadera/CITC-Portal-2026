@@ -23,6 +23,7 @@ import logo from "../../images/logo.png";
 import { Carousel } from "flowbite-react"; // You can use MUI or Tailwind equivalent
 import Announcement from "../../Components/announcement";
 import { CircularProgress } from "@mui/material";
+import { useAppSelector } from "../../../../../../../hooks";
 
 const defaultTheme = createTheme();
 
@@ -59,6 +60,8 @@ export default function Landingpage() {
   const done = "done";
   const draft = "draft";
 
+  const { first_name, middle_name, last_name } = useAppSelector((state) => state.auth.user);
+
   let latestEventState: ContentState | null = null;
 
   try {
@@ -77,7 +80,7 @@ export default function Landingpage() {
     // Fetch events from the API
     const fetchEvents = async () => {
       try {
-        const response = await http.get("public-events/");
+        const response = await http.get("unieventify/public-events/");
         const allEvents = response.data
           .filter((event: Event) => event.status?.statusName !== "draft")
           .filter((event: Event) => !event.isAnnouncement);
@@ -134,13 +137,13 @@ export default function Landingpage() {
     fetchEvents();
     // Fetch event categories from the API
     http
-      .get("eventcategories/")
+      .get("unieventify/eventcategories/")
       .then((response) => setEventCategory(response.data))
       .catch((error) => console.log(error));
 
     // Fetch public events from the API and filter out those with status 'draft'
     http
-      .get("public-events/")
+      .get("unieventify/public-events/")
       .then((response) => {
         const publicEvents = response.data
           .filter((event: Event) => event.status?.statusName !== draft)
@@ -149,7 +152,7 @@ export default function Landingpage() {
       })
       .catch((error) => console.log(error));
     http
-      .get("announcement/")
+      .get("unieventify/announcement/")
       .then((response) => {
         setAnnouncement(response.data);
       })
@@ -290,6 +293,7 @@ export default function Landingpage() {
           </Button>
         </Box>
       </Box>
+      <Box className="flex justify-center">{first_name} {middle_name} {last_name}</Box>
       <Box className="mt-16 flex justify-center">
         {latestEvent?.length > 0 ? (
           <Box

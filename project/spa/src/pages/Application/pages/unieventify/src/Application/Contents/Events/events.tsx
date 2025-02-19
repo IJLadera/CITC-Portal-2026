@@ -31,6 +31,7 @@ import { RRule, Weekday } from "rrule";
 import colors from "../../../Components/colors";
 import { toast, ToastContainer } from "react-toastify";
 import { Department } from "../../../../../lms/models";
+import { useAppSelector } from "../../../../../../../../hooks";
 
 interface User {
   role: {
@@ -125,7 +126,7 @@ interface DepartmentTwo {
 }
 
 export default function Events() {
-  const [events, setEvents] = useState<FormattedEvent[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [categories, setCategories] = useState<EventCategory[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
   const [departments, setDepartments] = useState<DepartmentTwo[]>([]);
@@ -141,8 +142,11 @@ export default function Events() {
   const [open, setOpen] = useState(false);
   const [types, setTypes] = useState<EventType[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventApi  | null>(null);
-  const token = Cookies.get("auth_token");
+  const token = useAppSelector((state) => state.auth.token);
+  // const token = {tokens};
   const navigate = useNavigate();
+
+  console.log("auth:", token);
 
   const employeeRole = ["Mother Org", "Unit Org", "Admin"];
 
@@ -165,7 +169,7 @@ export default function Events() {
 
   const fetchCategories = async () => {
     try {
-      const response = await http.get("eventcategories/");
+      const response = await http.get("unieventify/eventcategories/");
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -174,7 +178,7 @@ export default function Events() {
 
   const fetchTypes = async () => {
     try {
-      const response = await http.get("eventtypes/");
+      const response = await http.get("unieventify/eventtypes/");
       setTypes(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -183,7 +187,7 @@ export default function Events() {
 
   const fetchColleges = async () => {
     try {
-      const response = await http.get("colleges/");
+      const response = await http.get("unieventify/colleges/");
       setColleges(response.data);
     } catch (error) {
       console.error("Error fetching colleges:", error);
@@ -192,7 +196,7 @@ export default function Events() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await http.get("departments/");
+      const response = await http.get("unieventify/departments/");
       setDepartments(response.data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -201,7 +205,7 @@ export default function Events() {
 
   const fetchCollegess = async () => {
     try {
-      const response = await http.get("departmentsbycollege/");
+      const response = await http.get("unieventify/departmentsbycollege/");
       setCollegess(response.data || []);
     } catch (error) {
       console.error("Error fetching collegess:", error);
@@ -211,7 +215,7 @@ export default function Events() {
 
   const fetchFaculties = async () => {
     try {
-      const response = await http.get("faculty/events", {
+      const response = await http.get("unieventify/faculty/events", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -224,7 +228,7 @@ export default function Events() {
 
   const fetchFacultyEvents = async (facultyId: number) => {
     try {
-      const response = await http.get(`faculty/events/${facultyId}`, {
+      const response = await http.get(`unieventify/faculty/events/${facultyId}`, {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -248,9 +252,9 @@ export default function Events() {
         .filter((event) => {
           // If the user is a Dean or Chairperson, only show Faculty-created events
           if (
-            (currentUser.role.designation === "Dean" ||
-              currentUser.role.designation === "Chairperson") &&
-            event?.created_by?.role?.designation === "Faculty" &&
+            (currentUser.roles.name === "Dean" ||
+              currentUser.roles.name === "Chairperson") &&
+            event?.created_by?.role?.name === "Faculty" &&
             event?.isAnnouncement !== true &&
             event?.status?.statusName !== "draft"
           ) {
@@ -258,8 +262,8 @@ export default function Events() {
           }
 
           if (
-            event?.created_by?.role?.designation === "Student" ||
-            (!employeeRole.includes(event?.created_by?.role?.designation)
+            event?.created_by?.role?.name === "Student" ||
+            (!employeeRole.includes(event?.created_by?.role?.name)
               ? event?.eventCategory?.eventCategoryName?.toLowerCase() ===
               "personal" && event?.eventType?.eventTypeName !== "Academic"
               : event?.eventCategory?.eventCategoryName?.toLowerCase() ===
@@ -336,7 +340,7 @@ export default function Events() {
       });
       const currentUser = userResponse.data;
   
-      const response = await http.get("events/", {
+      const response = await http.get("unieventify/public-events/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -347,9 +351,9 @@ export default function Events() {
       const formattedEvents: FormattedEventTwo[] = eventData
         .filter((event: any) => {
           if (
-            (currentUser.role.designation === "Dean" ||
-              currentUser.role.designation === "Chairperson") &&
-            event?.created_by?.role?.designation === "Faculty" &&
+            (currentUser.roles.name === "Dean" ||
+              currentUser.roles.name === "Chairperson") &&
+            event?.created_by?.role?.name === "Faculty" &&
             event?.isAnnouncement !== true &&
             event?.status?.statusName !== "draft"
           ) {
@@ -357,8 +361,8 @@ export default function Events() {
           }
   
           if (
-            event?.created_by?.role?.designation === "Student" ||
-            (!employeeRole.includes(event?.created_by?.role?.designation)
+            event?.created_by?.role?.name === "Student" ||
+            (!employeeRole.includes(event?.created_by?.role?.name)
               ? event?.eventCategory?.eventCategoryName?.toLowerCase() ===
                   "personal" && event?.eventType?.eventTypeName !== "Academic"
               : event?.eventCategory?.eventCategoryName?.toLowerCase() ===
@@ -433,8 +437,8 @@ export default function Events() {
             allDay: false,
             category: event.eventCategory?.id || null,
             //dili ni apil
-            // color: eventTypesColors[event.eventType?.id] || "#000000",
-            color: "#000000",
+            color: eventTypesColors[event.eventType?.id as keyof typeof eventTypesColors] || "#000000",
+            // color: "#000000",
             eventDescription: event.eventDescription || "",
             participants: event.participants || [],
             departments: event.department || [],
@@ -496,8 +500,7 @@ export default function Events() {
   const handleViewDetails = () => {
     if (!selectedEvent) return;
 
-
-    navigate(`eventdetails/${selectedEvent.id}`);
+    navigate(`/citc/portal/unieventify/app/eventdetails/${selectedEvent.id}`);
     handleClose();
   };
 
@@ -758,11 +761,10 @@ export default function Events() {
           interactionPlugin,
           rrulePlugin,
         ]}
-        // events={filteredEvents.map((event) => ({
-        //   ...event,
-        //   id: event.id.toString(),
-        //   backgroundColor: event.color,
-        // }))}
+        events={filteredEvents.map((event) => ({
+          ...event,
+          backgroundColor: event.color,
+        }))}
         eventClick={handleEventClick}
         editable={false}
       />

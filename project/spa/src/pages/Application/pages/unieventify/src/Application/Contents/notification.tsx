@@ -1,3 +1,4 @@
+import { Event, Role, User } from "../../Components/models"; 
 import React, { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import {
@@ -16,10 +17,10 @@ import colors from "../../Components/colors";
 import http from "../../../../../../../http";
 import { useNavigate } from "react-router-dom";
 import { Editor, EditorState, convertFromRaw, ContentState } from "draft-js";
+import { useAppSelector } from "../../../../../../../hooks";
 
 const deanAndChairperson = ['Dean', 'Chairperson']
 
-import { Event, Role, User } from "../../Components/models"; 
 
 
 
@@ -70,7 +71,7 @@ const Notification = () => {
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState<Role | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const token = Cookies.get("auth_token");
+  const token = useAppSelector((state) => state.auth.token);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -88,13 +89,13 @@ const Notification = () => {
         setUser(userResponse.data);
 
         // Fetch approval events
-        const approvalEventsResponse = await http.get("approvalevents/", {
+        const approvalEventsResponse = await http.get("unieventify/approvalevents/", {
           headers: { Authorization: `Token ${token}` },
         });
         setApprovalEvents(approvalEventsResponse.data);
 
         // Fetch notifications
-        const notificationsResponse = await http.get("notifications/", {
+        const notificationsResponse = await http.get("unieventify/notifications/", {
           headers: { Authorization: `Token ${token}` },
         });
         // Filter notifications based on event status
@@ -119,7 +120,7 @@ const Notification = () => {
   const handleOnClickNotification = (id:any, read: boolean, eventId: number) => {
     if (read === false || read === null) {
       http.patch(
-        `notifications/${id}/`,
+        `unieventify/notifications/${id}/`,
         {
           is_read: true,
         },
@@ -130,7 +131,7 @@ const Notification = () => {
         }
       );
     }
-    navigate(`/auth/app/eventdetails/${eventId}`);
+    navigate(`/citc/portal/unieventify/app/eventdetails/${eventId}`);
   };
 
 

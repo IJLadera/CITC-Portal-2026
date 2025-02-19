@@ -4,18 +4,20 @@ import http from "../../../../../../../../http";
 import Cookies from "js-cookie";
 import EventDetails from "../../../Components/eventComponents/eventDetails";
 import Eventskeleton from "../../../Components/eventComponents/eventskeleton";
+import { useAppSelector } from "../../../../../../../../hooks";
 
 export default function DifEventDetails() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
-  const token = Cookies.get("auth_token");
+  // const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token)
   const [admin, setAdmin] = useState("");
   const [currentUser, setCurrentUser] = useState("");
 
   useEffect(() => {
     const fetchEventDetails = async () => {
       try {
-        const response = await http.get(`events/${id}`, {
+        const response = await http.get(`unieventify/events/${id}`, {
           headers: {
             Authorization: `Token ${token}`,
           },

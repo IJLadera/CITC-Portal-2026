@@ -10,6 +10,7 @@ import colors from "../../../Components/colors";
 import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Event } from "../../../Components/models";
+import { useAppSelector } from "../../../../../../../../hooks";
 
 interface EventType {
   id: number;
@@ -83,13 +84,14 @@ export default function EventTimeline() {
     }
   ]);
   const [searchTerm, setSearchTerm] = useState('');
-  const token = Cookies.get("auth_token");
+  // const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await http.get("timeline/", {
+        const response = await http.get("unieventify/timeline/", {
           headers: {
             Authorization: `Token ${token}`,
           },

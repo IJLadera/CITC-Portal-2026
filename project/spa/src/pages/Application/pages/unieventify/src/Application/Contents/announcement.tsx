@@ -16,6 +16,7 @@ import { Editor, EditorState, convertFromRaw, ContentState } from "draft-js";
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { User, Event } from "../../Components/models";
+import { useAppSelector } from "../../../../../../../hooks";
 
 // interface User  {
 //   id: number,
@@ -59,7 +60,8 @@ const AnnouncementsPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [announcements, setAnnouncements] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const token = Cookies.get("auth_token");
+  // const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token);
   const navigate = useNavigate();
 
   const fetchUserDepartment = async () => {
@@ -78,7 +80,7 @@ const AnnouncementsPage = () => {
 
   const fetchAnnouncements = async () => {
     try {
-      const response = await http.get("events/", {
+      const response = await http.get("unieventify/events/", {
         headers: {
           Authorization: `Token ${token}`,
         },

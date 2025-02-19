@@ -5,9 +5,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
-import { EventInput } from "@fullcalendar/core"; 
 import Cookies from "js-cookie";
-import { SelectChangeEvent } from "@mui/material";
 import {
   Box,
   Dialog,
@@ -25,15 +23,14 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { RRule, Weekday } from "rrule";
+import { RRule } from "rrule";
 import rrulePlugin from "@fullcalendar/rrule";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DeleteConfirmModal } from "../../../Components/DeleteConfirmModal";
 import colors from "../../../Components/colors";
-import { EventClickArg } from "@fullcalendar/core";
 import { Event, EventCategory, Department } from "../../../Components/models";
-import { start } from "repl";
+import { useAppSelector } from "../../../../../../../../hooks";
 
 const palette = {
   primary: "#FAB417",
@@ -75,6 +72,7 @@ interface UserEvents {
   eventType: string | string[] | null;  // Change eventType to an array of strings or null
   startDateTime: string;
   endDateTime: string;
+  title: string;
 }
 interface User {
   id: number;
@@ -86,15 +84,14 @@ interface User {
   department: number;
   created_events?: UserEvents[];
 }
-
 export default function UserEvents() {
-  const [events, setEvents] = useState<UserEvents[]>([{          
+  const [events, setEvents] = useState<any[]>([{          
     id: "",
     eventName: "",
     start: "", // Use toISOString() to ensure correct formatting
     end: "", // Ensure end time is included
     duration: { hours: 0, minutes: 0 },
-    rrule: "",
+    rrule: null,
     allDay: false,
     category: 0,
     color: "",
@@ -123,7 +120,8 @@ export default function UserEvents() {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<UserEvents | null>(null);
-  const token = Cookies.get("auth_token");
+  // const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token)
   const navigate = useNavigate();
   const [openModal, setOpenModal] = useState(false);
   const [created, setCreated] = useState(false);
@@ -136,7 +134,7 @@ export default function UserEvents() {
 
   const fetchCategories = async () => {
     try {
-      const response = await http.get("eventcategories/");
+      const response = await http.get("unieventify/eventcategories/");
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -150,90 +148,87 @@ export default function UserEvents() {
 
   const fetchEvents = async () => {
     try {
-      const response = await http.get("participatedevents/", {
+      const response = await http.get("unieventify/participatedevents/", {
         headers: {
           Authorization: `Token ${token}`,
         },
       });
 
-      const formattedEvents = (response.data as Event[]).map((event: Event) => {
+      const formattedEvents = response.data.map((event: any) => {
+        // Parse start and end date-time
         const eventStart = new Date(event.startDateTime);
         const eventEnd = new Date(event.endDateTime);
-      
-        // Ensure that eventEnd is correctly parsed
+
+        // Ensure that eventEnd is actually passed correctly (don't forget to check that it has been parsed)
         if (isNaN(eventEnd.getTime())) {
           console.error("Invalid event end date:", event.endDateTime);
         }
-      
+
+        // Set both dates to the same day to calculate time difference only
         const startOnlyTime = new Date(eventStart);
         const endOnlyTime = new Date(eventEnd);
-        startOnlyTime.setFullYear(2000, 0, 1);
-        endOnlyTime.setFullYear(2000, 0, 1);
-      
+        startOnlyTime.setFullYear(2000, 0, 1); // Set to a fixed date
+        endOnlyTime.setFullYear(2000, 0, 1); // Same date for accurate time difference
+
+        // Calculate the duration in hours and minutes between start time and end time
         const durationMs = endOnlyTime.getTime() - startOnlyTime.getTime();
         const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
-        const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-      
-        const recurrenceRule =
-          event.recurrence_type === "daily"
-            ? new RRule({
-                freq: RRule.DAILY,
-                dtstart: eventStart,
-                until: eventEnd,
-              }).toString()
-            : event.recurrence_type === "weekly" && event.recurrence_days
-            ? new RRule({
-                freq: RRule.WEEKLY,
-                dtstart: eventStart,
-                byweekday: event.recurrence_days
-                  ?.split(',').map((day: string) => {
-                    switch (day) {
-                      case "monday":
-                        return RRule.MO;
-                      case "tuesday":
-                        return RRule.TU;
-                      case "wednesday":
-                        return RRule.WE;
-                      case "thursday":
-                        return RRule.TH;
-                      case "friday":
-                        return RRule.FR;
-                      case "saturday":
-                        return RRule.SA;
-                      case "sunday":
-                        return RRule.SU;
-                      default:
-                        return null;
-                    }
-                  })
-                  .filter((day): day is Weekday => day !== null),
-                until: eventEnd,
-              }).toString()
-            : null;
-      
+        const durationMinutes = Math.floor(
+          (durationMs % (1000 * 60 * 60)) / (1000 * 60)
+        );
+
+        let recurrenceRule = null; // Start with null
+      if (event.recurrence_type === "daily") {
+        recurrenceRule = new RRule({
+          freq: RRule.DAILY,
+          dtstart: eventStart,
+          until: eventEnd,
+        }).toString();
+      } else if (event.recurrence_type === "weekly" && event.recurrence_days) {
+        recurrenceRule = new RRule({
+          freq: RRule.WEEKLY,
+          dtstart: eventStart,
+          byweekday: event.recurrence_days
+            .map((day: any) => {
+              switch (day) {
+                case "monday":
+                  return RRule.MO;
+                case "tuesday":
+                  return RRule.TU;
+                case "wednesday":
+                  return RRule.WE;
+                case "thursday":
+                  return RRule.TH;
+                case "friday":
+                  return RRule.FR;
+                case "saturday":
+                  return RRule.SA;
+                case "sunday":
+                  return RRule.SU;
+                default:
+                  return null;
+              }
+            })
+            .filter(Boolean),
+          until: eventEnd,
+        }).toString();
+      }
+
         return {
-          id: event.id.toString(),
-          eventName: event.eventName,
-          start: eventStart.toISOString(),
-          end: eventEnd.toISOString(),
+          id: event.id,
+          title: event.eventName,
+          start: eventStart.toISOString(), // Use toISOString() to ensure correct formatting
+          end: eventEnd.toISOString(), // Ensure end time is included
           duration: { hours: durationHours, minutes: durationMinutes },
           rrule: recurrenceRule,
           allDay: false,
           category: event.eventCategory?.id || null,
           color: eventcolors.nonpersonal,
           departments: event.department || [],
-          // Add missing fields with default values or null
-          participants: [],  // Or actual participants data if available
-          created_by: event.created_by || null,  // Replace with actual created_by data if available
-          eventCategory: event.eventCategory || null,
-          eventType: event.eventType || null,  // Include other required fields with default values
-          startDateTime: event.startDateTime,
-          endDateTime: event.endDateTime,
         };
       });
-      
+
       setEvents(formattedEvents);
-      
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -241,16 +236,16 @@ export default function UserEvents() {
 
   const fetchListEvents = async () => {
     try {
-      const response = await http.get("userevents/", {
+      const response = await http.get("unieventify/userevents/", {
         headers: {
           Authorization: `Token ${token}`,
         },
       });
 
       // Assuming events are under `created_events` inside the response
-      const events = response.data.map((user: User) => user.created_events).flat();
+      const events = response.data.map((user: any) => user.created_events).flat();
 
-      const formattedListEvents = events.map((event: Event) => {
+      const formattedListEvents = events.map((event: any) => {
         // Parse start and end date-time
         const eventStart = new Date(event.startDateTime);
         const eventEnd = new Date(event.endDateTime);
@@ -285,7 +280,7 @@ export default function UserEvents() {
                 freq: RRule.WEEKLY,
                 dtstart: eventStart,
                 byweekday: event.recurrence_days
-                  ?.split(',').map((day: string) =>{
+                  .map((day: any) => {
                     switch (day) {
                       case "monday":
                         return RRule.MO;
@@ -305,16 +300,16 @@ export default function UserEvents() {
                         return null;
                     }
                   })
-                  .filter((day): day is Weekday => day !== null),
+                  .filter(Boolean),
                 until: eventEnd,
               }).toString()
             : null;
 
         return {
           id: event.id,
-          eventName: event.eventName,
-          startDateTime: eventStart.toISOString(), // Use toISOString() to ensure correct formatting
-          endDateTime: eventEnd.toISOString(), // Ensure end time is included
+          title: event.eventName,
+          start: eventStart.toISOString(), // Use toISOString() to ensure correct formatting
+          end: eventEnd.toISOString(), // Ensure end time is included
           duration: { hours: durationHours, minutes: durationMinutes },
           rrule: recurrenceRule,
           allDay: false,
@@ -330,25 +325,8 @@ export default function UserEvents() {
     }
   };
 
-  const handleEventClick = (clickInfo: EventClickArg, created: boolean) => {
-    setSelectedEvent({
-      id: clickInfo.event.id,
-      eventName: clickInfo.event.title,
-      start: clickInfo.event.start?.toISOString() || "",
-      end: clickInfo.event.end?.toISOString() || "",
-      duration: { hours: 0, minutes: 0 }, // You may need to calculate this based on start and end
-      rrule: clickInfo.event.extendedProps.rrule || null,
-      allDay: clickInfo.event.allDay,
-      category: clickInfo.event.extendedProps.category || null,
-      color: clickInfo.event.backgroundColor,
-      departments: clickInfo.event.extendedProps.departments || [],
-      participants: clickInfo.event.extendedProps.participants || [],
-      created_by: clickInfo.event.extendedProps.created_by || null,
-      eventCategory: clickInfo.event.extendedProps.eventCategory || null,
-      eventType: clickInfo.event.extendedProps.eventType || null,
-      startDateTime: clickInfo.event.start?.toISOString() || "",
-      endDateTime: clickInfo.event.end?.toISOString() || "",
-    });
+  const handleEventClick = (clickInfo: any, created: any) => {
+    setSelectedEvent(clickInfo.event);
     setCreated(created);
     setOpen(true);
   };
@@ -358,27 +336,45 @@ export default function UserEvents() {
     setSelectedEvent(null);
   };
 
-  const handleCategoryChange = (event: SelectChangeEvent<number[]>) => {
-    setSelectedCategories(event.target.value as number[]);
+  const handleCategoryChange = (event: any) => {
+    setSelectedCategories(event.target.value);
   };
 
   const handleViewDetails = () => {
-    if (!selectedEvent) return;
-    navigate(`/auth/app/eventdetails/${selectedEvent.id}`);
-    handleClose();
+    if (selectedEvent) {
+      navigate(`/auth/app/eventdetails/${selectedEvent.id}`);
+      handleClose();
+    } else {
+      // Handle the case where selectedEvent is null (e.g., show an error or return early)
+      console.error("No event selected");
+    }
   };
 
   const handleDelete = async () => {
-    if (!selectedEvent) return;
+    if (!selectedEvent) {
+      toast.error("No event selected for deletion", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+      return; // Return early if selectedEvent is null
+    }
     try {
-      await http.delete(`events/${selectedEvent.id}/`, {
+      await http.delete(`unieventify/events/${selectedEvent.id}/`, {
         headers: {
           Authorization: `Token ${token}`,
         },
       });
-      setListEvents(
-        listEvents.filter((event) => event.id !== selectedEvent.id)
-      );
+      if (selectedEvent) {
+        setListEvents(
+          listEvents.filter((event) => event.id !== selectedEvent.id)
+        );
+      }
       toast.success("Deleted successfully", {
         position: "top-center",
         autoClose: 5000,
@@ -410,19 +406,19 @@ export default function UserEvents() {
   // Filter events based on selected categories
   const filteredEvents = events.filter((event) =>
     selectedCategories.length
-      ? event.eventCategory && selectedCategories.includes(event.eventCategory.id) // Check if event.eventCategory is not null and compare its id
+      ? selectedCategories.includes(event.category)
       : true
   );
-  
-  const filteredListEvents = listEvents.filter((event) =>
+
+  const filteredListEvents = listEvents.filter((event: any) =>
     selectedCategories.length
-      ? event.eventCategory && selectedCategories.includes(event.eventCategory.id) // Check if event.eventCategory is not null and compare its id
+      ? selectedCategories.includes(event.category)
       : true
   );
 
   const combinedEvents = [...filteredEvents, ...filteredListEvents];
 
-  const formatDateTime = (date: string | Date | undefined) => {
+  const formatDateTime = (date: any) => {
     if (!date) return "";
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
@@ -472,13 +468,13 @@ export default function UserEvents() {
           onChange={handleCategoryChange}
           renderValue={(selected) =>
             categories
-              .filter((category: any) => selected.includes(category.id))
-              .map((category: any) => category.eventCategoryName)
+              .filter((category) => selected.includes(category.id))
+              .map((category) => category.eventCategoryName)
               .join(", ")
           }
           sx={{ bgcolor: "background.paper" }}
         >
-          {categories.map((category: any) => (
+          {categories.map((category) => (
             <MenuItem key={category.id} value={category.id}>
               <Checkbox checked={selectedCategories.includes(category.id)} />
               <ListItemText primary={category.eventCategoryName} />
@@ -527,10 +523,9 @@ export default function UserEvents() {
           interactionPlugin,
           listPlugin,
           rrulePlugin,
-          
         ]}
         initialView="dayGridMonth"
-        // events={combinedEvents}
+        events={combinedEvents}
         eventClick={(e) => handleEventClick(e, true)}
         headerToolbar={{
           left: "prev,next today",
@@ -558,14 +553,14 @@ export default function UserEvents() {
 
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle sx={{ bgcolor: palette.primary, color: "#fff" }}>
-          {selectedEvent?.eventName}
+          {selectedEvent?.title}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" color="textSecondary">
-            Start: {formatDateTime(selectedEvent?.startDateTime)}
+            Start: {formatDateTime(selectedEvent?.start)}
           </Typography>
           <Typography variant="body1" color="textSecondary">
-            End: {formatDateTime(selectedEvent?.endDateTime)}
+            End: {formatDateTime(selectedEvent?.end)}
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -594,8 +589,8 @@ export default function UserEvents() {
         setOpenModal={setOpenModal}
         handleDelete={handleDelete} // Pass handleDelete as a prop
         type=""
+        remark=""
         setRemark={() => {}}
-        remark={null}
       />
       <ToastContainer />
     </Box>

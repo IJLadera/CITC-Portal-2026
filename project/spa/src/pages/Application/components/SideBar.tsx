@@ -46,7 +46,7 @@ export default function SideBar () {
                             {/* <span className="inline-flex items-center justify-center w-3 h-3 p-3 ms-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">3</span> */}
                         </NavLink>
                     </li>
-                    <li onClick={() => navigate('unieventify')}>
+                    <li onClick={() => navigate('citc/portal/unieventify')}>
                         <NavLink to="" className={({isActive}) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
                             <MdEvent className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
                             <span className="flex-1 ms-3 whitespace-nowrap">Unieventify</span>

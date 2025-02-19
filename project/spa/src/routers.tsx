@@ -10,6 +10,14 @@ import Header from "./pages/Application/pages/unieventify/src/Components/Header"
 import Error from "./pages/Application/pages/unieventify/src/Application/error";
 import Landingpage from "./pages/Application/pages/unieventify/src/Application/PublicViewContent/landingpage";
 import Profile from "./pages/Application/pages/unieventify/src/Application/Contents/profile";
+import MyCalendar from "./pages/Application/pages/unieventify/src/Components/calendar";
+import Events from "./pages/Application/pages/unieventify/src/Application/Contents/Events/events";
+import UniEvntifyApplication from "./pages/Application/pages/unieventify/src/Application/application";
+import Notification from "../src/pages/Application/pages/unieventify/src/Application/Contents/notification";
+import DifEventDetails from "./pages/Application/pages/unieventify/src/Application/Contents/Events/eventDetails";
+import UserEvents from "./pages/Application/pages/unieventify/src/Application/Contents/Events/userEvents";
+import EventTimeline from "./pages/Application/pages/unieventify/src/Application/Contents/Events/timeline";
+import AnnouncementsPage from "./pages/Application/pages/unieventify/src/Application/Contents/announcement";
 
 const router = createBrowserRouter([
     {
@@ -29,7 +37,7 @@ const router = createBrowserRouter([
                         element: <Class />
                     }
                 ]
-            }
+            },
         ]
     },
     {
@@ -37,23 +45,61 @@ const router = createBrowserRouter([
         element: <Login />
     },
     {
-        path: "/unieventify",
+        path: "citc/portal/unieventify",
         element: <Header />,
         errorElement: <Error />,
         children: [
-          {
-            path: "/unieventify",
-            element: <Landingpage />,
-          },
-          {
-            path: "publicevents/",
-            element: <Publicevents />,
-          }
+            {
+                path: "",
+                element: <Landingpage />
+            },
+            {
+                path: "app/",
+                element: <UniEvntifyApplication />,
+                children: [
+                    {
+                        path: "profile/",
+                        element: <Profile />
+                    },
+                    {
+                        path: "notifications/",
+                        element: <Notification />
+                    },
+                    {
+                        path: "eventdetails/:id",
+                        element: <DifEventDetails />
+                    },
+                    {
+                        path: "userevents/",
+                        element: <UserEvents />
+                    },
+                    {
+                        path: "timeline/",
+                        element: <EventTimeline />
+                    },
+                    {
+                        path: "events/",
+                        element: <Events />
+                    },
+                    {
+                        path: "announcements/",
+                        element: <AnnouncementsPage />
+                    },
+                    {
+                        path: "announcement/",
+                        element: <AnnouncementsPage />
+                    }
+                ]    
+            },
         ]
     },
     {
-        path: "profile/",
-        element: <Profile />,
+        path: "calendar/",
+        element: <MyCalendar />,
+    },
+    {
+        path: "events/",
+        element: <Events />,
     },
 
 ])

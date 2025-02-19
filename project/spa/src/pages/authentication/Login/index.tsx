@@ -1,8 +1,8 @@
 import { Button, FloatingLabel } from 'flowbite-react';
 import '../../../App.css'
-import { SyntheticEvent, useState } from 'react';
+import { SyntheticEvent, useEffect, useState } from 'react';
 import { LoginModel } from './model';
-import { useAppDispatch } from '../../../hooks';
+import { useAppDispatch, useAppSelector } from '../../../hooks';
 import { mutateLoggedIn, storeToken } from './slice';
 import { useNavigate } from 'react-router-dom';
 import { loginAPI } from './api';
@@ -15,6 +15,13 @@ function Login() {
         email: '',
         password: ''
     })
+    const loggedIn = useAppSelector(state => state.auth.loggedIn)
+
+    useEffect(() => {
+        if (loggedIn) {
+            navigate('/')
+        }
+    }, [loggedIn, navigate])
 
     const onChangeInput = (event:React.ChangeEvent<HTMLInputElement>) => {
         setAuth({
@@ -28,12 +35,11 @@ function Login() {
         const result = await loginAPI(auth)
         if (result.status == 200) {
             dispatch(storeToken(result.data.auth_token))
+            console.log("auth_token", result.data.auth_token)
             dispatch(mutateLoggedIn(true))
             navigate('/')
         }
-        
     }
-
     return (
         <div className="App-header">
             <img src={ process.env.PUBLIC_URL + 'inverted-logo.png' } className="App-logo" alt="logo" />

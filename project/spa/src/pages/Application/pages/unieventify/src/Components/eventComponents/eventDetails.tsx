@@ -33,6 +33,7 @@ import { DeleteConfirmModal } from "../DeleteConfirmModal";
 import { useParams } from "react-router-dom";
 import EditEvent from "./editevent";
 import { DateTime } from "luxon";
+import { useAppSelector } from "../../../../../../../hooks";
 
 //status
 const cancelled = "cancelled";
@@ -170,7 +171,8 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
     approveDocuments: '',
   });
   const [statuses, setStatuses] = useState<Status[]>([]);
-  const token = Cookies.get("auth_token");
+  // const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token)
   const [isDisabled, setIsDisabled] = useState(false);
   const [remark, setRemark] = useState("");
   const [openModal, setOpenModal] = useState(false);
@@ -207,23 +209,23 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
   const previousEditingRef = useRef(editing);
   useEffect(() => {
     http
-      .get("status/", { headers: { Authorization: `Token ${token}` } })
+      .get("unieventify/status/", { headers: { Authorization: `Token ${token}` } })
       .then((response) => setStatuses(response.data))
       .catch((error) => console.error("Error fetching status:", error));
 
     http
-      .get("eventremark/")
+      .get("unieventify/eventremark/")
       .then((response) => setRemarks(response.data))
       .catch((error) => console.error("Error fetching status:", error));
 
     http
-      .get("auditlogdatechange/", {
+      .get("unieventify/auditlogdatechange/", {
         headers: { Authorization: `Token ${token}` },
       })
       .then((response) => setAuditLog(response.data))
       .catch((error) => console.error("Error fetching status:", error));
     http
-      .get("auditlogeventchange/", {
+      .get("unieventify/auditlogeventchange/", {
         headers: { Authorization: `Token ${token}` },
       })
       .then((response) => setAuditLogAll(response.data))
@@ -272,12 +274,12 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
           : { isAprrovedByChairman: true };
 
       // Update the approval field in the backend
-      await http.patch(`events/${id}/`, approvalField, {
+      await http.patch(`unieventify/events/${id}/`, approvalField, {
         headers: { Authorization: `Token ${token}` },
       });
 
       // Fetch the updated event data
-      const response = await http.get(`events/${id}/`, {
+      const response = await http.get(`unieventify/events/${id}/`, {
         headers: { Authorization: `Token ${token}` },
       });
       const updatedEvent = response.data;
@@ -351,7 +353,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
         const findStatus = statuses.find((stat) => stat.statusName === status);
         if (findStatus?.id) {
           await http.patch(
-            `events/${id}/`,
+            `unieventify/events/${id}/`,
             { status: findStatus.id },
             {
               headers: { Authorization: `Token ${token}` },
@@ -396,7 +398,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
       if (cancel && remark) {
         // Add event remark
         await http.post(
-          `eventremark/`,
+          `unieventify/eventremark/`,
           {
             events: cancel.id,
             remark: remark, // Use the remark state here
@@ -414,7 +416,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
           // Proceed only if `findstatus` is found
           // Update event status
           await http.patch(
-            `events/${cancel.id}/`,
+            `unieventify/events/${cancel.id}/`,
             {
               status: findstatus.id,
             },
@@ -494,7 +496,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
           // Proceed only if `findstatus` is found
           // Update event status
           await http.patch(
-            `events/${postpone.id}/`,
+            `unieventify/events/${postpone.id}/`,
             {
               status: findstatus.id,
             },

@@ -126,7 +126,7 @@ export default function Editprofile({
 
   useEffect(() => {
     http
-      .get("userroles/")
+      .get("unieventify/userroles/")
       .then((response) => {
         setRole(response.data);
         const designations = response.data.map((role: any) => role.designation);
@@ -135,14 +135,14 @@ export default function Editprofile({
       .catch((error) => console.log(error));
 
     http
-      .get("colleges/")
+      .get("unieventify/colleges/")
       .then((response) => {
         setColleges(response.data);
       })
       .catch((error) => console.log(error));
 
     http
-      .get("departments/")
+      .get("unieventify/departments/")
       .then((response) => {
         setDepartments(response.data);
         const designations = response.data.map(
@@ -153,7 +153,7 @@ export default function Editprofile({
       .catch((error) => console.log(error));
 
     http
-      .get("sections/")
+      .get("unieventify/sections/")
       .then((response) => {
         setSections(response.data);
         const designations = response.data.map(
@@ -164,7 +164,7 @@ export default function Editprofile({
       .catch((error) => console.log(error));
 
     http
-      .get("studentorgs/")
+      .get("unieventify/studentorgs/")
       .then((response) => {
         setOrganizations(response.data);
         const designations = response.data.map((org: any) => org.studentOrgName);
@@ -173,7 +173,7 @@ export default function Editprofile({
       .catch((error) => console.log(error));
 
     http
-      .get("yearlevel/")
+      .get("unieventify/yearlevel/")
       .then((response) => {
         setYearLevel(response.data);
       })

@@ -9,7 +9,6 @@ import { useAppSelector } from "../../../../../../../../hooks";
 const EventForm: React.FC = () => {
   const [currentUser, setCurrentUser] = useState("");
   const token = useAppSelector(state => state.auth.token);
-  // const token = Cookies.get("auth_token");
 
   useEffect(() => {
     const fetchEventDetails = async () => {

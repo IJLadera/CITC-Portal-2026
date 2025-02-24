@@ -8,8 +8,7 @@ import { useAppSelector } from "../../../../../../../../hooks";
 
 export default function DifEventDetails() {
   const { id } = useParams();
-  const [event, setEvent] = useState(null);
-  // const token = Cookies.get("auth_token");
+  const [event, setEvent] = useState(null)
   const token = useAppSelector(state => state.auth.token)
   const [admin, setAdmin] = useState("");
   const [currentUser, setCurrentUser] = useState("");

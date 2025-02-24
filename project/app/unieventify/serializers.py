@@ -386,7 +386,7 @@ class SchoolYearAndSemesterEvent(serializers.ModelSerializer):
                 'startDate': semester.startDate,
                 'endDate': semester.endDate,
                 'yearID': semester.schoolYear.id,
-                'schoolYearName': semester.schoolYear.schoolYearName,
+                'schoolYearName': semester.schoolYear.name,
                 'startYear': semester.schoolYear.startYear,
                 'endYear': semester.schoolYear.endYear,
 

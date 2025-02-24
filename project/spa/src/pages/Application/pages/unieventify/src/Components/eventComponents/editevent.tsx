@@ -130,7 +130,6 @@ const EditEvent = ({
   setResched,
   currentUser,
 }: EditEventProps) => {
-//   const token = Cookies.get("auth_token");
   const token = useAppSelector(state => state.auth.token)
   const [loading, setLoading] = useState(false);
   const [eventName, setEventName] = useState(event?.eventName || "");
@@ -737,7 +736,7 @@ const EditEvent = ({
       findcategory?.eventCategoryName.toLowerCase() !== personalCategory &&
       !(currentUser?.is_staff
         ? currentUser?.is_staff
-        : deanAndChairperson.includes(currentUser?.role?.name))
+        : deanAndChairperson.includes(currentUser?.roles?.name))
     ) {
       // Automatically set status to draft
       status = draft;
@@ -1170,7 +1169,7 @@ const EditEvent = ({
   };
 
   let documents;
-  if (OrgType.includes(currentUser?.role?.name.toLowerCase())) {
+  if (OrgType.includes(currentUser?.roles?.name?.toLowerCase())) {
     documents = "SARF";
   } else {
     documents = "Documents";

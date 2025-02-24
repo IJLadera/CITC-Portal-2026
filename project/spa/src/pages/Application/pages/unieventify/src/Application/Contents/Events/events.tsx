@@ -145,7 +145,6 @@ export default function Events() {
   const [types, setTypes] = useState<EventType[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventApi  | null>(null);
   const token = useAppSelector((state) => state.auth.token);
-  // const token = {tokens};
   const navigate = useNavigate();
 
   const employeeRole = ["Mother Org", "Unit Org", "Admin"];

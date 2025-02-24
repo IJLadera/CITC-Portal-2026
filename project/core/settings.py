@@ -110,6 +110,7 @@ EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = env('EMAIL_PORT')
+DEFAULT_FROM_EMAIL = env('EMAIL_HOST')
 
 
 
@@ -206,9 +207,11 @@ CLOUDINARY_STORAGE = {
     'API_KEY': env('API_KEY', default=''),
     'API_SECRET': env('API_SECRET', default='')
 }
+
 # Celery settings in settings.py
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Use Redis as the broker
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'  # Use Redis as the broker
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True

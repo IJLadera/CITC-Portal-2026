@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from .serializers import (
-    UserRoleSerializer, tblstudentOrgSerializer, tblEventTypeSerializer,
+    RoleSerializer, UserRoleSerializer, tblstudentOrgSerializer, tblEventTypeSerializer,
     tblEventCategorySerializer, tblVenueSerializer, tblSetupSerializer,
     tblStatusSerializer, tblEventSerializer, tblEventLogSerializer,
     CollegesSerializer, DesignationCountSerializer, 
@@ -48,6 +48,7 @@ from calendar import month_name
 from django.conf import settings
 from django.utils.timezone import make_aware, get_current_timezone
 from .tasks import send_event_email_notification, send_user_email_notification
+from django.shortcuts import get_object_or_404
 
 from app.users.permissions import IsOwnerOrReadOnly, IsAdminOrReadOnly, IsUserOrReadOnly, IsDeanOrReadOnly, IsUserOrIsAdminOrReadOnly, IsNotificationOrReadOnly, IsOwnerOrIsAdminOrReadOnly, RoleHierarchyPermission, IsAuthenticatedOrReadOnly
 
@@ -72,6 +73,10 @@ class UserInfoView(RetrieveUpdateDestroyAPIView):
         # Exclude users with is_admin=True
         return User.objects.filter(is_staff=False)
     
+    def get_object(self):
+        uuid = self.kwargs.get("uuid")
+        return get_object_or_404(User, uuid=uuid, is_staff=False)
+    
 # class UserInfoView(RetrieveUpdateDestroyAPIView):
 #     queryset = CustomUser.objects.all()
 #     serializer_class = CustomUserSerializer
@@ -83,14 +88,18 @@ class UserInfoView(RetrieveUpdateDestroyAPIView):
 #         return CustomUser.objects.filter(is_staff=False)
 
 class UserRoleListView(ListCreateAPIView):
-    queryset = UserRole.objects.all()
-    serializer_class = UserRoleSerializer
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
     permission_classes = [IsAdminOrReadOnly]
 
 class UserRoleInfoView(RetrieveUpdateDestroyAPIView):
-    queryset = UserRole.objects.all()
-    serializer_class = UserRoleSerializer
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
     permission_classes = [IsAdminOrReadOnly]  
+
+    def get_object(self):
+        uuid = self.kwargs.get("uuid")
+        return get_object_or_404(Role, uuid=uuid)
 
 class CollegeListView(ListCreateAPIView):
     queryset = College.objects.all()

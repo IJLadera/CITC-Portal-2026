@@ -1037,16 +1037,16 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
 
             <Box sx={{ mt: 3 }}>
               {userOrAdmin && !doneStatus && (
-                <CustomButton onClick={() => setEditing(true)}>
+                <CustomButton onClick={() => setEditing(true)} startIcon="">
                   Edit
                 </CustomButton>
               )}
               {(postponedStatus || disapprovedStatus) && !admin && (
-                <CustomButton onClick={() => setResched(true)}>
+                <CustomButton onClick={() => setResched(true)} startIcon="">
                   ReSchedule
                 </CustomButton>
               )}
-              <CustomButton onClick={() => window.history.back()}>
+              <CustomButton onClick={() => window.history.back()} startIcon="">
                 Back
               </CustomButton>
               {!postponedStatus &&
@@ -1101,6 +1101,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
             color={isAprrovedByDean ? "success" : "primary"}
             onClick={handleApproval}
             disabled={isAprrovedByDean} // Disable if already approved
+            startIcon=""
           >
             {isAprrovedByDean ? "Approved" : "Approve"}
           </CustomButton>
@@ -1111,6 +1112,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
               color={isAprrovedByChairman ? "success" : "primary"}
               onClick={handleApproval}
               disabled={isAprrovedByChairman} // Disable if already approved
+              startIcon=""
             >
               {isAprrovedByChairman ? "Approved" : "Approve"}
             </CustomButton>

@@ -116,6 +116,7 @@ interface Faculty {
 interface College {
   id: number;
   collegeName: string;
+  name: string;
 }
 
 
@@ -123,6 +124,7 @@ interface DepartmentTwo {
   id: number;
   departmentName: string;
   collegeName: string;
+  name: string;
 }
 
 export default function Events() {
@@ -145,8 +147,6 @@ export default function Events() {
   const token = useAppSelector((state) => state.auth.token);
   // const token = {tokens};
   const navigate = useNavigate();
-
-  console.log("auth:", token);
 
   const employeeRole = ["Mother Org", "Unit Org", "Admin"];
 
@@ -521,7 +521,7 @@ export default function Events() {
     const collegeMatches =
       !selectedCollege.length ||
       event.departments.some((dept: any) =>
-        selectedCollege.includes(dept.collegeName)
+        selectedCollege.includes(dept.name)
       );
 
     const monthMatches =
@@ -638,7 +638,7 @@ export default function Events() {
           renderValue={(selected) =>
             colleges
               .filter((college) => selected.includes(college.id))
-              .map((college) => college.collegeName)
+              .map((college) => college.name)
               .join(", ")
           }
           sx={selectStyles}
@@ -646,7 +646,7 @@ export default function Events() {
           {colleges.map((college) => (
             <MenuItem key={college.id} value={college.id}>
               <Checkbox checked={selectedCollege.includes(college.id)} />
-              <ListItemText primary={college.collegeName} />
+              <ListItemText primary={college.name} />
             </MenuItem>
           ))}
         </Select>
@@ -663,7 +663,7 @@ export default function Events() {
           renderValue={(selected) =>
             departments
               .filter((department) => selected.includes(department.id))
-              .map((department) => department.departmentName)
+              .map((department) => department.name)
               .join(", ")
           }
           sx={selectStyles}
@@ -673,7 +673,7 @@ export default function Events() {
               <Checkbox
                 checked={selectedDepartment.some((dept) => dept.id === department.id)}
               />
-              <ListItemText primary={department.departmentName} />
+              <ListItemText primary={department.name} />
             </MenuItem>
           ))}
         </Select>

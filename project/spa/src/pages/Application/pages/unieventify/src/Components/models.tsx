@@ -1,5 +1,7 @@
 export interface User {
     id: number,
+    id_number: number,
+    uuid: string,
     email: string,
     first_name: string,
     last_name: string,
@@ -7,14 +9,14 @@ export interface User {
     username: string,
     idNumber: number,
     role: {
-        id: number,
-        designation: string,
+        uuid: number,
+        name: string,
         rank: number
     },
     department: {
-        id: number,
-        departmentName: string,
-        collegeName: number
+        id: number | null,
+        name: string,
+        college: number
     },
     section: Section,
     organization: StudentOrg,
@@ -70,30 +72,30 @@ export interface Event{
 
 export interface Section{
     id: number,
-    sectionName: string,
+    section: string,
     tblYearLevel: YearLevel
 }
 
 export interface Role{
-    id: number,
+    uuid: number,
     designation: string,
     rank: number
 }
 
 export interface Department{
     id: number,
-    departmentName: string,
-    collegeName: number
+    name: string,
+    college: number
 }
 
 export interface College{
     id: number,
-    collegeName: string
+    name: string
 }
 
 export interface Status{
     id: number,
-    statusName: string
+    name: string
 }
 
 export interface Venue {

@@ -154,12 +154,12 @@ function SideBar(props: SideBarProps) {
     >
       <Toolbar />
       <Divider />
-      {!dashboardRole.includes(currentUser?.role?.designation || "") && (
+      {!dashboardRole.includes(currentUser?.role?.name || "") && (
         <List>
           <ListItem disablePadding>
             <ListItemButton
               onClick={(event) => {
-                onClickToNavigate(event, "/auth/app/dashboard");
+                onClickToNavigate(event, "dashboard/");
               }}
               style={getItemStyle("/auth/app/dashboard")}
             >
@@ -206,7 +206,7 @@ function SideBar(props: SideBarProps) {
           >
             Your Events
           </Accordion.Content>
-          {currentUser?.role?.designation !== "Faculty" ? (
+          {currentUser?.role?.name !== "Faculty" ? (
             <Accordion.Content
               className="pt-1 ml-12 border-none cursor-pointer"
               onClick={(event) => {
@@ -220,7 +220,7 @@ function SideBar(props: SideBarProps) {
           <Accordion.Content
             className="pt-1 ml-12 border-none cursor-pointer"
             onClick={(event) => {
-              onClickToNavigate(event, "/auth/app/addevent");
+              onClickToNavigate(event, "addevent");
             }}
             style={getItemStyle("/auth/app/addevent")}
           >
@@ -338,6 +338,7 @@ function SideBar(props: SideBarProps) {
           },
         });
         setProfile(response.data);
+        console.log("profile", response.data);
       } catch (error) {
         setError(error as Error);
       } finally {

@@ -189,7 +189,7 @@ export default function UserDetails() {
   }
 
   const college = colleges?.find(
-    (college) => college.id === profile?.department?.collegeName
+    (college) => college.id === profile?.department?.college
   );
 
   const yearLevel = yearLevels?.find((year: YearLevel) => year.id === profile?.section?.tblYearLevel.id);
@@ -282,14 +282,14 @@ export default function UserDetails() {
                     sx={{ my: 2, backgroundColor: "#FAB417", borderWidth: 1 }}
                   />
                   <Typography variant="body1">
-                    Role: <strong>{profile.role?.designation}</strong>
+                    Role: <strong>{profile.role?.name}</strong>
                   </Typography>
                   <Divider
                     sx={{ my: 2, backgroundColor: "#FAB417", borderWidth: 1 }}
                   />
                   <Typography variant="body1">
                     College:{" "}
-                    <strong>{college?.collegeName || "No College"}</strong>
+                    <strong>{college?.name || "No College"}</strong>
                   </Typography>
                   <Divider
                     sx={{ my: 2, backgroundColor: "#FAB417", borderWidth: 1 }}
@@ -297,7 +297,7 @@ export default function UserDetails() {
                   <Typography variant="body1">
                     Department:{" "}
                     <strong>
-                      {profile.department?.departmentName || "No Department"}
+                      {profile.department?.name || "No Department"}
                     </strong>
                   </Typography>
 
@@ -334,7 +334,7 @@ export default function UserDetails() {
                       <Typography variant="body1">
                         Section:{" "}
                         <strong>
-                          {profile.section?.sectionName ||
+                          {profile.section?.section ||
                             "Section Unavailable"}
                         </strong>
                       </Typography>
@@ -404,7 +404,7 @@ export default function UserDetails() {
           <Editprofile
             handleClickEdit={handleClick}
             profile={profile}
-            collegeParams={college?.collegeName}
+            collegeParams={college?.name}
             currentUser={currentUser}
             yearLevelParams={yearLevel?.yearLevel}
           />

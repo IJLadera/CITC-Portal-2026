@@ -7,9 +7,10 @@ interface CustomButtonProps {
   variant?: "text" | "outlined" | "contained";
   color?: "inherit" | "primary" | "secondary" | "error" | "success" | "info" | "warning";
   size?: "small" | "medium" | "large";
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void; // Update type here
   children: React.ReactNode;
   disabled?: boolean;
+  startIcon: any;
   sx?: any;
 }
 

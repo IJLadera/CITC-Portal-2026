@@ -18,6 +18,8 @@ import DifEventDetails from "./pages/Application/pages/unieventify/src/Applicati
 import UserEvents from "./pages/Application/pages/unieventify/src/Application/Contents/Events/userEvents";
 import EventTimeline from "./pages/Application/pages/unieventify/src/Application/Contents/Events/timeline";
 import AnnouncementsPage from "./pages/Application/pages/unieventify/src/Application/Contents/announcement";
+import Dashboard from "./pages/Application/pages/unieventify/src/Application/Contents/dashboard";
+import EventForm from "./pages/Application/pages/unieventify/src/Application/Contents/Events/addEvent";
 
 const router = createBrowserRouter([
     {
@@ -38,6 +40,10 @@ const router = createBrowserRouter([
                     }
                 ]
             },
+            // {
+            //     path: "citc/portal/unieventify/",
+            //     element: <Landingpage />,
+            // }
         ]
     },
     {
@@ -88,6 +94,14 @@ const router = createBrowserRouter([
                     {
                         path: "announcement/",
                         element: <AnnouncementsPage />
+                    },
+                    {
+                        path: "dashboard/",
+                        element: <Dashboard />
+                    },
+                    {
+                        path: "addevent/",
+                        element: <EventForm />
                     }
                 ]    
             },

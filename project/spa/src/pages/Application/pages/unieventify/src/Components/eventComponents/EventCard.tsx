@@ -17,7 +17,7 @@ interface eventProps {
             location: string
         },
         status: {
-            statusName: string
+            name: string
         }
     }
 }
@@ -86,9 +86,9 @@ const EventCard: React.FC<eventProps> = ({ event }) => {
                     }}
                 />{" "}
                 {event.venue?.location || 'NO Venue ATM'}</p>
-            <div className={`flex items-center ${getStatusColor(event.status.statusName)} ml-2`}>
+            <div className={`flex items-center ${getStatusColor(event.status.name)} ml-2`}>
                 <BsCircleFill size={8} className="mr-2" />
-                <span>{event.status.statusName.charAt(0).toUpperCase() + event.status.statusName.slice(1)}</span>
+                <span>{event.status.name.charAt(0).toUpperCase() + event.status.name.slice(1)}</span>
             </div>
         </div>
     );

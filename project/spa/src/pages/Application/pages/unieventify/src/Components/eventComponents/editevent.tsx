@@ -39,7 +39,7 @@ import { FileInput, Label, Alert } from "flowbite-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "draft-js/dist/Draft.css";
-import DraftEditor from "../eventComponents/draft components/DraftEditor"; // Adjust the import path as necessary
+import DraftEditor from "./draft components/DraftEditor"; // Adjust the import path as necessary
 import PlaceIcon from "@mui/icons-material/Place";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import Brightness1Icon from "@mui/icons-material/Brightness1";
@@ -47,21 +47,23 @@ import CustomDeleteButton from "../customdeletebutton";
 import InfoIcon from "@mui/icons-material/Info";
 import CustomButton from "../button";
 import Tooltip from "@mui/material/Tooltip";
+import { EventCategory, User, Setup, Venue, EventType, College, Status, Role, Department } from "../models";
+import { useAppSelector } from "../../../../../../../hooks";
 
 // Define API endpoints
-const API_VENUES = "venues/";
-const API_SETUPS = "setups/";
-const API_STATUS = "status/";
-const API_EVENTTYPES = "eventtypes/";
-const API_EVENT_CATEGORIES = "eventcategories/";
-const API_USERS = "users/";
-const API_DEPARTMENTS = "departments/";
-const API_USER_ROLES = "userroles/";
-const API_COLLEGES = "departmentsbycollege/";
-const API_EVENTS = "events/";
-const API_UNAVAILABLE_PERSONAL = "unavail-slots/personal";
-const API_UNAVAILABLE_NONPERSONAL = "unavail-slots/nonpersonal";
-const API_PARTICIPANTS = "roles/events";
+const API_VENUES = "unieventify/venues/";
+const API_SETUPS = "unieventify/setups/";
+const API_STATUS = "unieventify/status/";
+const API_EVENTTYPES = "unieventify/eventtypes/";
+const API_EVENT_CATEGORIES = "unieventify/eventcategories/";
+const API_USERS = "unieventify/users/";
+const API_DEPARTMENTS = "unieventify/departments/";
+const API_USER_ROLES = "unieventify/userroles/";
+const API_COLLEGES = "unieventify/departmentsbycollege/";
+const API_EVENTS = "unieventify/events/";
+const API_UNAVAILABLE_PERSONAL = "unieventify/unavail-slots/personal";
+const API_UNAVAILABLE_NONPERSONAL = "unieventify/unavail-slots/nonpersonal";
+const API_PARTICIPANTS = "unieventify/roles/events";
 
 //selected category
 const ftf = "in_person";
@@ -98,6 +100,27 @@ const collegeCategory = ["college", "university"];
 // setup
 const inperson = "in_person";
 
+interface EditEventProps {
+  event: any;
+  eventID: number | undefined;
+  isEdit: boolean;
+  setEditing: any;
+  isResched: boolean;
+  setResched: any;
+  currentUser: any;
+}
+
+interface Slot{
+  slot: any
+}
+
+interface ConflictingEvent {
+  start: number,
+  end: number,
+  proceedable: [],
+  nonProceedable: [],
+}
+
 const EditEvent = ({
   event,
   eventID,
@@ -106,8 +129,9 @@ const EditEvent = ({
   isResched,
   setResched,
   currentUser,
-}) => {
-  const token = Cookies.get("auth_token");
+}: EditEventProps) => {
+//   const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token)
   const [loading, setLoading] = useState(false);
   const [eventName, setEventName] = useState(event?.eventName || "");
   const [eventDescription, setEventDescription] = useState(
@@ -123,32 +147,32 @@ const EditEvent = ({
   const [setup, setSetup] = useState(event?.setup?.id || "");
   const [meetingLink, setMeetingLink] = useState(event?.meetinglink || "");
   const [sameStatus, setSameStatus] = useState(event?.status?.id || "");
-  const [eventType, setEventType] = useState([]);
+  const [eventType, setEventType] = useState<EventType[]>([]);
   const [selectedEventType, setSelectedEventType] = useState(
     event?.eventType?.id || ""
   );
   const [category, setCategory] = useState(event?.eventCategory?.id || "");
-  const [approveDocuments, setApproveDocuments] = useState(null);
+  const [approveDocuments, setApproveDocuments] = useState<File | null>(null);
   const [images, setImages] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [selectedParticipants, setSelectedParticipants] = useState(
     event?.participants
-      ? event?.participants.map((participant) => participant.id)
+      ? event?.participants.map((participant: any) => participant.id)
       : []
   );
-  const [filteredParticipants, setFilteredParticipants] = useState([]);
-  const [checkedParticipants, setCheckedParticipants] = useState([]);
-  const [venues, setVenues] = useState([]);
-  const [setups, setSetups] = useState([]);
-  const [statuses, setStatuses] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [colleges, setColleges] = useState([]);
-  const [selectedColleges, setSelectedColleges] = useState([]);
+  const [filteredParticipants, setFilteredParticipants] = useState<User[]>([]);
+  const [checkedParticipants, setCheckedParticipants] = useState<string[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [setups, setSetups] = useState<Setup[]>([]);
+  const [statuses, setStatuses] = useState<Status[]>([]);
+  const [categories, setCategories] = useState<EventCategory[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [colleges, setColleges] = useState<College[]>([]);
+  const [selectedColleges, setSelectedColleges] = useState<string[]>([]);
   const [selectedDepartments, setSelectedDepartments] = useState(
     event?.department
-      ? event?.department.map((department) => department.id)
+      ? event?.department.map((department: any) => department.id)
       : []
   );
   const [roles, setRoles] = useState([]);
@@ -159,14 +183,13 @@ const EditEvent = ({
     event?.isAnnouncement ? event?.isAnnouncement : false
   );
   const [isInPerson, setIsInPerson] = useState(false);
-  const [conflictingEvent, setConflictingEvent] = useState({
-    proceedable: [],
-    nonProceedable: [],
-  }); // Store conflicting event
+  const [conflictingEvent, setConflictingEvent] = useState<{
+    proceedable: Slot[];
+    nonProceedable: Slot[];
+  }>({ proceedable: [], nonProceedable: [] });
   const [dateError, setDateError] = useState("");
-  const [unavailableSlotsPersonal, setUnavailableSlotsPersonal] = useState([]);
-  const [unavailableSlotsNonPersonal, setUnavailableSlotsNonPersonal] =
-    useState([]);
+  const [unavailableSlotsPersonal, setUnavailableSlotsPersonal] = useState<Slot[]>([]);
+  const [unavailableSlotsNonPersonal, setUnavailableSlotsNonPersonal] = useState<Slot[]>([]);
 
   const [openModal, setOpenModal] = useState(false); // State to control modal visibility
   const [searchTerm, setSearchTerm] = useState("");
@@ -187,23 +210,23 @@ const EditEvent = ({
           sunday: false,
         }
   );
-  const [checkedEvents, setCheckedEvents] = useState([]);
+  const [checkedEvents, setCheckedEvents] = useState<string[]>([]);
   const [showContinueButton, setShowContinueButton] = useState(false);
   const MAX_FILE_SIZE_MB = 5; // Maximum file size in MB
   const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024; // Convert to bytes
 
   // Find the selected category name
-  const findcategory = categories.find((cat) => cat.id === category);
-  const findsetup = setups.find((set) => set.id === setup);
+  const findcategory = categories.find((cat: any) => cat.id === category);
+  const findsetup = setups.find((set: any) => set.id === setup);
   const currentUserEmail = currentUser.email;
 
   const personal = event?.eventCategory?.eventCategoryName === personalCat;
 
-  const handleRecurrenceTypeChange = (event) => {
+  const handleRecurrenceTypeChange = (event: any) => {
     setRecurrenceType(event.target.value);
   };
 
-  const handleRecurrenceDayChange = (event) => {
+  const handleRecurrenceDayChange = (event: any) => {
     setRecurrenceDays({
       ...recurrenceDays,
       [event.target.name]: event.target.checked,
@@ -252,7 +275,7 @@ const EditEvent = ({
       .get(API_USERS, { headers: { Authorization: `Token ${token}` } })
       .then((response) => {
         const filteredUsers = response.data.filter(
-          (users) => users.is_active === true
+          (users: any) => users.is_active === true
         );
         setUsers(filteredUsers);
       })
@@ -310,12 +333,12 @@ const EditEvent = ({
       setShowAdditionalFields(true);
     }
     if (
-      collegeCategory.includes(findcategory?.eventCategoryName.toLowerCase())
+      collegeCategory.includes(findcategory?.eventCategoryName.toLowerCase() || "")
     ) {
       const allDepartmentIds = departments
         .filter(
           (department) =>
-            !department.departmentName.toLowerCase().startsWith("all")
+            !department.name.toLowerCase().startsWith("all")
         ) // Exclude departments starting with "All"
         .map((department) => department.id);
 
@@ -328,11 +351,11 @@ const EditEvent = ({
   }, [token, findcategory, departments, collegeCategory, personalCategory]);
 
   const generateAvailableSlots = (
-    start,
-    end,
-    unavailableSlots,
-    participantsData,
-    selectedVenue
+    start: any,
+    end: any,
+    unavailableSlots: any,
+    participantsData: any,
+    selectedVenue: any
   ) => {
     const availableSlots = [];
     const durationInMillis = end.diff(start).as("milliseconds");
@@ -344,8 +367,8 @@ const EditEvent = ({
     const dayEndTime = 21;
     const venuefind = venues.find((ven) => ven.id === selectedVenue);
 
-    const hasConflict = (slotStart, slotEnd) => {
-      return unavailableSlots.some((slot) => {
+    const hasConflict = (slotStart: any, slotEnd: any) => {
+      return unavailableSlots.some((slot: any) => {
         const slotStartUnavailable = DateTime.fromISO(slot.start);
         const slotEndUnavailable = DateTime.fromISO(slot.end);
         const conflictWithVenue =
@@ -358,7 +381,7 @@ const EditEvent = ({
       });
     };
 
-    const isWithinAvailableHours = (slotStart, slotEnd) => {
+    const isWithinAvailableHours = (slotStart: any, slotEnd: any) => {
       const startHour = slotStart.hour;
       const endHour = slotEnd.hour;
       return startHour >= dayStartTime && endHour <= dayEndTime;
@@ -443,9 +466,9 @@ const EditEvent = ({
   };
 
   // Function to count available participants for a time slot
-  const countAvailableParticipants = (slotStart, slotEnd, participantsData) => {
+  const countAvailableParticipants = (slotStart: any, slotEnd: any, participantsData: any) => {
     let count = 0;
-    participantsData?.forEach((participant) => {
+    participantsData?.forEach((participant: any) => {
       // Combine participated and created events
       const allEvents = [
         ...participant.participated_events,
@@ -474,15 +497,24 @@ const EditEvent = ({
   };
 
   const TimeSlotPicker = ({
-    startDateTime,
-    endDateTime,
-    unavailableSlotsPersonal,
-    unavailableSlotsNonPersonal,
-    handleTimeSelect,
-    findcategory,
-    participantsData,
-    selectedVenue, // Added selected venue
-  }) => {
+      startDateTime,
+      endDateTime,
+      unavailableSlotsPersonal,
+      unavailableSlotsNonPersonal,
+      handleTimeSelect,
+      findcategory,
+      participantsData,
+      selectedVenue, // Added selected venue
+    }: {
+      startDateTime: string;
+      endDateTime: string;
+      unavailableSlotsPersonal: any[];
+      unavailableSlotsNonPersonal: any[];
+      handleTimeSelect: (suggestion: any) => void;
+      findcategory: any;
+      participantsData: any[];
+      selectedVenue: string;
+    }) => {
     let relevantSlots = null;
 
     // Determine which unavailable slots to consider based on the category
@@ -548,54 +580,54 @@ const EditEvent = ({
     const inputStart = new Date(startDateTime);
     const inputEnd = new Date(endDateTime);
     let conflicts = [];
-    let proceedableEvents = [];
-    let nonProceedableEvents = [];
+    let proceedableEvents: Slot[] = [];
+    let nonProceedableEvents: Slot[] = [];
 
     // Define a helper function to check if the current user is part of the event
-    const userInEvent = (event) => {
+    const userInEvent = (event: any) => {
       const isCreator = event.created_by.email === currentUserEmail;
       const isParticipant = event.participants.some(
-        (participant) => participant.email === currentUserEmail
+        (participant: any) => participant.email === currentUserEmail
       );
       return isCreator || isParticipant;
     };
 
     // Helper function to check if an event belongs to the selected departments
-    const eventInSelectedDepartments = (event) => {
+    const eventInSelectedDepartments = (event: any) => {
       // Iterate through event's departments to check if any ID matches selectedDepartments
-      return event.departments.some((department) =>
+      return event.departments.some((department: any) =>
         selectedDepartments.includes(department.id)
       );
     };
-    if (findcategory?.eventCategoryName.toLowerCase() === personalCategory) {
-      // Personal category, check against personal unavailable slots
-      conflicts = unavailableSlotsPersonal.filter((slot) => {
-        const slotStart = new Date(slot.start);
-        const slotEnd = new Date(slot.end);
-        const timeConflict =
-          (slotStart >= inputStart && slotStart < inputEnd) ||
-          (slotEnd > inputStart && slotEnd <= inputEnd) ||
-          (slotStart <= inputStart && slotEnd >= inputEnd);
-        return timeConflict && userInEvent(slot); // Check both time and user conflicts
-      });
-    } else {
-      // Nonpersonal category, check against nonpersonal unavailable slots
-      conflicts = unavailableSlotsNonPersonal.filter((slot) => {
-        const slotStart = new Date(slot.start);
-        const slotEnd = new Date(slot.end);
-        const timeConflict =
-          (slotStart >= inputStart && slotStart < inputEnd) ||
-          (slotEnd > inputStart && slotEnd <= inputEnd) ||
-          (slotStart <= inputStart && slotEnd >= inputEnd);
-        return departmentCategory.includes(
-          findcategory?.eventCategoryName.toLowerCase()
-        )
-          ? timeConflict &&
-              (eventInSelectedDepartments(slot) ||
-                slot.category.toLowerCase() === examCategory)
-          : timeConflict;
-      });
-    }
+    if (findcategory?.eventCategoryName?.toLowerCase() === personalCategory) {
+        // Personal category, check against personal unavailable slots
+        conflicts = unavailableSlotsPersonal.filter((slot: any) => {
+          const slotStart = new Date(slot.start);
+          const slotEnd = new Date(slot.end);
+          const timeConflict =
+            (slotStart >= inputStart && slotStart < inputEnd) ||
+            (slotEnd > inputStart && slotEnd <= inputEnd) ||
+            (slotStart <= inputStart && slotEnd >= inputEnd);
+          return timeConflict && userInEvent(slot); // Check both time and user conflicts
+        });
+      } else {
+        // Nonpersonal category, check against nonpersonal unavailable slots
+        conflicts = unavailableSlotsNonPersonal.filter((slot: any) => {
+          const slotStart = new Date(slot.start);
+          const slotEnd = new Date(slot.end);
+          const timeConflict =
+            (slotStart >= inputStart && slotStart < inputEnd) ||
+            (slotEnd > inputStart && slotEnd <= inputEnd) ||
+            (slotStart <= inputStart && slotEnd >= inputEnd);
+          return departmentCategory.includes(
+            findcategory?.eventCategoryName?.toLowerCase() ?? ''
+          )
+            ? timeConflict &&
+                (eventInSelectedDepartments(slot) ||
+                  slot.category.toLowerCase() === examCategory)
+            : timeConflict;
+        });
+      }
 
     // Handle conflicts
     if (
@@ -610,7 +642,7 @@ const EditEvent = ({
     } else if (conflicts.length === 0) {
       setShowAdditionalFields(true);
     } else {
-      conflicts?.forEach((event) => {
+      conflicts?.forEach((event: any) => {
         if (event.category.toLowerCase() === examCategory) {
           nonProceedableEvents.push(event);
         } else {
@@ -626,12 +658,12 @@ const EditEvent = ({
   };
 
   // Handler when a suggested time slot is selected
-  const handleTimeSelect = (suggestion) => {
+  const handleTimeSelect = (suggestion: any) => {
     setStartDateTime(suggestion.start.slice(0, 16));
     setEndDateTime(suggestion.end.slice(0, 16));
     setOpenModal(false);
   };
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     const isPersonalCategory =
       findcategory?.eventCategoryName.toLowerCase() === personalCategory;
@@ -699,13 +731,13 @@ const EditEvent = ({
     const now = DateTime.now();
 
     // Determine the event status based on current date
-    let status;
+    let status: any;
 
     if (
       findcategory?.eventCategoryName.toLowerCase() !== personalCategory &&
       !(currentUser?.is_staff
         ? currentUser?.is_staff
-        : deanAndChairperson.includes(currentUser?.role?.designation))
+        : deanAndChairperson.includes(currentUser?.role?.name))
     ) {
       // Automatically set status to draft
       status = draft;
@@ -720,7 +752,7 @@ const EditEvent = ({
       }
     }
 
-    const findstatus = statuses.find((stat) => stat.statusName === status);
+    const findstatus = statuses.find((stat) => stat.name === status);
 
     if (isEdit || isResched) {
       const formData = new FormData();
@@ -730,7 +762,9 @@ const EditEvent = ({
       formData.append("endDateTime", endDateTime);
       formData.append("recurrence_type", recurrenceType);
       if (isResched) {
-        formData.append("status", findstatus.id);
+        if (findstatus) {
+          formData.append("status", findstatus.id.toString());
+        }
       } else {
         formData.append("status", sameStatus);
       }
@@ -745,13 +779,13 @@ const EditEvent = ({
         formData.append("approveDocuments", approveDocuments);
       if (images) formData.append("images", images);
       if (selectedParticipants.length > 0) {
-        selectedParticipants?.forEach((participant) =>
+        selectedParticipants?.forEach((participant: any) =>
           formData.append("participants", participant)
         );
       }
       // Append selected departments
       if (selectedDepartments.length > 0) {
-        selectedDepartments?.forEach((departments) => {
+        selectedDepartments?.forEach((departments: any) => {
           formData.append("department", departments); // Append department ID
         });
       }
@@ -823,7 +857,9 @@ const EditEvent = ({
       formData.append("startDateTime", startDateTime);
       formData.append("endDateTime", endDateTime);
       formData.append("recurrence_type", recurrenceType);
-      formData.append("status", findstatus.id);
+      if (findstatus) {
+        formData.append("status", findstatus.id.toString());
+      }
       formData.append("isAnnouncement", isAnnouncement);
       formData.append("eventType", selectedEventType);
       if (venue) formData.append("venue", venue);
@@ -834,13 +870,13 @@ const EditEvent = ({
         formData.append("approveDocuments", approveDocuments);
       if (images) formData.append("images", images);
       if (selectedParticipants.length > 0) {
-        selectedParticipants?.forEach((participant) =>
+        selectedParticipants?.forEach((participant: any) =>
           formData.append("participants", participant)
         );
       }
       // Append selected departments
       if (selectedDepartments.length > 0) {
-        selectedDepartments?.forEach((departments) => {
+        selectedDepartments?.forEach((departments: any) => {
           formData.append("department", departments); // Append department ID
         });
       }
@@ -897,18 +933,49 @@ const EditEvent = ({
           }, 3000); // 5000 milliseconds = 5 seconds
         })
         .catch((error) => {
-          toast.error(`Error Posting Event: ${error}`, {
-            position: "top-center",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: "light",
+            // Check if the error has a response object
+            if (error.response) {
+              // Log the response details
+              console.error("Error Response:", error.response);
+              toast.error(`Error Posting Event: ${error.response.data}`, {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+              });
+            } else if (error.request) {
+              // If there is no response, log the request details
+              console.error("Error Request:", error.request);
+              toast.error("Error Posting Event: No response received", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+              });
+            } else {
+              // General error message if the issue is not related to response or request
+              console.error("Error Message:", error.message);
+              toast.error(`Error Posting Event: ${error.message}`, {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+              });
+            }
+            setLoading(false);
           });
-          setLoading(false);
-        });
     }
   };
   const isPersonalCategory =
@@ -958,78 +1025,80 @@ const EditEvent = ({
     setShowAdditionalFields(true);
   };
 
-  // Update selected colleges when departments change
   useEffect(() => {
-    const collegesSet = new Set();
-    selectedDepartments?.forEach((departmentId) => {
+    const collegesSet = new Set<string>();  // Explicitly define the type as string
+    selectedDepartments?.forEach((departmentId: any) => {
       const department = departments.find((dep) => dep.id === departmentId);
       if (department) {
-        collegesSet.add(department?.collegeName?.toString());
+        collegesSet.add(department?.college?.toString());
       }
     });
-    setSelectedColleges(Array.from(collegesSet));
+    setSelectedColleges(Array.from(collegesSet) as string[]);  // Type cast to string[]
   }, [selectedDepartments, departments]);
-
-  const handleCategoryChanges = (event) => {
+  
+  const handleCategoryChanges = (event: any) => {
     const selectedCategory = event.target.value;
     setCategory(selectedCategory);
     setShowAdditionalFields(false);
   };
+  
 
   // Handle department change and automatically set colleges
-  const handleDepartmentChange = (event) => {
+  const handleDepartmentChange = (event: any) => {
     setShowAdditionalFields(false);
     const selectedDeps = event.target.value;
-
+  
     // Check if "All CITC Department" is selected
     const isAllCITCSelected = selectedDeps.includes(CITC); // We use a unique identifier for the selection
-
+  
     if (isAllCITCSelected) {
       // Get the "CITC" college
       const citcCollege = colleges.find(
-        (college) => college.collegeName === CITC
+        (college) => college.name === CITC
       );
-
+  
       // Select all departments that belong to the CITC college
       const allCITCDepartmentIds = departments
         .filter(
           (department) =>
-            department.collegeName === citcCollege?.id &&
-            !department.departmentName.toLowerCase().startsWith("all")
+            department.college === citcCollege?.id &&
+            !department.name.toLowerCase().startsWith("all")
         ) // Exclude departments starting with "All"
         .map((department) => department.id);
-
+  
       setSelectedDepartments(allCITCDepartmentIds);
+  
       // Automatically set selectedColleges based on selected departments
-      const collegesSet = new Set();
+      const collegesSet = new Set<string>(); // Explicitly define the type as string
       allCITCDepartmentIds?.forEach((departmentId) => {
         const department = departments.find((dep) => dep.id === departmentId);
         if (department) {
-          collegesSet.add(department?.collegeName?.toString());
+          collegesSet.add(department?.college?.toString());
         }
       });
-      setSelectedColleges(Array.from(collegesSet));
+      setSelectedColleges(Array.from(collegesSet) as string[]); // Type cast to string[]
     } else {
       setSelectedDepartments(selectedDeps);
-
+  
       // Automatically set selectedColleges based on selected departments
-      const collegesSet = new Set();
-      selectedDeps?.forEach((departmentId) => {
+      const collegesSet = new Set<string>(); // Explicitly define the type as string
+      selectedDeps?.forEach((departmentId: any) => {
         const department = departments.find((dep) => dep.id === departmentId);
         if (department) {
-          collegesSet.add(department?.collegeName?.toString());
+          collegesSet.add(department?.college?.toString());
         }
       });
-      setSelectedColleges(Array.from(collegesSet));
+      setSelectedColleges(Array.from(collegesSet) as string[]); // Type cast to string[]
     }
   };
+  
 
-  const handleIsRecurring = (event) => {
+  const handleIsRecurring = (event: any) => {
     setIsRecurring(event.target.checked);
   };
 
   // Handle checkbox changes
-  const handleCheckboxChange = (eventId, isChecked) => {
+  const handleCheckboxChange = (eventId: any, isChecked: any) => {
     const updatedCheckedEvents = isChecked
       ? [...checkedEvents, eventId] // Add event ID if checked
       : checkedEvents.filter((id) => id !== eventId); // Remove event ID if unchecked
@@ -1057,10 +1126,10 @@ const EditEvent = ({
   };
 
   // Function to handle the override for a single event
-  const handleOverride = async (eventId) => {
+  const handleOverride = async (eventId: any) => {
     try {
       const findstatus = statuses?.find(
-        (stat) => stat.statusName === postponed
+        (stat) => stat.name === postponed
       );
       await http.patch(
         `events/${eventId}/`,
@@ -1079,7 +1148,7 @@ const EditEvent = ({
     }
   };
 
-  const handleImageChange = (event) => {
+  const handleImageChange = (event: any) => {
     const file = event.target.files[0];
 
     if (file) {
@@ -1101,7 +1170,7 @@ const EditEvent = ({
   };
 
   let documents;
-  if (OrgType.includes(currentUser?.role?.designation.toLowerCase())) {
+  if (OrgType.includes(currentUser?.role?.name.toLowerCase())) {
     documents = "SARF";
   } else {
     documents = "Documents";
@@ -1122,7 +1191,7 @@ const EditEvent = ({
     const normalizedEnd = new Date(endDateTime);
 
     const conflictingParticipantIds = participants
-      .filter((participant) => {
+      .filter((participant: any) => {
         const allEvents = [
           ...participant.participated_events,
           ...participant.created_events,
@@ -1141,12 +1210,12 @@ const EditEvent = ({
           );
         });
       })
-      .map((participant) => participant.id);
+      .map((participant: any) => participant.id);
 
     return users.filter((user) => {
       const matchCollege =
         selectedColleges.length === 0 ||
-        selectedColleges.includes(user.department?.collegeName.toString());
+        selectedColleges.includes(user.department?.college.toString());
       const matchDepartment =
         selectedDepartments.length === 0 ||
         selectedDepartments.includes(user.department?.id);
@@ -1155,11 +1224,11 @@ const EditEvent = ({
         `${user.first_name} ${user.middle_name || ""} ${
           user.last_name
         }`.toLowerCase(),
-        user.idNumber?.toLowerCase() || "",
-        user.role?.designation?.toLowerCase() || "",
-        user.department?.departmentName?.toLowerCase() || "",
+        user.idNumber?.toString().toLowerCase() || "",
+        user.role?.name?.toLowerCase() || "",
+        user.department?.name?.toLowerCase() || "",
         user.email?.toLowerCase() || "",
-        user.section?.sectionName?.toLowerCase() || "",
+        user.section?.section?.toLowerCase() || "",
         user.organization?.studentOrgName?.toLowerCase() || "",
       ];
 
@@ -1174,17 +1243,17 @@ const EditEvent = ({
     });
   };
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = (e: any) => {
     setSearchTerm(e.target.value);
   };
 
-  const handleAddParticipant = (id) => {
+  const handleAddParticipant = (id: any) => {
     if (!selectedParticipants.includes(id)) {
-      setSelectedParticipants((prev) => [...prev, id]);
+      setSelectedParticipants((prev: any) => [...prev, id]);
     }
   };
 
-  const handleToggleCheckbox = (id) => {
+  const handleToggleCheckbox = (id: any) => {
     if (checkedParticipants.includes(id)) {
       setCheckedParticipants((prev) =>
         prev.filter((participant) => participant !== id)
@@ -1194,7 +1263,7 @@ const EditEvent = ({
     }
   };
 
-  const handleSelectAllparticipants = (e) => {
+  const handleSelectAllparticipants = (e: any) => {
     if (e.target.checked) {
       setCheckedParticipants(selectedParticipants);
     } else {
@@ -1203,14 +1272,14 @@ const EditEvent = ({
   };
 
   const handleRemoveSelected = () => {
-    setSelectedParticipants((prev) =>
-      prev.filter((participant) => !checkedParticipants.includes(participant))
+    setSelectedParticipants((prev: any) =>
+      prev.filter((participant: any) => !checkedParticipants.includes(participant))
     );
     setCheckedParticipants([]);
   };
 
   // Updated "Select All" logic
-  const handleSelectAll = (event) => {
+  const handleSelectAll = (event: any) => {
     const isChecked = event.target.checked;
     const filteredIds = filteredParticipants.map((user) => user.id);
 
@@ -1223,7 +1292,7 @@ const EditEvent = ({
     } else {
       // Remove only the filtered participants
       const remainingParticipants = selectedParticipants.filter(
-        (id) => !filteredIds.includes(id)
+        (id: any) => !filteredIds.includes(id)
       );
       setSelectedParticipants(remainingParticipants);
     }
@@ -1405,7 +1474,7 @@ const EditEvent = ({
                 if (currentUser.is_staff) {
                   return true;
                 } else if (
-                  currentUser.role?.designation.toLowerCase() === student
+                  currentUser.role?.name.toLowerCase() === student
                 ) {
                   return (
                     cat?.eventCategoryName.toLowerCase() === personalCategory
@@ -1452,7 +1521,7 @@ const EditEvent = ({
         </Grid>
 
         {departmentCategory.includes(
-          findcategory?.eventCategoryName?.toLowerCase()
+          findcategory?.eventCategoryName?.toLowerCase() ?? ''
         ) && (
           <Grid item xs={6}>
             <FormControl fullWidth>
@@ -1464,12 +1533,12 @@ const EditEvent = ({
                 onChange={handleDepartmentChange}
                 renderValue={(selected) => (
                   <div>
-                    {selected.map((value) => {
+                    {selected.map((value: any) => {
                       const department = departments.find(
                         (dep) => dep.id === value
                       );
                       return department ? (
-                        <Chip key={value} label={department.departmentName} />
+                        <Chip key={value} label={department.name} />
                       ) : null;
                     })}
                   </div>
@@ -1483,9 +1552,9 @@ const EditEvent = ({
                 {/* Render other departments, excluding those starting with 'All' */}
                 {departments.map(
                   (department) =>
-                    !department.departmentName.startsWith("All") && ( // Exclude departments starting with "All"
+                    !department.name.startsWith("All") && ( // Exclude departments starting with "All"
                       <MenuItem key={department.id} value={department.id}>
-                        {department.departmentName}
+                        {department.name}
                       </MenuItem>
                     )
                 )}
@@ -1493,7 +1562,7 @@ const EditEvent = ({
             </FormControl>
           </Grid>
         )}
-        {currentUser.role?.designation.toLowerCase() !== student && (
+        {currentUser.role?.name.toLowerCase() !== student && (
           <Grid item xs={12}>
             <FormControlLabel
               control={
@@ -1530,7 +1599,7 @@ const EditEvent = ({
 
         {!showAdditionalFields && (
           <Grid item xs={12}>
-            <CustomButton onClick={handleProceed}>Proceed</CustomButton>
+            <CustomButton onClick={handleProceed} startIcon="">Proceed</CustomButton>
             {(isEdit || isResched) && (
               <CustomDeleteButton
                 onClick={() => {
@@ -1561,9 +1630,9 @@ const EditEvent = ({
             {conflictingEvent.proceedable.length > 0 && (
               <div>
                 <ul>
-                  {conflictingEvent.proceedable.map((event, index) => {
+                  {conflictingEvent.proceedable.map((event: any, index: number) => {
                     const eventCreatorRank = event.created_by?.rank;
-                    const currentUserRank = currentUser.role.rank;
+                    const currentUserRank = currentUser.roles.rank;
 
                     return (
                       <li key={index} className="mb-2">
@@ -1611,7 +1680,7 @@ const EditEvent = ({
             {conflictingEvent.nonProceedable.length > 0 && (
               <div>
                 <ul>
-                  {conflictingEvent.nonProceedable.map((event, index) => (
+                  {conflictingEvent.nonProceedable.map((event: any, index: any) => (
                     <li key={index} className="mb-2">
                       <Alert color="failure">
                         <Typography sx={{ color: colors.darkblue }}>
@@ -1656,7 +1725,9 @@ const EditEvent = ({
                     }
 
                     // Set the setup value based on the selected in-person status
-                    setSetup(setupfind.id);
+                    if (setupfind) {
+                      setSetup(setupfind.id);
+                    }
                   }}
                 />
               }
@@ -1702,8 +1773,7 @@ const EditEvent = ({
             />
           </DialogContent>
           <DialogActions>
-            {!conflictingEvent.nonProceedable.length > 0 &&
-              conflictingEvent.proceedable.length > 0 && (
+          {conflictingEvent.nonProceedable.length === 0 && conflictingEvent.proceedable.length > 0 && (
                 <Button
                   onClick={handleProceedAnyway}
                   sx={{ color: colors.yellow }}
@@ -1776,7 +1846,7 @@ const EditEvent = ({
                   <MenuItem value="">None</MenuItem>
                   {venues.map((venue) => {
                     const isVenueConflicted = conflictingEvent.proceedable.some(
-                      (event) => event.venueName === venue.venueName
+                      (event: any) => event.venueName === venue.venueName
                     );
 
                     return (
@@ -1891,13 +1961,13 @@ const EditEvent = ({
                   </Box>
                   <FileInput
                     id="approve-documents-upload" // Make sure this ID is unique within the form
-                    type="file"
+                    // type="file"
                     disabled={
                       (currentUser.is_staff ? false : isEdit) &&
                       (!event ? false : !personal)
                     }
                     accept="application/pdf"
-                    onChange={(e) => setApproveDocuments(e.target.files[0])}
+                    onChange={(e) => setApproveDocuments(e.target.files ? e.target.files[0] : null)}
                   />
                 </Box>
                 {event?.approveDocuments && !approveDocuments && (
@@ -1926,7 +1996,7 @@ const EditEvent = ({
                   </Box>
                   <FileInput
                     id="image-upload" // Make sure this ID is unique within the form
-                    type="file"
+                    // type="file"
                     disabled={isResched}
                     accept="image/*"
                     onChange={handleImageChange}
@@ -1952,7 +2022,7 @@ const EditEvent = ({
             )}
 
             {/* Display Selected Colleges */}
-            {currentUser.role.designation.toLowerCase() !== student && (
+            {currentUser.role?.name.toLowerCase() !== student && (
               <Grid item xs={12}>
                 <Typography variant="h6">Selected Colleges:</Typography>
                 <div>
@@ -1961,7 +2031,7 @@ const EditEvent = ({
                       (col) => col.id === parseInt(collegeId)
                     );
                     return college ? (
-                      <Chip key={college.id} label={college.collegeName} />
+                      <Chip key={college.id} label={college.name} />
                     ) : null;
                   })}
                 </div>
@@ -1969,7 +2039,7 @@ const EditEvent = ({
             )}
 
             {/* Participant Selection */}
-            {currentUser.role.designation.toLowerCase() !== student && (
+            {currentUser.role?.name.toLowerCase() !== student && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   {/* Search Field */}
@@ -2034,7 +2104,7 @@ const EditEvent = ({
                           }}
                           onClick={() => handleAddParticipant(user.id)}
                         >
-                          {`${user.first_name} ${user.last_name} - ${user.role?.designation}`}
+                          {`${user.first_name} ${user.last_name} - ${user.role?.name}`}
                         </Typography>
                       ))
                     ) : (
@@ -2082,7 +2152,7 @@ const EditEvent = ({
                                 0,
                                 Math.ceil(selectedParticipants.length / 2)
                               ) // Split into two sections
-                              .map((id, index) => {
+                              .map((id: any, index: any) => {
                                 const user = users.find((u) => u.id === id);
                                 return user ? (
                                   <TableRow
@@ -2111,7 +2181,7 @@ const EditEvent = ({
                                     <TableCell
                                       sx={{ padding: "4px 8px" }} // Compact cell padding
                                     >
-                                      {user.role?.designation}
+                                      {user.role?.name}
                                     </TableCell>
                                   </TableRow>
                                 ) : null;
@@ -2154,7 +2224,7 @@ const EditEvent = ({
                           <TableBody>
                             {selectedParticipants
                               .slice(Math.ceil(selectedParticipants.length / 2)) // Second section
-                              .map((id, index) => {
+                              .map((id: any, index: any) => {
                                 const user = users.find((u) => u.id === id);
                                 return user ? (
                                   <TableRow
@@ -2183,7 +2253,7 @@ const EditEvent = ({
                                     <TableCell
                                       sx={{ padding: "4px 8px" }} // Compact cell padding
                                     >
-                                      {user.role?.designation}
+                                      {user.role?.name}
                                     </TableCell>
                                   </TableRow>
                                 ) : null;
@@ -2195,7 +2265,7 @@ const EditEvent = ({
                   </Grid>
                   {/* General Remove Button */}
                   {checkedParticipants.length > 0 && (
-                    <CustomButton onClick={handleRemoveSelected}>
+                    <CustomButton onClick={handleRemoveSelected} startIcon={""}>
                       Remove Selected
                     </CustomButton>
                   )}
@@ -2206,7 +2276,7 @@ const EditEvent = ({
             {event ? (
               <Grid item xs={12}>
                 <CustomButton
-                  onClick={handleSubmit}
+                  onClick={(e: any) => handleSubmit(e)}
                   disabled={loading}
                   startIcon={loading ? <CircularProgress size={20} /> : null}
                 >

@@ -107,7 +107,7 @@ export default function Profile() {
   }, [editProfile]);
 
   const college = colleges?.find(
-    (college) => college.id === profile?.department?.collegeName
+    (college) => college.id === profile?.department?.college
   );
 
   const yearLevel = yearLevels?.find(
@@ -222,14 +222,14 @@ export default function Profile() {
                     sx={{ my: 2, backgroundColor: "#FAB417", borderWidth: 1 }}
                   />
                   <Typography variant="body1">
-                    Role: <strong>{profile.role?.designation}</strong>
+                    Role: <strong>{profile.role?.name}</strong>
                   </Typography>
                   <Divider
                     sx={{ my: 2, backgroundColor: "#FAB417", borderWidth: 1 }}
                   />
                   <Typography variant="body1">
                     College:{" "}
-                    <strong>{college?.collegeName || "No College"}</strong>
+                    <strong>{college?.name || "No College"}</strong>
                   </Typography>
                   <Divider
                     sx={{ my: 2, backgroundColor: "#FAB417", borderWidth: 1 }}
@@ -237,7 +237,7 @@ export default function Profile() {
                   <Typography variant="body1">
                     Department:{" "}
                     <strong>
-                      {profile.department?.departmentName || "No Department"}
+                      {profile.department?.name || "No Department"}
                     </strong>
                   </Typography>
 
@@ -273,7 +273,7 @@ export default function Profile() {
                       <Typography variant="body1">
                         Section:{" "}
                         <strong>
-                          {profile.section?.sectionName ||
+                          {profile.section?.section ||
                             "Section Unavailable"}
                         </strong>
                       </Typography>
@@ -329,7 +329,7 @@ export default function Profile() {
           <Editprofile
             handleClickEdit={handleClick}
             profile={profile}
-            collegeParams={college?.collegeName}
+            collegeParams={college?.name}
             yearLevelParams={yearLevel?.yearLevel}
             currentUser={profile}
           />

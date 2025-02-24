@@ -3,11 +3,13 @@ import EditEvent from "../../../Components/eventComponents/editevent";
 import http from "../../../../../../../../http";
 import Cookies from "js-cookie";
 import { CircularProgress, Box } from "@mui/material";
+import { useAppSelector } from "../../../../../../../../hooks";
 
 
 const EventForm: React.FC = () => {
   const [currentUser, setCurrentUser] = useState("");
-  const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token);
+  // const token = Cookies.get("auth_token");
 
   useEffect(() => {
     const fetchEventDetails = async () => {

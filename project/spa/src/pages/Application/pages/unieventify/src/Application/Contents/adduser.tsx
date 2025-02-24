@@ -127,11 +127,11 @@ export default function AddUser() {
       );
       if (department) {
         const college = colleges.find(
-          (college) => college.id === department.collegeName
+          (college) => college.id === department.college
         );
         setFormData((prevData) => ({
           ...prevData,
-          college: college ? college.collegeName : "",
+          college: college ? college.name : "",
         }));
       }
     }
@@ -275,7 +275,7 @@ export default function AddUser() {
                 required
               >
                 {roles.map((role) => (
-                  <MenuItem key={role.id} value={role.id}>
+                  <MenuItem key={role.uuid} value={role.uuid}>
                     {role.designation}
                   </MenuItem>
                 ))}
@@ -293,7 +293,7 @@ export default function AddUser() {
               >
                 {departments.map((department) => (
                   <MenuItem key={department.id} value={department.id}>
-                    {department.departmentName}
+                    {department.name}
                   </MenuItem>
                 ))}
               </Select>

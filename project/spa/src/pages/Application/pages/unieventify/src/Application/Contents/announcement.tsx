@@ -90,14 +90,14 @@ const AnnouncementsPage = () => {
 
       // Role-based filtering
       let filteredAnnouncements;
-      if (user?.role?.designation?.toLowerCase() === "admin") {
+      if (user?.role?.name?.toLowerCase() === "admin") {
         // Admin: Show all announcements
         filteredAnnouncements = announcements;
-      } else if (user?.role?.designation?.toLowerCase() === "dean") {
+      } else if (user?.role?.name?.toLowerCase() === "dean") {
         // Dean: Filter based on the college of the dean's department
         filteredAnnouncements = announcements.filter((event:any) =>
           event.department &&
-          event.department.some((dep:any) => dep.collegeName === user.department?.collegeName)
+          event.department.some((dep:any) => dep.collegeName === user.department?.college)
         );
       } else {
         // Other users: Filter based on the user's specific department
@@ -192,7 +192,7 @@ const AnnouncementsPage = () => {
                     {event.department && event.department.length > 0 ? (
                       event.department.map((dep, index) => (
                         <Typography variant="caption" key={index}>
-                          {dep.departmentName},
+                          {dep.name},
                         </Typography>
                       ))
                     ) : (

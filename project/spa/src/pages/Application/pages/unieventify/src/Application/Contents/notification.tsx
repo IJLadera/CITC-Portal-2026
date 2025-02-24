@@ -208,7 +208,7 @@ const Notification = () => {
       <Typography variant="h4" gutterBottom>
         Notifications
       </Typography>
-      {deanAndChairperson.includes(user?.role?.designation || '') && (
+      {deanAndChairperson.includes(user?.role?.name || '') && (
         <Box>
           <Typography variant="body1" color="textSecondary">
             Events that need approval:

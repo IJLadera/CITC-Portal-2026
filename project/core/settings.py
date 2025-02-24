@@ -172,8 +172,10 @@ DJOSER = {
     'PASSWORD_CHANED_EMAIL_CONFIRMATION' : True,
     'USER_CREATE_PASSWORD_RETYPE' : True,
     'SERIALIZERS': {
-
+        "user_create": "app.users.serializers.UserCreateSerializer",
+        "current_user": "app.users.serializers.CustomUserSerializer",
     },
+
 }
 
 CORS_ALLOWED_ORIGINS = [

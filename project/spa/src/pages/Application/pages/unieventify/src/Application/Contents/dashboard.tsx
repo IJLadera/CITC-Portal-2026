@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { User, Role, Status, Event, College, Setup, Venue, Section } from "../../Components/models";
 import http from "../../../../../../../http"
 import {
   Container,
@@ -39,6 +40,7 @@ import { DeleteConfirmModal } from "../../Components/DeleteConfirmModal";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DateTime } from "luxon";
+import { useAppSelector } from "../../../../../../../hooks";
 
 const dean = "Dean";
 const chairperson = "Chairperson";
@@ -47,84 +49,17 @@ const unitOrg = "Unit Org";
 const faculty = "Faculty";
 const cancelled = "cancelled";
 
-import { User, Role, Status, Event, College, Setup, Venue, Section } from "../../Components/models";
-
-// interface UserRole {
-//   id: number;
-//   designation: string;
-//   rank: number;
-// }
-
-// interface User {
-//   id: number;
-//   is_active: boolean;
-//   first_name: string;
-//   last_name: string;
-//   idNumber: string;
-//   email: string;
-//   department: {
-//     id: number;
-//     departmentName: string;
-//     collegeName: number;
-//   };
-//   role: UserRole;
-//   createdBy: any
-// }
-
-// interface Notification {
-//   id: number;
-//   eventName: string;
-//   created_by: string;
-//   startDateTime: string;
-//   endDateTime: string;
-//   status: string;
-// }
-
-// interface Status {
-//   id: number;
-//   statusName: string;
-// }
-
-// interface Events {
-//   id: number;
-//   eventName: string;
-//   startDateTime: string;
-//   endDateTime: string;
-//   status: Status;
-//   created_by: User;
-// }
-
-// interface College {
-//   id: number;
-//   collegeName: string;
-// }
-
-// interface Setup {
-//   id: number;
-//   setupName: string;
-// }
-
-// interface Venue {
-//   id: number;
-//   venueName: string;
-// }
-
-// interface Section {
-//   id: number;
-//   sectionName: string;
-// }
 
 interface Entity {
-  id: number,
+  id: number | "",
   eventTypeName: string;
   college: string;
-  collegeName: string;
   rank: string;
-  sectionName: string;
+  section: string;
   tblYearLevel: string;
   venueName: string;
   setupName: string;
-  statusName: string;
+  name: string;
   schoolYearName: string;
   departmentName: string;
   designation: string;
@@ -141,6 +76,8 @@ interface Entity {
   isAprrovedByChairman: boolean;
   type: string;
   location: string;
+  code: number;
+  departName: string;
 }
 
 interface YearLevel {
@@ -182,16 +119,15 @@ const Dashboard: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState<string>("");
   const [currentEntity, setCurrentEntity] = useState<Partial<Entity>>({
-    id: 0,
+    id: 0 || "",
     eventTypeName: "",
+    departName:"",
     college: "",
-    collegeName: "",
     rank: "",
-    sectionName: "",
+    section: "",
     tblYearLevel: "",
     venueName: "",
-    setupName: "",
-    statusName: "",
+    name: "",
     schoolYearName: "",
     departmentName: "",
     designation: "",
@@ -208,10 +144,12 @@ const Dashboard: React.FC = () => {
     isAprrovedByChairman: false,
     type: "",
     location: "",
+    code: 0,
   });
   const [currentEntityType, setCurrentEntityType] = useState<string>("");
 
-  const token = Cookies.get("auth_token");
+  // const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token);
   const navigate = useNavigate();
   const [openModal, setOpenModal] = useState(false);
   const [openModal2, setOpenModal2] = useState(false);
@@ -241,32 +179,32 @@ const Dashboard: React.FC = () => {
         schoolYearsResponse,
         remarkResponse,
       ] = await Promise.all([
-        http.get("users/", { headers: { Authorization: `Token ${token}` } }),
-        http.get("departments/", {
+        http.get("unieventify/users/", { headers: { Authorization: `Token ${token}` } }),
+        http.get("unieventify/departments/", {
           headers: { Authorization: `Token ${token}` },
         }),
-        http.get("userroles/", {
+        http.get("unieventify/userroles/", {
           headers: { Authorization: `Token ${token}` },
         }),
-        http.get("colleges/", {
+        http.get("unieventify/colleges/", {
           headers: { Authorization: `Token ${token}` },
         }),
-        http.get("setups/", { headers: { Authorization: `Token ${token}` } }),
-        http.get("venues/", { headers: { Authorization: `Token ${token}` } }),
-        http.get("status/", { headers: { Authorization: `Token ${token}` } }),
-        http.get("sections/", {
+        http.get("unieventify/setups/", { headers: { Authorization: `Token ${token}` } }),
+        http.get("unieventify/venues/", { headers: { Authorization: `Token ${token}` } }),
+        http.get("unieventify/status/", { headers: { Authorization: `Token ${token}` } }),
+        http.get("unieventify/sections/", {
           headers: { Authorization: `Token ${token}` },
         }),
-        http.get("eventcategories/", {
+        http.get("unieventify/eventcategories/", {
           headers: { Authorization: `Token ${token}` },
         }),
-        http.get("eventtypes/", {
+        http.get("unieventify/eventtypes/", {
           headers: { Authorization: `Token ${token}` },
         }),
-        http.get("schoolyear/", {
+        http.get("unieventify/schoolyear/", {
           headers: { Authorization: `Token ${token}` },
         }),
-        http.get("eventremark/", {
+        http.get("unieventify/eventremark/", {
           headers: { Authorization: `Token ${token}` },
         }),
       ]);
@@ -275,7 +213,7 @@ const Dashboard: React.FC = () => {
       setUsers(usersResponse.data);
       setDepartments(departmentsResponse.data);
       setRoles(
-        rolesResponse.data.filter((role: any) => role.designation !== "Admin")
+        rolesResponse.data.filter((role: any) => role.name !== "Admin")
       );
       setColleges(collegesResponse.data);
       setSetups(setupsResponse.data);
@@ -295,12 +233,12 @@ const Dashboard: React.FC = () => {
 
   const fetchDraftEvents = async () => {
     try {
-      const notificationsResponse = await http.get("approvalevents/", {
+      const notificationsResponse = await http.get("unieventify/approvalevents/", {
         headers: { Authorization: `Token ${token}` },
       });
 
       const draftNotifications = notificationsResponse.data.filter(
-        (notification: any) => notification.status.statusName === "draft"
+        (notification: any) => notification.status.name === "draft"
       );
 
       setDraftEvents(draftNotifications); // Store the fetched draft events in state
@@ -312,7 +250,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchYearLevels = async () => {
       try {
-        const response = await http.get("yearlevel/");
+        const response = await http.get("unieventify/yearlevel/");
         setYearLevels(response.data);
       } catch (error) {
         console.error("Error fetching year levels:", error);
@@ -346,12 +284,12 @@ const Dashboard: React.FC = () => {
   }, [token]);
 
   // Handle filter changes
-  const handleFilterChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
-    const { name, value } = event.target;
-    if (name === "role") setSelectedRole(value as string);
-    if (name === "department") setSelectedDepartment(value as string);
-    if (name === "college") setSelectedCollege(value as string);
-  };
+  // const handleFilterChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
+  //   const { name, value } = event.target;
+  //   if (name === "role") setSelectedRole(value as string);
+  //   if (name === "department") setSelectedDepartment(value as string);
+  //   if (name === "college") setSelectedCollege(value as string);
+  // };
 
   // Generate rows for DataGrid
   const getRows = () => {
@@ -364,20 +302,20 @@ const Dashboard: React.FC = () => {
         return isActiveFilter && isInactiveFilter;
       })
       .map((user) => ({
-        id: user.id,
-        idNumber: user.idNumber,
+        id: user.uuid,
+        idNumber: user.id_number,
         firstName: user.first_name,
         lastName: user.last_name,
         username: user.email,
-        department: user.department ? user.department.departmentName : "N/A",
-        role: user.role ? user.role.designation : "N/A",
+        department: user.department ? user.department.name : "N/A",
+        role: user.role ? user.role.name : "N/A",
         college: user.department
           ? colleges.find(
-            (college) => college.id === user.department.collegeName
-          )?.collegeName || "N/A"
+              (college) => college.id === user.department.college
+            )?.name || "N/A"
           : "N/A",
         active: user.is_active,
-        detailsUrl: `${http}users/${user.id}/`,
+        detailsUrl: `${http}/unieventify/users/${user.uuid}/`,
       }));
   };
 
@@ -388,13 +326,13 @@ const Dashboard: React.FC = () => {
       createdBy: `${event.created_by.first_name} ${event.created_by.last_name}`,
       startDateTime: new Date(event.startDateTime).toLocaleString(),
       endDateTime: new Date(event.endDateTime).toLocaleString(),
-      status: event.status.statusName,
+      status: event.status.name,
     }));
   };
 
   // Define columns for DataGrid
   const columns: GridColDef[] = [
-    { field: "idNumber", headerName: "ID", width: 100 },
+    { field: "idNumber", headerName: "ID Number", width: 100 },
     { field: "firstName", headerName: "First Name", width: 130 },
     { field: "lastName", headerName: "Last Name", width: 130 },
     { field: "username", headerName: "Email", width: 200 },
@@ -418,7 +356,7 @@ const Dashboard: React.FC = () => {
       width: 150,
       renderCell: (params: any) => (
         <CustomButton
-          onClick={() => navigate(`/auth/app/userdetails/${params.row.id}`)}
+          onClick={() => navigate(`/auth/app/userdetails/${params.row.id}`)} startIcon=""
         >
           See Details
         </CustomButton>
@@ -439,7 +377,7 @@ const Dashboard: React.FC = () => {
       width: 150,
       renderCell: (params: any) => (
         <CustomButton
-          onClick={() => navigate(`/auth/app/eventdetails/${params.row.id}`)}
+          onClick={() => navigate(`/auth/app/eventdetails/${params.row.id}`)} startIcon=""
         >
           See Details
         </CustomButton>
@@ -482,13 +420,14 @@ const Dashboard: React.FC = () => {
     if (entityType === "departments") {
       setCurrentEntity({
         id: entity?.id,
-        departmentName: entity?.departmentName,
+        name: entity?.name,
+        code: 1,
         college: entity?.college || "", // Ensure correct property name
       });
     } else if (entityType === "userroles") {
       setCurrentEntity({
-        id: entity?.id,
-        designation: entity?.designation,
+        id: entity?.uuid,
+        name: entity?.name,
         rank: entity?.rank || "",
       });
     } else {
@@ -508,24 +447,27 @@ const Dashboard: React.FC = () => {
   const handleSave = async () => {
     try {
       let updatedEntity = { ...currentEntity };
+      
+      // Debugging: Check the final payload before sending
+      console.log("Final Payload:", updatedEntity);
 
       // Adjust properties based on entity type
       if (currentEntityType === "departments") {
         if (updatedEntity.college) {
-          updatedEntity.collegeName = updatedEntity.college;
-          delete (updatedEntity as { college?: string }).college;
+          updatedEntity.name = updatedEntity.name;
+          // delete (updatedEntity as { college?: string }).college;
         }
       }
 
       // Add handling for other entity types if necessary
 
       if (dialogType === "add") {
-        await http.post(`${currentEntityType}/`, updatedEntity, {
+        await http.post(`unieventify/${currentEntityType}/`, updatedEntity, {
           headers: { Authorization: `Token ${token}` },
         });
       } else if (dialogType === "edit") {
         await http.put(
-          `${currentEntityType}/${currentEntity.id}/`,
+          `unieventify/${currentEntityType}/${currentEntity.id}/`,
           updatedEntity,
           {
             headers: { Authorization: `Token ${token}` },
@@ -541,8 +483,9 @@ const Dashboard: React.FC = () => {
 
   const handleDelete = async () => {
     try {
+      console.log("Entity to delete:", entityToDelete);
       if (entityToDelete) {
-        await http.delete(`${entityToDelete.type}/${entityToDelete.id}/`, {
+        await http.delete(`unieventify/${entityToDelete.type}/${entityToDelete.id}/`, {
           headers: { Authorization: `Token ${token}` },
         });
         fetchData(); // Refresh the data after deletion
@@ -575,16 +518,15 @@ const Dashboard: React.FC = () => {
   // Open delete confirmation modal
   const handleOpenDeleteModal = (entityType: any, entity: any) => {
     setEntityToDelete({
-      id: entity.id,
+      id: entityType === "userroles" ? entity.uuid : entity.id, // Ensure correct identifier
       eventTypeName: "",
       college: "",
-      collegeName: "",
       rank: "",
-      sectionName: "",
+      section: "",
       tblYearLevel: "",
       venueName: "",
       setupName: "",
-      statusName: "",
+      name: "",
       schoolYearName: "",
       departmentName: "",
       designation: "",
@@ -601,6 +543,8 @@ const Dashboard: React.FC = () => {
       isAprrovedByChairman: false,
       type: entityType,
       location: "",
+      code: 0,
+      departName: "",
     }); // Set the entity to delete
     setOpenModal(true); // Open the modal
   };
@@ -642,16 +586,16 @@ const Dashboard: React.FC = () => {
               <TableRow key={entity.id}>
                 <TableCell>{entity.id}</TableCell>
                 <TableCell>
-                  {entityType === "departments" && entity.departmentName}
-                  {entityType === "userroles" && entity.designation}
-                  {entityType === "colleges" && entity.collegeName}
+                  {entityType === "departments" && entity.name}
+                  {entityType === "userroles" && entity.name}
+                  {entityType === "colleges" && entity.name}
                   {entityType === "setups" && entity.setupName}
                   {entityType === "venues" && entity.venueName}
-                  {entityType === "status" && entity.statusName}
-                  {entityType === "sections" && entity.sectionName}
+                  {entityType === "status" && entity.name}
+                  {entityType === "sections" && entity.section}
                   {entityType === "eventcategories" && entity.eventCategoryName}
                   {entityType === "eventtypes" && entity.eventTypeName}
-                  {entityType === "schoolyear" && entity.schoolYearName}
+                  {entityType === "schoolyear" && entity.name}
                 </TableCell>
                 {entityType === "schoolyear" && (
                   <>
@@ -685,17 +629,17 @@ const Dashboard: React.FC = () => {
     try {
       // Determine the approval field based on the current user's role
       const approvalField =
-        user?.role?.designation === dean
+        user?.role?.name === dean
           ? { isAprrovedByDean: true }
           : { isAprrovedByChairman: true };
 
       // Update the approval field in the backend
-      await http.patch(`events/${eventId}/`, approvalField, {
+      await http.patch(`unieventify/events/${eventId}/`, approvalField, {
         headers: { Authorization: `Token ${token}` },
       });
 
       // Fetch the updated event data
-      const response = await http.get(`events/${eventId}/`, {
+      const response = await http.get(`unieventify/events/${eventId}/`, {
         headers: { Authorization: `Token ${token}` },
       });
       const updatedEvent = response.data;
@@ -707,10 +651,10 @@ const Dashboard: React.FC = () => {
       let status: any;
 
       // Determine status based on role and approvals
-      const { designation } = updatedEvent.created_by.role;
+      const { name } = updatedEvent.created_by.role;
 
       if (
-        designation === unitOrg &&
+        name === unitOrg &&
         !updatedEvent.isAprrovedByDean &&
         updatedEvent.isAprrovedByChairman
       ) {
@@ -725,7 +669,7 @@ const Dashboard: React.FC = () => {
           theme: "light",
         });
       } else if (
-        designation === unitOrg &&
+        name === unitOrg &&
         updatedEvent.isAprrovedByDean &&
         !updatedEvent.isAprrovedByChairman
       ) {
@@ -742,13 +686,13 @@ const Dashboard: React.FC = () => {
       }
 
       // Approval logic for "Mother Org"
-      if (designation === motherOrg && updatedEvent.isAprrovedByDean) {
+      if (name === motherOrg && updatedEvent.isAprrovedByDean) {
         status = now < start ? "upcoming" : now <= end ? "ongoing" : "done";
       }
 
       // Approval logic for "Unit Org" (requires both Dean and Chairperson)
       else if (
-        designation === unitOrg &&
+        name === unitOrg &&
         updatedEvent.isAprrovedByDean &&
         updatedEvent.isAprrovedByChairman
       ) {
@@ -756,15 +700,15 @@ const Dashboard: React.FC = () => {
       }
 
       // Approval logic for "Faculty" (requires only Chairperson)
-      else if (designation === faculty && updatedEvent.isAprrovedByChairman) {
+      else if (name === faculty && updatedEvent.isAprrovedByChairman) {
         status = now < start ? "upcoming" : now <= end ? "ongoing" : "done";
       }
 
       // If status was determined, update the event status
       if (status) {
-        const findStatus = statuses.find((stat) => stat.statusName === status);
+        const findStatus = statuses.find((stat) => stat.name === status);
         await http.patch(
-          `events/${eventId}/`,
+          `unieventify/events/${eventId}/`,
           { status: findStatus?.id || '' },
           {
             headers: { Authorization: `Token ${token}` },
@@ -773,7 +717,7 @@ const Dashboard: React.FC = () => {
         const remarks = Array.isArray(remark) ? remark.find((rem: any) => rem.events.id === eventId) : null;
         if (remarks) {
           // Remove the event remark for the approved event
-          await http.delete(`eventremark/${remarks.id}`, {
+          await http.delete(`unieventify/eventremark/${remarks.id}`, {
             headers: { Authorization: `Token ${token}` },
           });
         }
@@ -809,17 +753,17 @@ const Dashboard: React.FC = () => {
         selectedEvents.map(async (eventId) => {
           // Determine the approval field based on the current user's role
           const approvalField =
-            user?.role?.designation === dean
+            user?.role?.name === dean
               ? { isAprrovedByDean: true }
               : { isAprrovedByChairman: true };
 
           // Update the approval field in the backend
-          await http.patch(`events/${eventId}/`, approvalField, {
+          await http.patch(`unieventify/events/${eventId}/`, approvalField, {
             headers: { Authorization: `Token ${token}` },
           });
 
           // Fetch the updated event data
-          const response = await http.get(`events/${eventId}/`, {
+          const response = await http.get(`unieventify/events/${eventId}/`, {
             headers: { Authorization: `Token ${token}` },
           });
           const updatedEvent = response.data;
@@ -831,16 +775,16 @@ const Dashboard: React.FC = () => {
           let status: any;
 
           // Determine status based on role and approvals
-          const { designation } = updatedEvent.created_by.role;
+          const { name } = updatedEvent.created_by.role;
 
           // Approval logic for "Mother Org"
-          if (designation === motherOrg && updatedEvent.isAprrovedByDean) {
+          if (name === motherOrg && updatedEvent.isAprrovedByDean) {
             status = now < start ? "upcoming" : now <= end ? "ongoing" : "done";
           }
 
           // Approval logic for "Unit Org" (requires both Dean and Chairperson)
           else if (
-            designation === unitOrg &&
+            name === unitOrg &&
             updatedEvent.isAprrovedByDean &&
             updatedEvent.isAprrovedByChairman
           ) {
@@ -848,15 +792,15 @@ const Dashboard: React.FC = () => {
           }
 
           // Approval logic for "Faculty" (requires only Chairperson)
-          else if (designation === faculty && updatedEvent.isAprrovedByChairman) {
+          else if (name === faculty && updatedEvent.isAprrovedByChairman) {
             status = now < start ? "upcoming" : now <= end ? "ongoing" : "done";
           }
 
           // If status was determined, update the event status
           if (status) {
-            const findStatus = statuses.find((stat) => stat.statusName === status);
+            const findStatus = statuses.find((stat) => stat.name === status);
             await http.patch(
-              `events/${eventId}/`,
+              `unieventify/events/${eventId}/`,
               { status: findStatus?.id || '' },
               {
                 headers: { Authorization: `Token ${token}` },
@@ -865,7 +809,7 @@ const Dashboard: React.FC = () => {
             const remarks = Array.isArray(remark) ? remark.find((rem: any) => rem.events.id === eventId) : null;
             if (remarks) {
               // Remove the event remark for the approved event
-              await http.delete(`eventremark/${remarks.id}`, {
+              await http.delete(`unieventify/eventremark/${remarks.id}`, {
                 headers: { Authorization: `Token ${token}` },
               });
             }
@@ -910,7 +854,7 @@ const Dashboard: React.FC = () => {
       if (remark) {
         // Add event remark
         await http.post(
-          `eventremark/`,
+          `unieventify/eventremark/`,
           {
             events: eventId,
             remark: remark, // Use the remark state here
@@ -922,14 +866,14 @@ const Dashboard: React.FC = () => {
 
         // Find the status id for "disapproved"
         const findstatus = statuses?.find(
-          (stat) => stat.statusName === "disapproved"
+          (stat) => stat.name === "disapproved"
         );
 
         if (findstatus?.id) {
           // Proceed only if `findstatus` is found
           // Update event status
           await http.patch(
-            `events/${eventId}/`,
+            `unieventify/events/${eventId}/`,
             {
               status: findstatus.id,
             },
@@ -982,8 +926,8 @@ const Dashboard: React.FC = () => {
     try {
       await Promise.all(
         selectedUsers.map((userId) =>
-          http.patch(
-            `users/${userId}/`,
+          http.put(
+            `unieventify/users/${userId}/`,
             { is_active: true },
             {
               headers: { Authorization: `Token ${token}` },
@@ -1011,8 +955,8 @@ const Dashboard: React.FC = () => {
     try {
       await Promise.all(
         selectedUsers.map((userId) =>
-          http.patch(
-            `users/${userId}/`,
+          http.put(
+            `unieventify/users/${userId}/`,
             { is_active: false },
             {
               headers: { Authorization: `Token ${token}` },
@@ -1061,7 +1005,7 @@ const Dashboard: React.FC = () => {
           </Box>
         ) : (
           <Box>
-            {draftRole.includes(user?.role?.designation) && (
+            {draftRole.includes(user?.role?.name) && (
               <Box>
                 <Typography variant="h6" gutterBottom>
                   Draft Event
@@ -1094,21 +1038,21 @@ const Dashboard: React.FC = () => {
             {admin ? (
               <Box>
                 <Box sx={{ mt: 5 }}>
-                  <CustomButton onClick={() => navigate("/auth/app/adduser")}>
+                  <CustomButton onClick={() => navigate("/auth/app/adduser")} startIcon=""> 
                     Add a User
                   </CustomButton>
                   {admin && (
                     <CustomButton
-                      onClick={() => navigate("/auth/app/uploaduser")}
+                      onClick={() => navigate("/auth/app/uploaduser")} startIcon=""
                     >
                       Upload User
                     </CustomButton>
                   )}
-                  <CustomButton onClick={() => setActiveUsers((prev) => !prev)}>
+                  <CustomButton onClick={() => setActiveUsers((prev) => !prev)} startIcon="">
                     {activeUsers ? "Show All Users" : "Active Users"}
                   </CustomButton>
                   <CustomButton
-                    onClick={() => setInactiveUsers((prev) => !prev)}
+                    onClick={() => setInactiveUsers((prev) => !prev)} startIcon=""
                   >
                     {inactiveUsers ? "Show All Users" : "Inactive Users"}
                   </CustomButton>
@@ -1118,6 +1062,7 @@ const Dashboard: React.FC = () => {
                     disabled={selectedUsers.length === 0} // Enable button only if users are selected
                     color="primary"
                     variant="contained"
+                    startIcon=""
                   >
                     Reactivate Selected
                   </CustomButton>
@@ -1127,12 +1072,14 @@ const Dashboard: React.FC = () => {
                     color="secondary"
                     variant="contained"
                     sx={{ marginLeft: 8 }}
+                    startIcon=""
                   >
                     Deactivate Selected
                   </CustomButton>
                 </Box>
 
                 <DataGrid
+                  getRowId={(row) => row.id}
                   rows={getRows()}
                   columns={columns}
                   paginationModel={{ page: 0, pageSize: 10 }}
@@ -1158,7 +1105,7 @@ const Dashboard: React.FC = () => {
                         Setups
                       </Typography>
                       <CustomButton
-                        onClick={() => handleOpenDialog("add", "setups", "")}
+                        onClick={() => handleOpenDialog("add", "setups", "")} startIcon=""
                       >
                         Add Setup
                       </CustomButton>
@@ -1169,7 +1116,7 @@ const Dashboard: React.FC = () => {
                         Venues
                       </Typography>
                       <CustomButton
-                        onClick={() => handleOpenDialog("add", "venues", "")}
+                        onClick={() => handleOpenDialog("add", "venues", "")} startIcon=""
                       >
                         Add Venue
                       </CustomButton>
@@ -1180,7 +1127,7 @@ const Dashboard: React.FC = () => {
                         Status
                       </Typography>
                       <CustomButton
-                        onClick={() => handleOpenDialog("add", "status", "")}
+                        onClick={() => handleOpenDialog("add", "status", "")} startIcon=""
                       >
                         Add Status
                       </CustomButton>
@@ -1191,7 +1138,7 @@ const Dashboard: React.FC = () => {
                         Sections
                       </Typography>
                       <CustomButton
-                        onClick={() => handleOpenDialog("add", "sections", "")}
+                        onClick={() => handleOpenDialog("add", "sections", "")} startIcon=""
                       >
                         Add Section
                       </CustomButton>
@@ -1205,6 +1152,7 @@ const Dashboard: React.FC = () => {
                         onClick={() =>
                           handleOpenDialog("add", "eventcategories", "")
                         }
+                        startIcon=""
                       >
                         Add Event Category
                       </CustomButton>
@@ -1215,7 +1163,7 @@ const Dashboard: React.FC = () => {
                         Colleges
                       </Typography>
                       <CustomButton
-                        onClick={() => handleOpenDialog("add", "colleges", "")}
+                        onClick={() => handleOpenDialog("add", "colleges", "")} startIcon=""
                       >
                         Add College
                       </CustomButton>
@@ -1226,7 +1174,7 @@ const Dashboard: React.FC = () => {
                         Departments
                       </Typography>
                       <CustomButton
-                        onClick={() => handleOpenDialog("add", "departments", "")}
+                        onClick={() => handleOpenDialog("add", "departments", "")} startIcon=""
                       >
                         Add Department
                       </CustomButton>
@@ -1237,7 +1185,7 @@ const Dashboard: React.FC = () => {
                         User Roles
                       </Typography>
                       <CustomButton
-                        onClick={() => handleOpenDialog("add", "userroles", "")}
+                        onClick={() => handleOpenDialog("add", "userroles", "")} startIcon=""
                       >
                         Add User Role
                       </CustomButton>
@@ -1249,7 +1197,7 @@ const Dashboard: React.FC = () => {
                         Event Types
                       </Typography>
                       <CustomButton
-                        onClick={() => handleOpenDialog("add", "eventtypes", "")}
+                        onClick={() => handleOpenDialog("add", "eventtypes", "")} startIcon=""
                       >
                         Add Event Type
                       </CustomButton>
@@ -1262,7 +1210,7 @@ const Dashboard: React.FC = () => {
                         School Years
                       </Typography>
                       <CustomButton
-                        onClick={() => handleOpenDialog("add", "schoolyear", "")}
+                        onClick={() => handleOpenDialog("add", "schoolyear", "")} startIcon=""
                       >
                         Add School Year
                       </CustomButton>
@@ -1339,13 +1287,13 @@ const Dashboard: React.FC = () => {
               <TextField
                 autoFocus
                 margin="dense"
-                id="statusName"
+                id="name"
                 label="Status Name"
                 type="text"
                 fullWidth
                 variant="standard"
-                value={currentEntity?.statusName || ""}
-                onChange={(e) => setCurrentEntity({ ...currentEntity, statusName: e.target.value })}
+                value={currentEntity?.name || ""}
+                onChange={(e) => setCurrentEntity({ ...currentEntity, name: e.target.value })}
               />
             )}
 
@@ -1353,13 +1301,13 @@ const Dashboard: React.FC = () => {
               <TextField
                 autoFocus
                 margin="dense"
-                id="sectionName"
+                id="section"
                 label="Section Name"
                 type="text"
                 fullWidth
                 variant="standard"
-                value={currentEntity?.sectionName || ""}
-                onChange={(e) => setCurrentEntity({ ...currentEntity, sectionName: e.target.value })}
+                value={currentEntity?.section || ""}
+                onChange={(e) => setCurrentEntity({ ...currentEntity, section: e.target.value })}
               />
             )}
 
@@ -1405,13 +1353,13 @@ const Dashboard: React.FC = () => {
               <TextField
                 autoFocus
                 margin="dense"
-                id="collegeName"
+                id="name"
                 label="College Name"
                 type="text"
                 fullWidth
                 variant="standard"
-                value={currentEntity?.collegeName || ""}
-                onChange={(e) => setCurrentEntity({ ...currentEntity, collegeName: e.target.value })}
+                value={currentEntity?.name || ""}
+                onChange={(e) => setCurrentEntity({ ...currentEntity, name: e.target.value })}
               />
             )}
 
@@ -1420,17 +1368,17 @@ const Dashboard: React.FC = () => {
                 <TextField
                   autoFocus
                   margin="dense"
-                  id="departmentName"
+                  id="name"
                   label="Department Name"
                   type="text"
                   fullWidth
                   variant="standard"
-                  value={currentEntity?.departmentName || ""}
-                  onChange={(e) => setCurrentEntity({ ...currentEntity, departmentName: e.target.value })}
+                  value={currentEntity?.name || ""}
+                  onChange={(e) => setCurrentEntity({ ...currentEntity, name: e.target.value })}
                 />
                 <Select
                   margin="dense"
-                  id="collegeName"
+                  id="name"
                   label="College"
                   value={currentEntity?.college || ""}
                   onChange={(e) =>
@@ -1443,7 +1391,7 @@ const Dashboard: React.FC = () => {
                 >
                   {colleges.map((college) => (
                     <MenuItem key={college.id} value={college.id}>
-                      {college.collegeName}
+                      {college.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -1455,13 +1403,13 @@ const Dashboard: React.FC = () => {
                 <TextField
                   autoFocus
                   margin="dense"
-                  id="designation"
+                  id="name"
                   label="Role Designation"
                   type="text"
                   fullWidth
                   variant="standard"
-                  value={currentEntity?.designation || ""}
-                  onChange={(e) => setCurrentEntity({ ...currentEntity, designation: e.target.value })}
+                  value={currentEntity?.name || ""}
+                  onChange={(e) => setCurrentEntity({ ...currentEntity, name: e.target.value })}
                 />
                 <TextField
                   autoFocus

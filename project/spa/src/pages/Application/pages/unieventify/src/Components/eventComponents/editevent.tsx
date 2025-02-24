@@ -1209,7 +1209,7 @@ const EditEvent = ({
           );
         });
       })
-      .map((participant: any) => participant.id);
+      .map((participant: any) => participant.uuid);
 
     return users.filter((user) => {
       const matchCollege =
@@ -1231,7 +1231,7 @@ const EditEvent = ({
         user.organization?.studentOrgName?.toLowerCase() || "",
       ];
 
-      const isConflicting = conflictingParticipantIds.includes(user.id);
+      const isConflicting = conflictingParticipantIds.includes(user.uuid);
 
       return (
         matchCollege &&
@@ -1280,7 +1280,7 @@ const EditEvent = ({
   // Updated "Select All" logic
   const handleSelectAll = (event: any) => {
     const isChecked = event.target.checked;
-    const filteredIds = filteredParticipants.map((user) => user.id);
+    const filteredIds = filteredParticipants.map((user) => user.uuid);
 
     if (isChecked) {
       // Combine new filtered participants with the existing ones
@@ -1291,7 +1291,7 @@ const EditEvent = ({
     } else {
       // Remove only the filtered participants
       const remainingParticipants = selectedParticipants.filter(
-        (id: any) => !filteredIds.includes(id)
+        (uuid: any) => !filteredIds.includes(uuid)
       );
       setSelectedParticipants(remainingParticipants);
     }

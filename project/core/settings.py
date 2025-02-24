@@ -206,3 +206,9 @@ CLOUDINARY_STORAGE = {
     'API_KEY': env('API_KEY', default=''),
     'API_SECRET': env('API_SECRET', default='')
 }
+# Celery settings in settings.py
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Use Redis as the broker
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

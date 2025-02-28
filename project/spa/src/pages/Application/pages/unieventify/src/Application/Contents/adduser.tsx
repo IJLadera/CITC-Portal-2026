@@ -42,7 +42,7 @@ interface FormData {
   first_name: string;
   last_name: string;
   middle_name: string;
-  idNumber: string;
+  id_number: string;
   role: string;
   department: string;
   college: string;
@@ -52,7 +52,7 @@ interface FormData {
   image: null | File;
   isStaff: boolean;
   password: string;
-  confirm_password: string;
+  re_password: string;
 }
 
 export default function AddUser() {
@@ -61,7 +61,7 @@ export default function AddUser() {
     first_name: "",
     last_name: "",
     middle_name: "",
-    idNumber: "",
+    id_number: "",
     role: "",
     department: "",
     college: "",
@@ -71,7 +71,7 @@ export default function AddUser() {
     image: null,
     isStaff: false,
     password: "",
-    confirm_password: "",
+    re_password: "",
   });
 
   const [roles, setRoles] = useState<Role[]>([]);
@@ -98,8 +98,8 @@ export default function AddUser() {
 
         // Fetch roles, colleges, and departments
         const [rolesResponse, collegesResponse] = await Promise.all([
-          http.get("userroles/", { headers }),
-          http.get("departmentsbycollege/", {
+          http.get("unieventify/userroles/", { headers }),
+          http.get("unieventify/departmentsbycollege/", {
             headers,
           }),
         ]);
@@ -155,7 +155,7 @@ export default function AddUser() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
   
-    if (formData.password !== formData.confirm_password) {
+    if (formData.password !== formData.re_password) {
       toast.error("Passwords do not match.");
       return;
     }
@@ -181,7 +181,7 @@ export default function AddUser() {
           first_name: "",
           last_name: "",
           middle_name: "",
-          idNumber: "",
+          id_number: "",
           role: "",
           department: "",
           college: "",
@@ -191,7 +191,7 @@ export default function AddUser() {
           image: null,
           isStaff: false,
           password: "",
-          confirm_password: "",
+          re_password: "",
         });
       })
       .catch((error) => {
@@ -260,8 +260,8 @@ export default function AddUser() {
             <TextField
               fullWidth
               label="ID Number"
-              name="idNumber"
-              value={formData.idNumber}
+              name="id_number"
+              value={formData.id_number}
               onChange={handleChange}
             />
           </Grid>
@@ -276,7 +276,7 @@ export default function AddUser() {
               >
                 {roles.map((role) => (
                   <MenuItem key={role.uuid} value={role.uuid}>
-                    {role.designation}
+                    {role.name}
                   </MenuItem>
                 ))}
               </Select>
@@ -323,9 +323,9 @@ export default function AddUser() {
             <TextField
               fullWidth
               label="Confirm Password"
-              name="confirm_password"
+              name="re_password"
               type="password"
-              value={formData.confirm_password}
+              value={formData.re_password}
               onChange={handleChange}
               required
             />

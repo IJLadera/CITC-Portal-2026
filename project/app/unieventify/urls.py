@@ -132,7 +132,7 @@ urlpatterns = [
     path('unavail-slots/nonpersonal', UnavailablesSlotNonPersonalView.as_view(), name='school-year-available-slots'),
 
     path('faculty/events', FacultyEventsListView.as_view(), name='faculty-events'),
-    path('faculty/events/<int:pk>', FacultyEventsDetailView.as_view(), name='faculty-events'),
+    path('faculty/events/<uuid:uuid>', FacultyEventsDetailView.as_view(), name='faculty-events'),
     
     path('roles/events', AllRoleEventsListView.as_view(), name='role-events'),
     path('roles/events/<int:pk>', AllRoleEventsDetailView.as_view(), name='role-events'),

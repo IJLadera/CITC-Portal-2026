@@ -156,7 +156,7 @@ const EditEvent = ({
   const [participants, setParticipants] = useState([]);
   const [selectedParticipants, setSelectedParticipants] = useState(
     event?.participants
-      ? event?.participants.map((participant: any) => participant.id)
+      ? event?.participants.map((participant: any) => participant.uuid)
       : []
   );
   const [filteredParticipants, setFilteredParticipants] = useState<User[]>([]);
@@ -326,6 +326,8 @@ const EditEvent = ({
       .then((response) => setDepartments(response.data))
       .catch((error) => console.error("Error fetching participants:", error));
   }, [token]);
+
+  console.log("users", participants);
 
   useEffect(() => {
     if (isEdit && !currentUser.is_staff && !personal) {
@@ -1246,19 +1248,19 @@ const EditEvent = ({
     setSearchTerm(e.target.value);
   };
 
-  const handleAddParticipant = (id: any) => {
-    if (!selectedParticipants.includes(id)) {
-      setSelectedParticipants((prev: any) => [...prev, id]);
+  const handleAddParticipant = (uuid: any) => {
+    if (!selectedParticipants.includes(uuid)) {
+      setSelectedParticipants((prev: any) => [...prev, uuid]);
     }
   };
 
-  const handleToggleCheckbox = (id: any) => {
-    if (checkedParticipants.includes(id)) {
+  const handleToggleCheckbox = (uuid: any) => {
+    if (checkedParticipants.includes(uuid)) {
       setCheckedParticipants((prev) =>
-        prev.filter((participant) => participant !== id)
+        prev.filter((participant) => participant !== uuid)
       );
     } else {
-      setCheckedParticipants((prev) => [...prev, id]);
+      setCheckedParticipants((prev) => [...prev, uuid]);
     }
   };
 
@@ -1281,7 +1283,7 @@ const EditEvent = ({
   const handleSelectAll = (event: any) => {
     const isChecked = event.target.checked;
     const filteredIds = filteredParticipants.map((user) => user.uuid);
-
+  
     if (isChecked) {
       // Combine new filtered participants with the existing ones
       const uniqueParticipants = Array.from(
@@ -1295,7 +1297,7 @@ const EditEvent = ({
       );
       setSelectedParticipants(remainingParticipants);
     }
-
+  
     setSelectAll(isChecked); // Set "Select All" checkbox state
   };
 
@@ -2221,43 +2223,35 @@ const EditEvent = ({
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {selectedParticipants
-                              .slice(Math.ceil(selectedParticipants.length / 2)) // Second section
-                              .map((id: any, index: any) => {
-                                const user = users.find((u) => u.id === id);
-                                return user ? (
-                                  <TableRow
-                                    key={id}
-                                    sx={{
-                                      backgroundColor:
-                                        index % 2 === 0 ? "white" : "#f7f7f7",
-                                      height: "40px", // Reduced row height
-                                    }}
-                                  >
-                                    <TableCell padding="checkbox">
-                                      <Checkbox
-                                        checked={checkedParticipants.includes(
-                                          id
-                                        )}
-                                        onChange={() =>
-                                          handleToggleCheckbox(id)
-                                        }
-                                      />
-                                    </TableCell>
-                                    <TableCell
-                                      sx={{ padding: "4px 8px" }} // Compact cell padding
-                                    >
-                                      {`${user.first_name} ${user.last_name}`}
-                                    </TableCell>
-                                    <TableCell
-                                      sx={{ padding: "4px 8px" }} // Compact cell padding
-                                    >
-                                      {user.role?.name}
-                                    </TableCell>
-                                  </TableRow>
-                                ) : null;
-                              })}
-                          </TableBody>
+                        {selectedParticipants
+                            .slice(Math.ceil(selectedParticipants.length / 2)) // Second section
+                            .map((uuid: any, index: any) => {
+                            const user = users.find((u) => u.uuid === uuid); // Use uuid to find user
+                            return user ? (
+                                <TableRow
+                                key={uuid}
+                                sx={{
+                                    backgroundColor: index % 2 === 0 ? "white" : "#f7f7f7",
+                                    height: "40px", // Reduced row height
+                                }}
+                                >
+                                <TableCell padding="checkbox">
+                                    <Checkbox
+                                    checked={checkedParticipants.includes(uuid)} // Use uuid for checking
+                                    onChange={() => handleToggleCheckbox(uuid)} // Toggle based on uuid
+                                    />
+                                </TableCell>
+                                <TableCell sx={{ padding: "4px 8px" }}>
+                                    {`${user.first_name} ${user.last_name}`}
+                                </TableCell>
+                                <TableCell sx={{ padding: "4px 8px" }}>
+                                    {user.role?.name}
+                                </TableCell>
+                                </TableRow>
+                            ) : null;
+                            })}
+                        </TableBody>
+
                         </Table>
                       </TableContainer>
                     </Grid>

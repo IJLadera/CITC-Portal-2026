@@ -27,11 +27,14 @@ import {
   SelectChangeEvent
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { RRule, Weekday } from "rrule";
+import { RRule, RRule as RRuleNamespace, Weekday } from "rrule";
 import colors from "../../../Components/colors";
 import { toast, ToastContainer } from "react-toastify";
 import { Department } from "../../../../../lms/models";
 import { useAppSelector } from "../../../../../../../../hooks";
+import { fetchEventCategoriesApi, fetchEventTypesApi, fetchCollegesesApi, 
+  fetchDepartmentsApi, fetchDepartmentsByCollegeApi, fetchEventsApi, 
+  fetchFacultyEventsApi, fetchUserProfileApi, fetchPublicEventsApi } from "../../../../../../../../api"
 
 interface User {
   role: {
@@ -61,7 +64,7 @@ interface Event {
   };
   isAnnouncement?: boolean;
   status?: {
-    statusName: string;
+    name: string;
   };
   eventCategory?: EventCategory;
   eventType?: EventType;
@@ -107,7 +110,7 @@ interface FormattedEventTwo{
 }
 
 interface Faculty {
-  id: number;
+  uuid: number;
   first_name: string;
   last_name: string;
 }
@@ -160,38 +163,41 @@ export default function Events() {
     fetchCategories();
     fetchColleges();
     fetchDepartments();
-    fetchCollegess(); // Fetch college-department relationships
+    // fetchCollegess(); // Fetch college-department relationships
+    fetchDepartmentsByColleges();
     fetchFaculties();
     fetchEvents();
-    fetchTypes();
+    fetchEventTypes();
   }, []);
 
   const fetchCategories = async () => {
-    try {
-      const response = await http.get("unieventify/eventcategories/");
-      setCategories(response.data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+      try {
+        const categories = await fetchEventCategoriesApi(); // Fetch event categories
+        setCategories(categories); // Set the categories after fetching
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
 
-  const fetchTypes = async () => {
+  const fetchEventTypes = async () => {
     try {
-      const response = await http.get("unieventify/eventtypes/");
-      setTypes(response.data);
+      const eventTypes = await fetchEventTypesApi(); // Fetch event categories
+      // setCategories(categories); // Set the categories after fetching
+      // const response = await http.get("unieventify/eventtypes/");
+      setTypes(eventTypes);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
   };
 
   const fetchColleges = async () => {
-    try {
-      const response = await http.get("unieventify/colleges/");
-      setColleges(response.data);
-    } catch (error) {
-      console.error("Error fetching colleges:", error);
-    }
-  };
+      try {
+        const response = await fetchCollegesesApi();
+        setColleges(response);
+      } catch (error) {
+        console.error("Error fetching colleges:", error);
+      }
+    };
 
   const fetchDepartments = async () => {
     try {
@@ -202,10 +208,12 @@ export default function Events() {
     }
   };
 
-  const fetchCollegess = async () => {
+  const fetchDepartmentsByColleges = async () => {
     try {
-      const response = await http.get("unieventify/departmentsbycollege/");
-      setCollegess(response.data || []);
+      // const response = await http.get("unieventify/departmentsbycollege/");
+      // setCollegess(response.data || []);
+      const departmentByCollege = await fetchDepartmentsByCollegeApi(); // Fetch event categories
+      setCollegess(departmentByCollege); // Set the categories after fetching
     } catch (error) {
       console.error("Error fetching collegess:", error);
       setCollegess([]); // Ensure collegess is always an array
@@ -214,12 +222,9 @@ export default function Events() {
 
   const fetchFaculties = async () => {
     try {
-      const response = await http.get("unieventify/faculty/events", {
-        headers: {
-          Authorization: `Token ${token}`,
-        },
-      });
-      setFaculties(response.data || []);
+      const facultyEvents = await fetchFacultyEventsApi(); // Fetch event categories
+      // setCollegess(facultyEvents); // Set the categories after fetching
+      setFaculties(facultyEvents || []);
     } catch (error) {
       console.error("Error fetching faculties:", error);
     }
@@ -255,7 +260,7 @@ export default function Events() {
               currentUser.roles.name === "Chairperson") &&
             event?.created_by?.role?.name === "Faculty" &&
             event?.isAnnouncement !== true &&
-            event?.status?.statusName !== "draft"
+            event?.status?.name !== "draft"
           ) {
             return true; // Show events created by Faculty for Dean/Chairperson
           }
@@ -268,7 +273,7 @@ export default function Events() {
               : event?.eventCategory?.eventCategoryName?.toLowerCase() ===
               "personal") ||
             event?.isAnnouncement === true ||
-            event?.status?.statusName === "draft"
+            event?.status?.name === "draft"
           ) {
             return false; // Exclude these events
           }
@@ -338,71 +343,82 @@ export default function Events() {
         },
       });
       const currentUser = userResponse.data;
-  
-      const response = await http.get("unieventify/public-events/", {
+
+      const response = await http.get("unieventify/events/", {
         headers: {
           Authorization: `Token ${token}`,
         },
       });
-  
-      const eventData: any[] = response.data || []; // Explicitly typing as array of any
-  
-      const formattedEvents: FormattedEventTwo[] = eventData
+
+      const eventData = response.data || [];
+
+      // if any role in student organization has academic or non-academic and is not aprroved by admin or dean, it will not show in the event
+      // walay student sa calendar then ang tulo ka eventtype except sa academic
+      const formattedEvents = eventData
         .filter((event: any) => {
+          // If the user is a Dean or Chairperson, only show Faculty-created events
           if (
             (currentUser.roles.name === "Dean" ||
               currentUser.roles.name === "Chairperson") &&
             event?.created_by?.role?.name === "Faculty" &&
             event?.isAnnouncement !== true &&
-            event?.status?.statusName !== "draft"
+            event?.status?.name !== "draft"
           ) {
-            return true; 
+            return true; // Show events created by Faculty for Dean/Chairperson
           }
-  
+
           if (
             event?.created_by?.role?.name === "Student" ||
             (!employeeRole.includes(event?.created_by?.role?.name)
               ? event?.eventCategory?.eventCategoryName?.toLowerCase() ===
-                  "personal" && event?.eventType?.eventTypeName !== "Academic"
+              "personal" && event?.eventType?.eventTypeName !== "Academic"
               : event?.eventCategory?.eventCategoryName?.toLowerCase() ===
-                  "personal") ||
+              "personal") ||
             event?.isAnnouncement === true ||
-            event?.status?.statusName === "draft" ||
-            event?.status?.statusName === "disapproved"
+            event?.status?.name === "draft" ||
+            event?.status?.name === "disapproved"
           ) {
-            return false; 
+            return false; // Exclude these events
           }
-          return true;
+          return true; // Include all other events
         })
         .map((event: any) => {
+          // Parse start and end date-time
           const eventStart = new Date(event.startDateTime);
           const eventEnd = new Date(event.endDateTime);
-  
+
+          // Ensure that eventEnd is actually passed correctly (don't forget to check that it has been parsed)
           if (isNaN(eventEnd.getTime())) {
             console.error("Invalid event end date:", event.endDateTime);
-            return null; 
           }
-  
-          const durationMs = eventEnd.getTime() - eventStart.getTime();
+
+          // Set both dates to the same day to calculate time difference only
+          const startOnlyTime = new Date(eventStart);
+          const endOnlyTime = new Date(eventEnd);
+          startOnlyTime.setFullYear(2000, 0, 1); // Set to a fixed date
+          endOnlyTime.setFullYear(2000, 0, 1); // Same date for accurate time difference
+
+          // Calculate the duration in hours and minutes between start time and end time
+          const durationMs = endOnlyTime.getTime() - startOnlyTime.getTime();
           const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
           const durationMinutes = Math.floor(
             (durationMs % (1000 * 60 * 60)) / (1000 * 60)
           );
-  
+
           const recurrenceRule =
             event.recurrence_type === "daily"
               ? new RRule({
-                  freq: RRule.DAILY,
-                  dtstart: eventStart,
-                  until: eventEnd,
-                }).toString()
+                freq: RRule.DAILY,
+                dtstart: eventStart,
+                until: eventEnd,
+              }).toString()
               : event.recurrence_type === "weekly" && event.recurrence_days
-              ? new RRule({
+                ? new RRule({
                   freq: RRule.WEEKLY,
                   dtstart: eventStart,
                   byweekday: event.recurrence_days
-                    .map((day: string): Weekday | null => {
-                      switch (day.toLowerCase()) {
+                    .map((day: any) => {
+                      switch (day) {
                         case "monday":
                           return RRule.MO;
                         case "tuesday":
@@ -421,36 +437,34 @@ export default function Events() {
                           return null;
                       }
                     })
-                    .filter((weekday: Weekday | null): weekday is Weekday => weekday !== null), 
+                    .filter(Boolean),
                   until: eventEnd,
                 }).toString()
-              : null;
-  
+                : null;
+
           return {
-            id: event.id.toString(),
-            title: event.eventName,
-            start: eventStart.toISOString(),
-            end: eventEnd.toISOString(),
+            id: event.id,
+            title: event.eventName, // Hide event name for Dean/Chairperson
+            start: eventStart.toISOString(), // Use toISOString() to ensure correct formatting
+            end: eventEnd.toISOString(), // Ensure end time is included
             duration: { hours: durationHours, minutes: durationMinutes },
             rrule: recurrenceRule,
             allDay: false,
             category: event.eventCategory?.id || null,
-            //dili ni apil
+            // color: eventTypesColors[event.eventType?.id] || "#000000",
             color: eventTypesColors[event.eventType?.id as keyof typeof eventTypesColors] || "#000000",
-            // color: "#000000",
-            eventDescription: event.eventDescription || "",
-            participants: event.participants || [],
             departments: event.department || [],
           };
-        })
-        .filter((event): event is FormattedEventTwo => event !== null);
-  
+        });
+
       setEvents(formattedEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
-      setEvents([]);
+      setEvents([]); // Ensure events is always an array
     }
-  };  
+  };
+  
+  
 
   const formControlStyles = {
     mb: 2,
@@ -605,7 +619,7 @@ export default function Events() {
           labelId="category-select-label"
           id="category-select"
           multiple
-          value={selectedCategories}
+          value={selectedCategories || []}
           onChange={handleCategoryChange}
           renderValue={(selected) =>
             categories
@@ -632,7 +646,7 @@ export default function Events() {
           labelId="college-select-label"
           id="college-select"
           multiple
-          value={selectedCollege}
+          value={selectedCollege || []}
           onChange={handleCollegeChange}
           renderValue={(selected) =>
             colleges
@@ -657,7 +671,7 @@ export default function Events() {
           labelId="department-select-label"
           id="department-select"
           multiple
-          value={selectedDepartment.map((dept) => dept.id)}
+          value={selectedDepartment.map((dept) => dept.id) || []}
           onChange={handleDepartmentChange}
           renderValue={(selected) =>
             departments
@@ -686,7 +700,7 @@ export default function Events() {
           id="month-select"
           multiple
           value={selectedMonth}
-          onChange={handleMonthChange}
+          onChange={handleMonthChange || []}
           renderValue={(selected) =>
             selected
               .map((month) =>
@@ -717,12 +731,12 @@ export default function Events() {
         <Select
           labelId="faculty-select-label"
           id="faculty-select"
-          value={selectedFaculty}
+          value={selectedFaculty || ""}
           onChange={(e: any) => handleFacultyChange(e.target.value)} // Pass the selected faculty ID
           sx={selectStyles}
         >
           {faculties.map((faculty) => (
-            <MenuItem key={faculty.id} value={faculty.id}>
+            <MenuItem key={faculty.uuid} value={faculty.uuid}>
               {faculty.first_name} {faculty.last_name}
             </MenuItem>
           ))}

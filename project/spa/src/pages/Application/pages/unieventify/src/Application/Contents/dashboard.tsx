@@ -76,7 +76,7 @@ interface Entity {
   isAprrovedByChairman: boolean;
   type: string;
   location: string;
-  code: number;
+  code: string;
   departName: string;
 }
 
@@ -144,7 +144,7 @@ const Dashboard: React.FC = () => {
     isAprrovedByChairman: false,
     type: "",
     location: "",
-    code: 0,
+    code: "",
   });
   const [currentEntityType, setCurrentEntityType] = useState<string>("");
 
@@ -421,7 +421,7 @@ const Dashboard: React.FC = () => {
       setCurrentEntity({
         id: entity?.id,
         name: entity?.name,
-        code: 1,
+        code: entity?.code,
         college: entity?.college || "", // Ensure correct property name
       });
     } else if (entityType === "userroles") {
@@ -543,7 +543,7 @@ const Dashboard: React.FC = () => {
       isAprrovedByChairman: false,
       type: entityType,
       location: "",
-      code: 0,
+      code: "",
       departName: "",
     }); // Set the entity to delete
     setOpenModal(true); // Open the modal
@@ -574,8 +574,8 @@ const Dashboard: React.FC = () => {
               </TableCell>
               {entityType === "schoolyear" && (
                 <>
-                  <TableCell>Start Year</TableCell>
-                  <TableCell>End Year</TableCell>
+                  <TableCell key="start-year">Start Year</TableCell>
+                  <TableCell key="end-year">End Year</TableCell>
                 </>
               )}
               <TableCell>Actions</TableCell>
@@ -1038,12 +1038,12 @@ const Dashboard: React.FC = () => {
             {admin ? (
               <Box>
                 <Box sx={{ mt: 5 }}>
-                  <CustomButton onClick={() => navigate("/auth/app/adduser")} startIcon=""> 
+                  <CustomButton onClick={() => navigate("/unieventify/app/adduser/")} startIcon=""> 
                     Add a User
                   </CustomButton>
                   {admin && (
                     <CustomButton
-                      onClick={() => navigate("/auth/app/uploaduser")} startIcon=""
+                      onClick={() => navigate("/unieventify/app/uploaduser/")} startIcon=""
                     >
                       Upload User
                     </CustomButton>
@@ -1376,6 +1376,17 @@ const Dashboard: React.FC = () => {
                   value={currentEntity?.name || ""}
                   onChange={(e) => setCurrentEntity({ ...currentEntity, name: e.target.value })}
                 />
+                <TextField
+                  autoFocus
+                  margin="dense"
+                  id="name"
+                  label="Department Name"
+                  type="text"
+                  fullWidth
+                  variant="standard"
+                  value={currentEntity?.code || ""}
+                  onChange={(e) => setCurrentEntity({ ...currentEntity, code: e.target.value })}
+                />
                 <Select
                   margin="dense"
                   id="name"
@@ -1421,22 +1432,6 @@ const Dashboard: React.FC = () => {
                   variant="standard"
                   value={currentEntity?.rank || ""}
                   onChange={(e) => setCurrentEntity({ ...currentEntity, rank: e.target.value })}
-                />
-              </Box>
-            )}
-
-            {currentEntityType === "eventtypes" && (
-              <Box>
-                <TextField
-                  autoFocus
-                  margin="dense"
-                  id="eventtpye"
-                  label="Event Type"
-                  type="text"
-                  fullWidth
-                  variant="standard"
-                  value={currentEntity?.eventTypeName || ""}
-                  onChange={(e) => setCurrentEntity({ ...currentEntity, eventTypeName: e.target.value })}
                 />
               </Box>
             )}

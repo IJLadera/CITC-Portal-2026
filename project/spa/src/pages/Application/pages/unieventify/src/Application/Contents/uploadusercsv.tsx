@@ -35,7 +35,7 @@ const UserUploadCSV = () => {
         formData.append("file", file); // Now `file` is guaranteed to be a `File`
     
         try {
-            const response = await http.post("upload-user/", formData, {
+            const response = await http.post("unieventify/upload-user/", formData, {
                 headers: {
                     Authorization: `Token ${token}`,
                     "Content-Type": "multipart/form-data",

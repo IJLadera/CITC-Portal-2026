@@ -243,7 +243,7 @@ function SideBar(props: SideBarProps) {
           <Accordion.Content
             className="pt-1 ml-12 border-none cursor-pointer"
             onClick={(event) => {
-              onClickToNavigate(event, "/auth/app/Documents");
+              onClickToNavigate(event, "documents");
             }}
             style={getItemStyle("/auth/app/Documents")}
           >
@@ -302,7 +302,7 @@ function SideBar(props: SideBarProps) {
           <ListItem disablePadding>
             <ListItemButton
               onClick={(event) => {
-                onClickToNavigate(event, "/auth/app/report");
+                onClickToNavigate(event, "reports");
               }}
               style={getItemStyle("/auth/app/report")}
             >
@@ -458,6 +458,11 @@ function SideBar(props: SideBarProps) {
                 <a href={feedback} className="btn btn-primary text-white">
                   FeedBack
                 </a>
+              </MenuItem>
+              <MenuItem
+                onClick={() => handleMenuItemClick("/")}
+              >
+                Hobnob
               </MenuItem>
               <MenuItem
                 onClick={() => handleMenuItemClick("/auth/app/profile")}

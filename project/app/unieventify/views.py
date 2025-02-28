@@ -1061,13 +1061,13 @@ class UserCSVUploadView(APIView):
             for row in csv_data:
                 try:
                     # Check if essential fields are present
-                    required_fields = ["email", "first_name", "last_name", "id_number"]
+                    required_fields = ["email", "first_name", "last_name", "id_number", "roles"]
                     for field in required_fields:
                         if not row.get(field):
                             raise ValueError(f"Missing required field '{field}' in row: {row}")
 
                     # Fetch or create related fields with case-insensitive match
-                    role = UserRole.objects.filter(name__iexact=row.get('role', '').strip()).first()
+                    roles = UserRole.objects.filter(name__iexact=row.get('roles', '').strip()).first()
                     department = Department.objects.filter(name__iexact=row.get('department', '').strip()).first()
                     section = Section.objects.filter(sectionName__iexact=row.get('section', '').strip()).first()
                     organization = tblstudentOrg.objects.filter(studentOrgName__iexact=row.get('organization', '').strip()).first()
@@ -1086,7 +1086,7 @@ class UserCSVUploadView(APIView):
                             "first_name": row.get("first_name"),
                             "last_name": row.get("last_name"),
                             "middle_name": row.get("middle_name"),
-                            "role": role if role else None,
+                            "role": roles if roles else None,
                             "department": department if department else None,
                             "section": section if section else None,
                             "organization": organization if organization else None,
@@ -1561,6 +1561,28 @@ class FacultyEventsDetailView(RetrieveAPIView):
 
         # Only include users with the highest rank (you can change this condition based on your needs)
         return queryset.filter(roles__rank=F('highest_rank')).filter(is_active=True)
+    
+    def get_object(self):
+        uuid = self.kwargs.get("uuid")
+        return get_object_or_404(User, uuid=uuid)
+    
+# class FacultyEventsDetailView(RetrieveAPIView):
+#     serializer_class = FacultyEventSerializer
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+#     def get_queryset(self):
+#         # This method should return the user related to the provided UUID
+#         # No need to filter by roles or ranks here; just return all users with related events
+#         return User.objects.all().prefetch_related(
+#             'event_participants',  # Events they participate in
+#             'event_createdby'      # Events they created
+#         )
+
+#     def get_object(self):
+#         # Get the user by UUID from the URL parameters
+#         uuid = self.kwargs.get("uuid")
+#         # Use get_object_or_404 to ensure the user exists or a 404 error is raised if not
+#         return get_object_or_404(User, uuid=uuid)    
     
 class UserEventsListView(ListAPIView):
     serializer_class = UserEventSerializer

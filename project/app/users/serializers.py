@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.settings import api_settings
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from .models import Role
-from app.unieventify.serializers import tblstudentOrgSerializer
+from app.unieventify.serializers import tbldepartmentSerializer, tblstudentOrgSerializer
 from djoser.conf import settings
 
 User = get_user_model()
@@ -83,6 +83,7 @@ class CreateUserSerializer(UserCreateSerializer):
 class CustomUserSerializer(UserSerializer):
     organization = tblstudentOrgSerializer(read_only=True)
     roles = RoleSerializer(many=True, read_only=True)
+    department = tbldepartmentSerializer(read_only=True)
 
     class Meta:
         model = User

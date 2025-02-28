@@ -76,7 +76,7 @@ const Reports: React.FC = () => {
   useEffect(() => {
     // Fetch semester data for the dropdown
     http
-      .get("semester/", {
+      .get("unieventify/semester/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -94,7 +94,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching semester data:", error));
     // Fetch event statistics
     http
-      .get("events/statistics/byCategories", {
+      .get("unieventify/events/statistics/byCategories", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -106,7 +106,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching data:", error));
 
     http
-      .get("events/statistics/byDepartment", {
+      .get("unieventify/events/statistics/byDepartment", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -118,7 +118,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching data:", error));
 
     http
-      .get("events/statistics/", {
+      .get("unieventify/events/statistics/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -135,7 +135,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching data:", error));
 
     http
-      .get("events/statistics/created", {
+      .get("unieventify/events/statistics/created", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -152,7 +152,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching data:", error));
 
     http
-      .get("events/statistics/cancelled", {
+      .get("unieventify/events/statistics/cancelled", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -169,7 +169,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching data:", error));
 
     http
-      .get("designation-count/", {
+      .get("unieventify/designation-count/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -188,7 +188,7 @@ const Reports: React.FC = () => {
         },
       })
       .then((response) => {
-        setRole(response.data.role.rank);
+        setRole("Admin");
         setAdmin(response.data.is_staff);
       });
   }, [token]);
@@ -674,6 +674,7 @@ const Reports: React.FC = () => {
   );
 }
 
+
 const formatMonth = (month: string) => {
   if (!month) return "No Data"; // Handle undefined or empty month values
   const [year, monthNumber] = month.split("-");
@@ -693,3 +694,6 @@ const formatMonth = (month: string) => {
   ];
   return `${months[parseInt(monthNumber, 10) - 1]} ${year}`;
 };
+
+
+export default Reports;

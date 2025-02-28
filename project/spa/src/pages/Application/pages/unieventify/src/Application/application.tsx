@@ -7,7 +7,7 @@ import http from "../../../../../../http"; // Replace with your Axios instance
 import { CircularProgress, Box } from "@mui/material";
 import { useAppSelector } from "../../../../../../hooks";
 
-export default function UniEvntifyApplication() {
+export default function UniEventifyApplication() {
   const location = useLocation();
   const token = useAppSelector(state => state.auth.token)
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);

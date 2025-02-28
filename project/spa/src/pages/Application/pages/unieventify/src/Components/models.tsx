@@ -79,6 +79,9 @@ export interface Section{
 export interface Role{
     uuid: number,
     designation: string,
+    //addition ni
+    name: string,
+    
     rank: number
 }
 

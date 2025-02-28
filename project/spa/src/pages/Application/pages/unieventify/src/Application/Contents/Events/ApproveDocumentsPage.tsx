@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Cookies from "js-cookie";
+import { useAppSelector } from "../../../../../../../../hooks";
 
 // Interface to define the structure of the document
 interface Document {
@@ -23,7 +24,8 @@ interface Document {
 }
 
 const ApproveDocumentsPage: React.FC = () => {
-  const token = Cookies.get("auth_token");
+  // const token = Cookies.get("auth_token");
+  const token = useAppSelector(state => state.auth.token);
   const [documentsByYear, setDocumentsByYear] = useState<{ [year: number]: Document[] }>({});
   const [loading, setLoading] = useState(true);
   const [expandedYears, setExpandedYears] = useState<{ [year: number]: boolean }>({});
@@ -31,7 +33,7 @@ const ApproveDocumentsPage: React.FC = () => {
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const response = await http.get("documents/", {
+        const response = await http.get("unieventify/documents/", {
           headers: { Authorization: `Token ${token}` },
         });
         const documents: Document[] = response.data;

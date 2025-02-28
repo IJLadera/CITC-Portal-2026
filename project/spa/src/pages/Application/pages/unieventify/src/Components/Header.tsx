@@ -46,7 +46,7 @@ export default function Header() {
 
   return token
     ? <Navigate
-      to="/auth/app/"
+      to="unieventify/"
       replace
       state={{ from: location }} // pass current location to redirect back
     />
@@ -73,8 +73,8 @@ export default function Header() {
               <Navbar.Link href="/" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>
                 Home
               </Navbar.Link>
-              <Navbar.Link href="/events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Events</Navbar.Link>
-              <Navbar.Link href="unieventify/app/" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Login/Register</Navbar.Link>
+              <Navbar.Link href="/events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Public Events</Navbar.Link>
+              <Navbar.Link href="/unieventify/app" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Calendar/Events</Navbar.Link>
             </Navbar.Collapse>
           </Navbar>
         </div>

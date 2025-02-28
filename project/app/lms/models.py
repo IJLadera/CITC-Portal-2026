@@ -13,7 +13,7 @@ class College(models.Model):
 class Department(models.Model):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=10)
-    college = models.ForeignKey(College, on_delete=models.PROTECT)
+    college = models.ForeignKey(College, on_delete=models.PROTECT, related_name="departments")
 
     def __str__(self):
         return self.name

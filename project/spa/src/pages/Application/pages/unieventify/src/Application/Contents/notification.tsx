@@ -137,7 +137,7 @@ const Notification = () => {
 
   const handleOnDeleteNotification = (id: number) => {
     http
-      .delete(`notifications/${id}/`, {
+      .delete(`unieventify/notifications/${id}/`, {
         headers: { Authorization: `Token ${token}` },
       })
       .then(() => {

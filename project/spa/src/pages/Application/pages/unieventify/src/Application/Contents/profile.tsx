@@ -20,43 +20,8 @@ import SideBar from "../../Components/sidebar";
 
 import {User, College, YearLevel} from "../../Components/models";
 import { useAppSelector } from "../../../../../../../hooks";
+import { fetchUserProfileApi, fetchCollegesesApi, fetchYearLevelsApi } from "../../../../../../../api"
 
-// interface YearLevel {
-//   id: string | number;  // Assuming `id` is either string or number
-//   name: string;         // Other properties of `yearLevel`
-//   find: (year: any) => any; //ambot ani na line
-// }
-
-// interface User {
-//   id: number;
-//   username: string;
-//   idNumber: string;
-//   email: string;
-//   first_name: string;
-//   last_name: string;
-//   middle_name: string;
-//   role: {
-//     designation: string;
-//   };
-//   department: {
-//     departmentName: string;
-//     collegeName: number;
-//   };
-//   section: {
-//     sectionName: string;
-//     tblYearLevel: number;
-//   };
-//   organization: {
-//     studentOrgType: string;
-//     studentOrgName: string;
-//   };
-//   image: string;
-// }
-
-// interface College {
-//   id: number;
-//   collegeName: string;
-// }
 
 export default function Profile() {
   const [profile, setProfile] = useState<User | null>(null);
@@ -73,13 +38,8 @@ export default function Profile() {
       // const token = Cookies.get("auth_token");
       if (!token) throw new Error("No authentication token found");
 
-      const response = await http.get("auth/users/me/", {
-        headers: {
-          Authorization: `Token ${token}`,
-        },
-      });
-
-      setProfile(response.data);
+      const userProfile = await fetchUserProfileApi(); // Assuming `fetchUserProfile` takes a token
+      setProfile(userProfile); // Set the profile after fetching
     } catch (error: any) {
       setError(error);
     } finally {
@@ -88,23 +48,34 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    if (editProfile === false) {
-      fetchProfile();
+    if (!editProfile) {
+      fetchProfile(); // Call fetchProfile when editProfile is false
     }
 
-    http
-      .get("unieventify/colleges/")
-      .then((response) => {
-        setColleges(response.data);
-      })
-      .catch((error) => console.log(error));
-    http
-      .get("unieventify/yearlevel/")
-      .then((response) => {
-        setYearLevels(response.data);
-      })
-      .catch((error) => console.log(error));
-  }, [editProfile]);
+    // Fetch colleges using fetchColleges
+    const fetchCollegesData = async () => {
+      try {
+        const collegesData = await fetchCollegesesApi(); // Assuming fetchColleges returns a promise
+        setColleges(collegesData); // Set colleges state with the fetched data
+      } catch (error) {
+        console.error("Error fetching colleges:", error); // Handle error
+      }
+    };
+
+    // Fetch year levels using fetchYearLevels
+    const fetchYearLevelsData = async () => {
+      try {
+        const yearLevelsData = await fetchYearLevelsApi(); // Assuming fetchYearLevels returns a promise
+        setYearLevels(yearLevelsData); // Set year levels state with the fetched data
+      } catch (error) {
+        console.error("Error fetching year levels:", error); // Handle error
+      }
+    };
+
+    // Call the fetch functions
+    fetchCollegesData();
+    fetchYearLevelsData();
+  }, [editProfile]); // This effect runs when editProfile changes
 
   const college = colleges?.find(
     (college) => college.id === profile?.department?.college

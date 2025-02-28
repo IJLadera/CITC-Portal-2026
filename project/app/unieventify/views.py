@@ -1066,27 +1066,25 @@ class UserCSVUploadView(APIView):
                         if not row.get(field):
                             raise ValueError(f"Missing required field '{field}' in row: {row}")
 
-                    # Fetch or create related fields with case-insensitive match
-                    role = UserRole.objects.filter(name__iexact=row.get('role', '').strip()).first()
+                    # Fetch related fields with case-insensitive match
                     department = Department.objects.filter(name__iexact=row.get('department', '').strip()).first()
-                    section = Section.objects.filter(sectionName__iexact=row.get('section', '').strip()).first()
+                    section = Section.objects.filter(section__iexact=row.get('section', '').strip()).first()
                     organization = tblstudentOrg.objects.filter(studentOrgName__iexact=row.get('organization', '').strip()).first()
 
                     # Check for an existing user by `idNumber`
                     user = User.objects.filter(id_number=row['id_number']).first()
 
                     if user:
-                        # If a user with `idNumber` exists, only update `is_active`
+                        # If user exists, just update `is_active`
                         user.is_active = True
                         user.save()
                     else:
-                        # Build user data dictionary with instances for new users
+                        # Create new user
                         user_data = {
                             "email": row.get("email"),
                             "first_name": row.get("first_name"),
                             "last_name": row.get("last_name"),
                             "middle_name": row.get("middle_name"),
-                            "role": role if role else None,
                             "department": department if department else None,
                             "section": section if section else None,
                             "organization": organization if organization else None,
@@ -1095,7 +1093,6 @@ class UserCSVUploadView(APIView):
                             "is_active": True,  # Set to true for new users
                         }
 
-                        # Create a new user
                         user = User.objects.create(**user_data)
 
                         # Set the default password to idNumber
@@ -1110,6 +1107,15 @@ class UserCSVUploadView(APIView):
                             password=user.id_number
                         )
 
+                    # Handle multiple roles
+                    role_names = [r.strip() for r in row.get('roles', '').split(',') if r.strip()]
+                    for role_name in role_names:
+                        role = Role.objects.filter(name__iexact=role_name).first()
+                        if role:
+                            # Check if the user already has this role
+                            if not UserRole.objects.filter(user=user, role=role).exists():
+                                UserRole.objects.create(user=user, role=role)
+
                 except Exception as e:
                     # Log detailed error for debugging
                     print(f"Error processing row {row}: {e}")
@@ -1118,6 +1124,7 @@ class UserCSVUploadView(APIView):
             return Response({"detail": "Users uploaded successfully"}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # for Public events
 class PublicEventsView(ListAPIView):

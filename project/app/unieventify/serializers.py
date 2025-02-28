@@ -71,6 +71,7 @@ class tblStatusSerializer(serializers.ModelSerializer):
 class CustomUserSerializer(UserSerializer):
     organization = tblstudentOrgSerializer(read_only=True)
     role = serializers.SerializerMethodField()
+    department = tbldepartmentSerializer(read_only=True)
 
     class Meta:
         model = User

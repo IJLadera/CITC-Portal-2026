@@ -70,7 +70,7 @@ export default function Publicevents() {
     useEffect(() => {
         // Fetch events
         http
-            .get("public-events/")
+            .get("unieventify/public-events/")
             .then((response) => {
                 const publicEvents = response.data.filter(
                     (event: any) => event.status?.statusName !== draft
@@ -84,7 +84,7 @@ export default function Publicevents() {
 
         // Fetch event categories
         http
-            .get("eventcategories/")
+            .get("unieventify/eventcategories/")
             .then((response) => setEventCategory(response.data))
             .catch((error) => console.log(error));
     }, []);

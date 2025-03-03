@@ -22,7 +22,8 @@ export interface User {
     organization: StudentOrg,
     image: string,
     is_staff: boolean,
-    is_active: boolean
+    is_active: boolean,
+    highestRankRole: any,
 }
 
 

@@ -469,9 +469,9 @@ function SideBar(props: SideBarProps) {
               >
                 Profile
               </MenuItem>
-              <MenuItem onClick={() => handleMenuItemClick("/auth")}>
+              {/* <MenuItem onClick={() => handleMenuItemClick("/auth")}>
                 Logout
-              </MenuItem>
+              </MenuItem> */}
             </Menu>
           </Box>
         </Toolbar>

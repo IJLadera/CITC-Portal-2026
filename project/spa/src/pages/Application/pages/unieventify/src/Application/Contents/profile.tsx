@@ -35,17 +35,28 @@ export default function Profile() {
 
   const fetchProfile = async () => {
     try {
-      // const token = Cookies.get("auth_token");
       if (!token) throw new Error("No authentication token found");
-
-      const userProfile = await fetchUserProfileApi(); // Assuming `fetchUserProfile` takes a token
-      setProfile(userProfile); // Set the profile after fetching
+  
+      const userProfile = await fetchUserProfileApi(); // Fetch user profile
+  
+      // Find the role with the lowest rank (highest priority)
+      const highestRankRole = userProfile.roles.reduce((minRole: any, currentRole: any) => {
+        return currentRole.rank < minRole.rank ? currentRole : minRole;
+      }, userProfile.roles[0]); // Start with the first role as the minimum
+      
+      // Assuming you set the profile state to store the highest rank role
+      setProfile({
+        ...userProfile,
+        highestRankRole,  // Add the highest rank role to the profile
+      });
     } catch (error: any) {
       setError(error);
     } finally {
       setLoading(false);
     }
   };
+
+  // const highestRankRole = profile?.roles?.find(role => role.rank === 1);
 
   useEffect(() => {
     if (!editProfile) {
@@ -193,8 +204,14 @@ export default function Profile() {
                     sx={{ my: 2, backgroundColor: "#FAB417", borderWidth: 1 }}
                   />
                   <Typography variant="body1">
-                    Role: <strong>{profile.role?.name}</strong>
+                    Role: <strong>{profile.highestRankRole.name}</strong>
+                    {/* {highestRankRole ? (
+                        <p>Highest Role: {highestRankRole.name} (Rank {highestRankRole.rank})</p>
+                      ) : (
+                        <p>No highest rank role found</p>
+                      )} */}
                   </Typography>
+                  
                   <Divider
                     sx={{ my: 2, backgroundColor: "#FAB417", borderWidth: 1 }}
                   />

@@ -188,9 +188,17 @@ const Reports: React.FC = () => {
         },
       })
       .then((response) => {
-        setRole("Admin");
+        // Set the role to the highest rank role
+        const highestRankRole = response.data.roles.find((role: { rank: number }) => role.rank === 1);
+
+        // If there is a role with rank 1, set it as the user's role
+        if (highestRankRole) {
+          setRole(highestRankRole.name);
+        }
+
+        // Set admin status
         setAdmin(response.data.is_staff);
-      });
+      })
   }, [token]);
 
   // Function to export data to Excel

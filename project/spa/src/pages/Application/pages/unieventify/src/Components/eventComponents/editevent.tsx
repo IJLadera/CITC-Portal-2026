@@ -2093,17 +2093,17 @@ const EditEvent = ({
                     {filteredParticipants.length > 0 ? (
                       filteredParticipants.map((user) => (
                         <Typography
-                          key={user.id}
+                          key={user.uuid}
                           style={{
                             padding: "8px",
                             cursor: "pointer",
                             backgroundColor: selectedParticipants.includes(
-                              user.id
+                              user.uuid
                             )
                               ? "#f0f0f0"
                               : "white",
                           }}
-                          onClick={() => handleAddParticipant(user.id)}
+                          onClick={() => handleAddParticipant(user.uuid)}
                         >
                           {`${user.first_name} ${user.last_name} - ${user.role?.name}`}
                         </Typography>
@@ -2153,11 +2153,11 @@ const EditEvent = ({
                                 0,
                                 Math.ceil(selectedParticipants.length / 2)
                               ) // Split into two sections
-                              .map((id: any, index: any) => {
-                                const user = users.find((u) => u.id === id);
+                              .map((uuid: any, index: any) => {
+                                const user = users.find((u) => u.uuid === uuid);
                                 return user ? (
                                   <TableRow
-                                    key={id}
+                                    key={uuid}
                                     sx={{
                                       backgroundColor:
                                         index % 2 === 0 ? "white" : "#f7f7f7",
@@ -2167,10 +2167,10 @@ const EditEvent = ({
                                     <TableCell padding="checkbox">
                                       <Checkbox
                                         checked={checkedParticipants.includes(
-                                          id
+                                          uuid
                                         )}
                                         onChange={() =>
-                                          handleToggleCheckbox(id)
+                                          handleToggleCheckbox(uuid)
                                         }
                                       />
                                     </TableCell>

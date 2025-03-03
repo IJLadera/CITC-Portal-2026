@@ -21,7 +21,6 @@ class CreateUserSerializer(UserCreateSerializer):
     last_name = serializers.CharField()
     confirm = serializers.CharField(write_only=True),
     avatar = serializers.ImageField(read_only=True)
-    roles = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), many=True)
 
     class Meta:
         model = User
@@ -42,7 +41,6 @@ class CreateUserSerializer(UserCreateSerializer):
             "is_active",
             "is_staff",
             "is_superuser",
-            "roles",
             "date_joined",
             "department",
             "section",

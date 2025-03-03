@@ -44,10 +44,10 @@ const router = createBrowserRouter([
                     }
                 ]
             },
-            // {
-            //     path: "citc/portal/unieventify/",
-            //     element: <Landingpage />,
-            // }
+            {
+                path: "adduser/",
+                element: <AddUser />,
+            }
         ]
     },
     {
@@ -133,7 +133,7 @@ const router = createBrowserRouter([
     },
     {
         path: "events/",
-        element: <Events />,
+        element: <Publicevents />,
     },
 
 ])

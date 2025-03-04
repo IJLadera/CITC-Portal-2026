@@ -55,7 +55,7 @@ export default function UniEventifyApplication() {
     <BaseTheme>
       <SideBar />
       <div
-        className="h-full w-full p-5 flex justify-center"
+        className="h-full w-full flex justify-center"
       >
         <Outlet />
       </div>

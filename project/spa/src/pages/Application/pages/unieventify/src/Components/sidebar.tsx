@@ -81,8 +81,6 @@ function SideBar(props: SideBarProps) {
 
   const dashboardRole = ["Student", "Faculty", "Mother Org", "Unit Org"];
 
-  console.log("token", token);
-
   useEffect(() => {
     http
       .get("auth/users/me/", {

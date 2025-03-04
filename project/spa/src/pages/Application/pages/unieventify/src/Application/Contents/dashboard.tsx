@@ -424,13 +424,19 @@ const Dashboard: React.FC = () => {
         code: entity?.code,
         college: entity?.college || "", // Ensure correct property name
       });
+    } else if (entityType === "colleges") {
+      setCurrentEntity({
+        id: entity?.uuid,
+        name: entity?.name,
+        code: entity?.code || "",
+      });
     } else if (entityType === "userroles") {
       setCurrentEntity({
         id: entity?.uuid,
         name: entity?.name,
         rank: entity?.rank || "",
       });
-    } else {
+    }else {
       // Default handling or additional cases
       setCurrentEntity(entity || {});
     }
@@ -518,7 +524,7 @@ const Dashboard: React.FC = () => {
   // Open delete confirmation modal
   const handleOpenDeleteModal = (entityType: any, entity: any) => {
     setEntityToDelete({
-      id: entityType === "userroles" ? entity.uuid : entity.id, // Ensure correct identifier
+      id: entityType === "userroles" ? entity.uuid : entity.id,
       eventTypeName: "",
       college: "",
       rank: "",
@@ -1350,17 +1356,30 @@ const Dashboard: React.FC = () => {
             )}
 
             {currentEntityType === "colleges" && (
-              <TextField
-                autoFocus
-                margin="dense"
-                id="name"
-                label="College Name"
-                type="text"
-                fullWidth
-                variant="standard"
-                value={currentEntity?.name || ""}
-                onChange={(e) => setCurrentEntity({ ...currentEntity, name: e.target.value })}
-              />
+              <Box>
+                <TextField
+                  autoFocus
+                  margin="dense"
+                  id="name"
+                  label="College Name"
+                  type="text"
+                  fullWidth
+                  variant="standard"
+                  value={currentEntity?.name || ""}
+                  onChange={(e) => setCurrentEntity({ ...currentEntity, name: e.target.value })}
+                />
+                <TextField
+                  autoFocus
+                  margin="dense"
+                  id="code"
+                  label="College Code"
+                  type="text"
+                  fullWidth
+                  variant="standard"
+                  value={currentEntity?.code || ""}
+                  onChange={(e) => setCurrentEntity({ ...currentEntity, code: e.target.value })}
+                />
+              </Box>
             )}
 
             {currentEntityType === "departments" && (

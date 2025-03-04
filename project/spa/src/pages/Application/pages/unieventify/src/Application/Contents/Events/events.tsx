@@ -35,12 +35,9 @@ import { useAppSelector } from "../../../../../../../../hooks";
 import { fetchEventCategoriesApi, fetchEventTypesApi, fetchCollegesesApi, 
   fetchDepartmentsApi, fetchDepartmentsByCollegeApi, fetchEventsApi, 
   fetchFacultyEventsApi, fetchUserProfileApi, fetchPublicEventsApi } from "../../../../../../../../api"
-
-interface User {
-  role: {
-    designation: string;
-  };
-}
+import { AppDispatch, RootState } from "../../../../../../../../store";
+import { useDispatch } from "react-redux";
+import { fetchCollegeses, fetchEventCategories } from "./slice";
 
 interface EventCategory {
   id: string;
@@ -50,27 +47,6 @@ interface EventCategory {
 interface EventType {
   id: number;
   eventTypeName: string;
-}
-
-interface Event {
-  id: number;
-  eventName: string;
-  startDateTime: string;
-  endDateTime: string;
-  created_by: {
-    role: {
-      designation: string;
-    };
-  };
-  isAnnouncement?: boolean;
-  status?: {
-    name: string;
-  };
-  eventCategory?: EventCategory;
-  eventType?: EventType;
-  recurrence_type?: string;
-  recurrence_days?: string[];
-  department?: string[];
 }
 
 interface FormattedEvent {
@@ -126,13 +102,25 @@ interface College {
 interface DepartmentTwo {
   id: number;
   departmentName: string;
-  collegeName: string;
+  // collegeName: string;
   name: string;
 }
 
 export default function Events() {
   const [events, setEvents] = useState<any[]>([]);
   const [categories, setCategories] = useState<EventCategory[]>([]);
+
+  
+  const dispatch = useDispatch<AppDispatch>();
+  // const { categories } = useAppSelector((state: RootState) => state.eventCategories);
+  // const { collegeses } = useAppSelector((state: RootState) => state.eventCategories);
+  // useEffect(() => {
+  //   dispatch(fetchEventCategories());
+  //   dispatch(fetchCollegeses());
+  // }, [dispatch]);
+
+  // console.log('categories', categories);
+  // console.log('colleges', collegeses);
   const [colleges, setColleges] = useState<College[]>([]);
   const [departments, setDepartments] = useState<DepartmentTwo[]>([]);
   const [collegess, setCollegess] = useState([]);
@@ -203,6 +191,7 @@ export default function Events() {
     try {
       const response = await http.get("unieventify/departments/");
       setDepartments(response.data);
+      console.log(response);
     } catch (error) {
       console.error("Error fetching departments:", error);
     }
@@ -534,7 +523,7 @@ export default function Events() {
     const collegeMatches =
       !selectedCollege.length ||
       event.departments.some((dept: any) =>
-        selectedCollege.includes(dept.name)
+        selectedCollege.includes(dept.college)
       );
 
     const monthMatches =

@@ -70,10 +70,10 @@ export default function Header() {
             </Navbar.Brand>
             <Navbar.Toggle />
             <Navbar.Collapse >
-              <Navbar.Link href="/" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>
+              <Navbar.Link href="/unieventify" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>
                 Home
               </Navbar.Link>
-              <Navbar.Link href="/events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Public Events</Navbar.Link>
+              <Navbar.Link href="/unieventify/events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Public Events</Navbar.Link>
               <Navbar.Link href="/unieventify/app" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Calendar/Events</Navbar.Link>
             </Navbar.Collapse>
           </Navbar>

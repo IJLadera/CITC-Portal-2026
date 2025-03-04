@@ -27,10 +27,16 @@ export interface User {
 }
 
 
+export interface EventCategorySlice{
+    id: string,
+    eventCategoryName: string
+}
+
 export interface EventCategory{
     id: number,
     eventCategoryName: string
 }
+
 
 
 export interface Event{

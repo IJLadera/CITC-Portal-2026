@@ -64,6 +64,10 @@ const router = createBrowserRouter([
                 element: <Landingpage />
             },
             {
+                path: "events/",
+                element: <Publicevents />,
+            },
+            {
                 path: "app/",
                 element: <UniEventifyApplication />,
                 children: [
@@ -131,10 +135,7 @@ const router = createBrowserRouter([
         path: "calendar/",
         element: <MyCalendar />,
     },
-    {
-        path: "events/",
-        element: <Publicevents />,
-    },
+
 
 ])
 

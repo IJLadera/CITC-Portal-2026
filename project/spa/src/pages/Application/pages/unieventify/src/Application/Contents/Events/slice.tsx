@@ -1,11 +1,12 @@
 // src/store/eventCategoriesSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { EventCategorySlice, College } from '../../../Components/models';
+import { EventCategorySlice, College, Department } from '../../../Components/models';
 
 // Define initial state type
 interface EventCategoriesState {
   categories: EventCategorySlice[];
-  collegeses: College[]
+  colleges: College[];
+  departments: Department[];
   loading: boolean;
   error: string | null;
 }
@@ -13,7 +14,8 @@ interface EventCategoriesState {
 // Initial state
 const initialState: EventCategoriesState = {
   categories: [],
-  collegeses: [],
+  colleges: [],
+  departments: [],
   loading: false,
   error: null,
 };
@@ -37,6 +39,17 @@ export const fetchCollegeses = createAsyncThunk(
     const response = await fetch('http://localhost:8000/api/v1/unieventify/colleges/');
     if (!response.ok) {
       throw new Error('Failed to fetch colleges');
+    }
+    return response.json();
+  }
+);
+
+export const fetchDepartments = createAsyncThunk(
+  'eventCategories/fetchDepartments',
+  async () => {
+    const response = await fetch('http://localhost:8000/api/v1/unieventify/departments/');
+    if (!response.ok) {
+      throw new Error('Failed to fetch departments');
     }
     return response.json();
   }
@@ -70,9 +83,22 @@ const eventCategoriesSlice = createSlice({
       })
       .addCase(fetchCollegeses.fulfilled, (state, action) => {
         state.loading = false;
-        state.collegeses = action.payload;
+        state.colleges = action.payload;
       })
       .addCase(fetchCollegeses.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to load colleges';
+      })
+
+      .addCase(fetchDepartments.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchDepartments.fulfilled, (state, action) => {
+        state.loading = false;
+        state.departments = action.payload;
+      })
+      .addCase(fetchDepartments.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to load colleges';
       });

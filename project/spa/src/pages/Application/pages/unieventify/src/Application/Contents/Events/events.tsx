@@ -37,7 +37,7 @@ import { fetchEventCategoriesApi, fetchEventTypesApi, fetchCollegesesApi,
   fetchFacultyEventsApi, fetchUserProfileApi, fetchPublicEventsApi } from "../../../../../../../../api"
 import { AppDispatch, RootState } from "../../../../../../../../store";
 import { useDispatch } from "react-redux";
-import { fetchCollegeses, fetchEventCategories } from "./slice";
+import { fetchCollegeses, fetchEventCategories, fetchDepartments } from "./slice";
 
 interface EventCategory {
   id: string;
@@ -101,28 +101,31 @@ interface College {
 
 interface DepartmentTwo {
   id: number;
-  departmentName: string;
+  // departmentName: string;
   // collegeName: string;
   name: string;
+  college: number
 }
 
 export default function Events() {
   const [events, setEvents] = useState<any[]>([]);
-  const [categories, setCategories] = useState<EventCategory[]>([]);
+  // const [categories, setCategories] = useState<EventCategory[]>([]);
 
   
   const dispatch = useDispatch<AppDispatch>();
-  // const { categories } = useAppSelector((state: RootState) => state.eventCategories);
-  // const { collegeses } = useAppSelector((state: RootState) => state.eventCategories);
-  // useEffect(() => {
-  //   dispatch(fetchEventCategories());
-  //   dispatch(fetchCollegeses());
-  // }, [dispatch]);
+  const { categories } = useAppSelector((state: RootState) => state.eventCategories);
+  const { colleges } = useAppSelector((state: RootState) => state.eventCategories);
+  const { departments } = useAppSelector((state: RootState) => state.eventCategories);
+  useEffect(() => {
+    dispatch(fetchEventCategories());
+    dispatch(fetchCollegeses());
+    dispatch(fetchDepartments());
+  }, [dispatch]);
 
   // console.log('categories', categories);
   // console.log('colleges', collegeses);
-  const [colleges, setColleges] = useState<College[]>([]);
-  const [departments, setDepartments] = useState<DepartmentTwo[]>([]);
+  // const [colleges, setColleges] = useState<College[]>([]);
+  // const [departments, setDepartments] = useState<DepartmentTwo[]>([]);
   const [collegess, setCollegess] = useState([]);
   const [user, setUser] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]); 
@@ -148,9 +151,9 @@ export default function Events() {
   };
 
   useEffect(() => {
-    fetchCategories();
-    fetchColleges();
-    fetchDepartments();
+    // fetchCategories();
+    // fetchColleges();
+    // fetchDepartments();
     // fetchCollegess(); // Fetch college-department relationships
     fetchDepartmentsByColleges();
     fetchFaculties();
@@ -158,14 +161,14 @@ export default function Events() {
     fetchEventTypes();
   }, []);
 
-  const fetchCategories = async () => {
-      try {
-        const categories = await fetchEventCategoriesApi(); // Fetch event categories
-        setCategories(categories); // Set the categories after fetching
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
+  // const fetchCategories = async () => {
+  //     try {
+  //       const categories = await fetchEventCategoriesApi(); // Fetch event categories
+  //       setCategories(categories); // Set the categories after fetching
+  //     } catch (error) {
+  //       console.error("Error fetching categories:", error);
+  //     }
+  //   };
 
   const fetchEventTypes = async () => {
     try {
@@ -178,24 +181,24 @@ export default function Events() {
     }
   };
 
-  const fetchColleges = async () => {
-      try {
-        const response = await fetchCollegesesApi();
-        setColleges(response);
-      } catch (error) {
-        console.error("Error fetching colleges:", error);
-      }
-    };
+  // const fetchColleges = async () => {
+  //     try {
+  //       const response = await fetchCollegesesApi();
+  //       setColleges(response);
+  //     } catch (error) {
+  //       console.error("Error fetching colleges:", error);
+  //     }
+  //   };
 
-  const fetchDepartments = async () => {
-    try {
-      const response = await http.get("unieventify/departments/");
-      setDepartments(response.data);
-      console.log(response);
-    } catch (error) {
-      console.error("Error fetching departments:", error);
-    }
-  };
+  // const fetchDepartments = async () => {
+  //   try {
+  //     const response = await http.get("unieventify/departments/");
+  //     setDepartments(response.data);
+  //     console.log(response);
+  //   } catch (error) {
+  //     console.error("Error fetching departments:", error);
+  //   }
+  // };
 
   const fetchDepartmentsByColleges = async () => {
     try {
@@ -502,7 +505,7 @@ export default function Events() {
   const handleViewDetails = () => {
     if (!selectedEvent) return;
 
-    navigate(`/citc/portal/unieventify/app/eventdetails/${selectedEvent.id}`);
+    navigate(`/unieventify/app/eventdetails/${selectedEvent.id}`);
     handleClose();
   };
 
@@ -510,6 +513,8 @@ export default function Events() {
     setSelectedFaculty(facultyId); // Update the selected faculty ID
     fetchFacultyEvents(facultyId); // Fetch events for the selected faculty
   };
+
+  console.log('events', events);
 
   // Filter logic
   const filteredEvents = events.filter((event: any) => {
@@ -805,3 +810,5 @@ export default function Events() {
     </Box>
   );
 }
+
+

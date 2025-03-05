@@ -24,6 +24,7 @@ import ApproveDocumentsPage from "./pages/Application/pages/unieventify/src/Appl
 import Reports from "./pages/Application/pages/unieventify/src/Application/Contents/reports";
 import AddUser from "./pages/Application/pages/unieventify/src/Application/Contents/adduser";
 import UserUploadCSV from "./pages/Application/pages/unieventify/src/Application/Contents/uploadusercsv";
+import EventDetails from "./pages/Application/pages/unieventify/src/Components/eventComponents/eventDetails";
 
 const router = createBrowserRouter([
     {

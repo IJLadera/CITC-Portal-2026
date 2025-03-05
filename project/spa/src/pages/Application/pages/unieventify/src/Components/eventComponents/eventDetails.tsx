@@ -892,11 +892,11 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
                   {formData.department
-                    ?.map((d: any) => `${d.departmentName}`)
+                    ?.map((d: any) => `${d.name}`)
                     .join(", ") ||
                     "No Department selected." ||
                     event.department
-                      ?.map((d: any) => `${d.departmentName}`)
+                      ?.map((d: any) => `${d.name}`)
                       .join(", ") ||
                     "No Department selected."}
                 </Typography>

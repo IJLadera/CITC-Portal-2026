@@ -92,6 +92,13 @@ export interface Role{
     rank: number
 }
 
+interface DepartmentTwo {
+    id: number;
+    departmentName: string;
+    // collegeName: string;
+    name: string;
+  }
+
 export interface Department{
     id: number,
     name: string,

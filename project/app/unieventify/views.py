@@ -1549,7 +1549,7 @@ class FacultyEventsListView(ListAPIView):
         )
 
         # Only include users with the highest rank (you can change this condition based on your needs)
-        return queryset.filter(roles__rank=F('highest_rank')).filter(is_active=True)
+        return queryset.filter(roles__rank=F('highest_rank')).filter(roles__name='Faculty').filter(is_active=True)
     
 class FacultyEventsDetailView(RetrieveAPIView):
     serializer_class = FacultyEventSerializer
@@ -1567,7 +1567,7 @@ class FacultyEventsDetailView(RetrieveAPIView):
         )
 
         # Only include users with the highest rank (you can change this condition based on your needs)
-        return queryset.filter(roles__rank=F('highest_rank')).filter(is_active=True)
+        return queryset.filter(roles__rank=F('highest_rank')).filter(roles__name='Faculty').filter(is_active=True)
     
 class UserEventsListView(ListAPIView):
     serializer_class = UserEventSerializer

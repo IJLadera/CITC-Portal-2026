@@ -16,9 +16,6 @@ class Role(models.Model):
         # super.__str__()
         return self.name
     
-    def can_override(self, other_user):
-        return self.role.rank <= other_user.role.rank
-
 class User(AbstractUser):
     username = None
     email = models.EmailField(_("email address"), unique=True)
@@ -57,6 +54,17 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+    
+    def get_highest_rank_role(self):
+        return self.roles.order_by('rank').first()
+
+    def can_override(self, other_user):
+        my_role = self.get_highest_rank_role()
+        other_role = other_user.get_highest_rank_role()
+        if not my_role or not other_role:
+            return False
+        return my_role.rank <= other_role.rank
+
 
 
 class UserRole(models.Model):

@@ -30,7 +30,7 @@ from auditlog.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 
 from django.db.models.functions import TruncMonth
-from django.db.models import Count, Max, F, Subquery, OuterRef, IntegerField, CharField, Value
+from django.db.models import Count, Max, F, Subquery, OuterRef, IntegerField, CharField, Value, Min
 from rest_framework.response import Response
 from rest_framework import status, serializers
 from datetime import datetime, timedelta, timezone as dj_timezone, date
@@ -1545,7 +1545,7 @@ class FacultyEventsListView(ListAPIView):
             'event_participants',  # Events they participate in
             'event_createdby'      # Events they created
         ).annotate(
-            highest_rank=Max('roles__rank')  # Get the highest rank from their roles
+            highest_rank=Min('roles__rank')  # Get the highest rank from their roles
         )
 
         # Only include users with the highest rank (you can change this condition based on your needs)
@@ -1563,7 +1563,7 @@ class FacultyEventsDetailView(RetrieveAPIView):
             'event_participants',  # Events they participate in
             'event_createdby'      # Events they created
         ).annotate(
-            highest_rank=Max('roles__rank')  # Get the highest rank from their roles
+            highest_rank=Min('roles__rank')  # Get the highest rank from their roles
         )
 
         # Only include users with the highest rank (you can change this condition based on your needs)
@@ -1627,7 +1627,7 @@ class AllRoleEventsListView(ListAPIView):
             'event_participants',  # Events they participate in
             'event_createdby'      # Events they created
         ).annotate(
-            highest_rank=Max('roles__rank')  # Get the highest rank from their roles
+            highest_rank=Min('roles__rank')  # Get the highest rank from their roles
         )
 
         # Order by the highest rank
@@ -1645,7 +1645,7 @@ class AllRoleEventsDetailView(RetrieveAPIView):
             'event_participants',  # Events they participate in
             'event_createdby'      # Events they created
         ).annotate(
-            highest_rank=Max('roles__rank')  # Get the highest rank from their roles
+            highest_rank=Min('roles__rank')  # Get the highest rank from their roles
         )
 
         # Order by the highest rank

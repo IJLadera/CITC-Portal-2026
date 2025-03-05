@@ -78,6 +78,7 @@ class CustomUserSerializer(UserSerializer):
         fields = tuple(User.REQUIRED_FIELDS) + (
             settings.USER_ID_FIELD,
             settings.LOGIN_FIELD,
+            "uuid", 
             'first_name',
             'last_name',
             'middle_name',
@@ -98,6 +99,7 @@ class CustomUserSerializer(UserSerializer):
         )
         read_only_fields = (
             settings.LOGIN_FIELD,
+            "uuid",
             'first_name',
             'last_name',
             'id_number',
@@ -105,7 +107,6 @@ class CustomUserSerializer(UserSerializer):
             'is_student',
             'is_employee',
             'is_develop',
-            'is_active',
             'is_staff',
             'is_superuser',
             'role',
@@ -385,7 +386,7 @@ class SchoolYearAndSemesterEvent(serializers.ModelSerializer):
                 'startDate': semester.startDate,
                 'endDate': semester.endDate,
                 'yearID': semester.schoolYear.id,
-                'schoolYearName': semester.schoolYear.schoolYearName,
+                'schoolYearName': semester.schoolYear.name,
                 'startYear': semester.schoolYear.startYear,
                 'endYear': semester.schoolYear.endYear,
 

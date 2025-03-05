@@ -1061,7 +1061,7 @@ class UserCSVUploadView(APIView):
             for row in csv_data:
                 try:
                     # Check if essential fields are present
-                    required_fields = ["email", "first_name", "last_name", "id_number"]
+                    required_fields = ["email", "first_name", "last_name", "id_number", "roles"]
                     for field in required_fields:
                         if not row.get(field):
                             raise ValueError(f"Missing required field '{field}' in row: {row}")
@@ -1568,6 +1568,28 @@ class FacultyEventsDetailView(RetrieveAPIView):
 
         # Only include users with the highest rank (you can change this condition based on your needs)
         return queryset.filter(roles__rank=F('highest_rank')).filter(roles__name='Faculty').filter(is_active=True)
+    
+    def get_object(self):
+        uuid = self.kwargs.get("uuid")
+        return get_object_or_404(User, uuid=uuid)
+    
+# class FacultyEventsDetailView(RetrieveAPIView):
+#     serializer_class = FacultyEventSerializer
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+#     def get_queryset(self):
+#         # This method should return the user related to the provided UUID
+#         # No need to filter by roles or ranks here; just return all users with related events
+#         return User.objects.all().prefetch_related(
+#             'event_participants',  # Events they participate in
+#             'event_createdby'      # Events they created
+#         )
+
+#     def get_object(self):
+#         # Get the user by UUID from the URL parameters
+#         uuid = self.kwargs.get("uuid")
+#         # Use get_object_or_404 to ensure the user exists or a 404 error is raised if not
+#         return get_object_or_404(User, uuid=uuid)    
     
 class UserEventsListView(ListAPIView):
     serializer_class = UserEventSerializer

@@ -34,7 +34,7 @@ urlpatterns = [
 
     #sa admin lang siguro ni hehe
     path('users/', UserListView.as_view(), name='user-list'), 
-    path('users/<int:pk>/', UserInfoView.as_view(), name='user-edit'), 
+    path('users/<uuid:uuid>/', UserInfoView.as_view(), name='user-edit'), 
 
     path('events/', EventListView.as_view(), name='event-list'),
     path('events/<int:pk>/', EventInfoView.as_view(), name='event-edit'),
@@ -58,7 +58,7 @@ urlpatterns = [
     path('eventlogs/<int:pk>/', EventLogInfoView.as_view(), name='event-log-edit'),
 
     path('userroles/', UserRoleListView.as_view(), name='user-role-list'),
-    path('userroles/<int:pk>/', UserRoleInfoView.as_view(), name='user-role-edit'),
+    path('userroles/<uuid:uuid>/', UserRoleInfoView.as_view(), name='user-role-edit'),
     
     path('departments/', DepartmentListView.as_view(), name='department-list'),
     path('departments/<int:pk>/', DepartmentInfoView.as_view(), name='department-edit'),
@@ -132,7 +132,7 @@ urlpatterns = [
     path('unavail-slots/nonpersonal', UnavailablesSlotNonPersonalView.as_view(), name='school-year-available-slots'),
 
     path('faculty/events', FacultyEventsListView.as_view(), name='faculty-events'),
-    path('faculty/events/<int:pk>', FacultyEventsDetailView.as_view(), name='faculty-events'),
+    path('faculty/events/<uuid:uuid>', FacultyEventsDetailView.as_view(), name='faculty-events'),
     
     path('roles/events', AllRoleEventsListView.as_view(), name='role-events'),
     path('roles/events/<int:pk>', AllRoleEventsDetailView.as_view(), name='role-events'),

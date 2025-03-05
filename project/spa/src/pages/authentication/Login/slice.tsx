@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { User } from "../providers/models";
 import { RootState } from '../../../store';
+import Cookies from "js-cookie";
 
 interface AuthState {
     user: User;
@@ -12,6 +13,7 @@ const initialState: AuthState = {
     user: {
         first_name: '',
         last_name: '',
+        middle_name: '',
         email: '',
         uuid: ''
     },
@@ -27,7 +29,8 @@ export const AuthSlice = createSlice({
             state.user = action.payload
         },
         storeToken: (state, action:PayloadAction<string>) => {
-            state.token = action.payload
+            state.token = action.payload;
+            // Cookies.set('auth_token', action.payload, { expires: 10 / (60 * 24) }); // 1 hour
         },
         mutateLoggedIn: (state, action:PayloadAction<boolean>) => {
             state.loggedIn = action.payload

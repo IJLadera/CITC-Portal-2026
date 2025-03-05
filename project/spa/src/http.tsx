@@ -1,6 +1,8 @@
 import axios, { AxiosRequestConfig } from 'axios';
+import store from './store';
 // import { useSelector } from 'react-redux';
 // import { RootState } from './store';
+
 
 const http = axios.create({
     baseURL: 'http://localhost:8000/api/v1/'
@@ -14,5 +16,13 @@ const http = axios.create({
 
 //     return config
 // })
+
+http.interceptors.request.use((config) => {
+    const token = store.getState().auth.token; 
+    if (token) {
+      config.headers.Authorization = `Token ${token}`;
+    }
+    return config;
+  });
 
 export default http;

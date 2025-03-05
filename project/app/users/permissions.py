@@ -52,51 +52,38 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         return request.user and request.user.is_staff
     
 class RoleHierarchyPermission(permissions.BasePermission):
-    """
-    Custom permission to only allow users with a higher role to override events.
-    """
-
     def has_permission(self, request, view):
-        # Allow read-only access for any request
         if request.method in permissions.SAFE_METHODS:
             return True
-        
-        # Allow all access for admin users
         if request.user and request.user.is_staff:
             return True
-        
         return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        # Allow read-only access for any request
         if request.method in permissions.SAFE_METHODS:
             return True
-
-        # Allow event creators to update their own events
-        if obj.created_by == request.user and request.user.is_staff or request.user.role.designation == "Dean" or request.user.role.designation == "Chairperson":
+        if obj.created_by == request.user:
             return True
-        
-        # Check if the user has a higher role to overwrite the event
+
         return request.user.can_override(obj.created_by)
     
 class IsDeanOrReadOnly(permissions.BasePermission):
     """
     Custom permission to only allow deans to modify objects.
     """
-
+    
     def has_permission(self, request, view):
-        # Allow read-only access for any request
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Allow access if the user is authenticated and is a dean
-        return request.user.is_authenticated and request.user.role.designation == 'Dean'
+        highest_role = request.user.get_highest_rank_role()
+        return highest_role and highest_role.name == 'Dean'
 
     def has_object_permission(self, request, view, obj):
         # Allow read-only access for any request
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Allow access if the user is authenticated and is a dean
-        return request.user.is_authenticated and request.user.role.designation == 'Dean'
+        highest_role = request.user.get_highest_rank_role()
+        return highest_role and highest_role.name == 'Dean'
     

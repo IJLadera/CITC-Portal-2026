@@ -30,7 +30,9 @@ import "react-toastify/dist/ReactToastify.css";
 import { DeleteConfirmModal } from "../../../Components/DeleteConfirmModal";
 import colors from "../../../Components/colors";
 import { Event, EventCategory, Department } from "../../../Components/models";
-import { useAppSelector } from "../../../../../../../../hooks";
+import { useAppDispatch, useAppSelector } from "../../../../../../../../hooks";
+import { fetchEventCategories, fetchParticipatedEvents } from "../../slice";
+import { RootState } from "../../../../../../../../store";
 
 const palette = {
   primary: "#FAB417",
@@ -115,8 +117,16 @@ export default function UserEvents() {
     startDateTime: "",
     endDateTime: "",
     }]);
+
+  const dispatch = useAppDispatch();
+  const participatedEventsData = useAppSelector((state) => state.unieventify.participatedEvents);
+  const listEventsData = useAppSelector((state) => state.unieventify.listEvents);
+  // const [events, setEvents] = useState([]);
+
   const [listEvents, setListEvents] = useState<UserEvents[]>([]);
-  const [categories, setCategories] = useState<EventCategory[]>([]);
+  // const [categories, setCategories] = useState<EventCategory[]>([]);
+
+  const { categories } = useAppSelector((state: RootState) => state.unieventify);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<UserEvents | null>(null);
@@ -127,98 +137,82 @@ export default function UserEvents() {
   const [created, setCreated] = useState(false);
 
   useEffect(() => {
-    fetchCategories();
-    fetchEvents();
+    dispatch(fetchEventCategories());
+    dispatch(fetchParticipatedEvents());
+    // fetchCategories();
+    // fetchEvents();
     fetchListEvents();
   }, []);
 
-  const fetchCategories = async () => {
-    try {
-      const response = await http.get("unieventify/eventcategories/");
-      setCategories(response.data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+
+  // const fetchCategories = async () => {
+  //   try {
+  //     const response = await http.get("unieventify/eventcategories/");
+  //     setCategories(response.data);
+  //   } catch (error) {
+  //     console.error("Error fetching categories:", error);
+  //   }
+  // };
 
   const formControlStyles = {
     mb: 2,
     width: { xs: 100, sm: 250, lg: 250 },
   };
 
-  const fetchEvents = async () => {
-    try {
-      const response = await http.get("unieventify/participatedevents/", {
-        headers: {
-          Authorization: `Token ${token}`,
-        },
-      });
-
-      const formattedEvents = response.data.map((event: any) => {
-        // Parse start and end date-time
+  useEffect(() => {
+    if (participatedEventsData && participatedEventsData.length > 0) {
+      const formattedEvents = participatedEventsData.map((event) => {
+        // Your existing formatting logic here
         const eventStart = new Date(event.startDateTime);
         const eventEnd = new Date(event.endDateTime);
 
-        // Ensure that eventEnd is actually passed correctly (don't forget to check that it has been parsed)
         if (isNaN(eventEnd.getTime())) {
           console.error("Invalid event end date:", event.endDateTime);
         }
 
-        // Set both dates to the same day to calculate time difference only
         const startOnlyTime = new Date(eventStart);
         const endOnlyTime = new Date(eventEnd);
-        startOnlyTime.setFullYear(2000, 0, 1); // Set to a fixed date
-        endOnlyTime.setFullYear(2000, 0, 1); // Same date for accurate time difference
+        startOnlyTime.setFullYear(2000, 0, 1);
+        endOnlyTime.setFullYear(2000, 0, 1);
 
-        // Calculate the duration in hours and minutes between start time and end time
         const durationMs = endOnlyTime.getTime() - startOnlyTime.getTime();
         const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
-        const durationMinutes = Math.floor(
-          (durationMs % (1000 * 60 * 60)) / (1000 * 60)
-        );
+        const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
 
-        let recurrenceRule = null; // Start with null
-      if (event.recurrence_type === "daily") {
-        recurrenceRule = new RRule({
-          freq: RRule.DAILY,
-          dtstart: eventStart,
-          until: eventEnd,
-        }).toString();
-      } else if (event.recurrence_type === "weekly" && event.recurrence_days) {
-        recurrenceRule = new RRule({
-          freq: RRule.WEEKLY,
-          dtstart: eventStart,
-          byweekday: event.recurrence_days
-            .map((day: any) => {
-              switch (day) {
-                case "monday":
-                  return RRule.MO;
-                case "tuesday":
-                  return RRule.TU;
-                case "wednesday":
-                  return RRule.WE;
-                case "thursday":
-                  return RRule.TH;
-                case "friday":
-                  return RRule.FR;
-                case "saturday":
-                  return RRule.SA;
-                case "sunday":
-                  return RRule.SU;
-                default:
-                  return null;
-              }
-            })
-            .filter(Boolean),
-          until: eventEnd,
-        }).toString();
-      }
+        let recurrenceRule = null;
+        if (event.recurrence_type === "daily") {
+          recurrenceRule = new RRule({
+            freq: RRule.DAILY,
+            dtstart: eventStart,
+            until: eventEnd,
+          }).toString();
+        } else if (event.recurrence_type === "weekly" && event.recurrence_days) {
+          recurrenceRule = new RRule({
+            freq: RRule.WEEKLY,
+            dtstart: eventStart,
+            byweekday: event.recurrence_days
+              .map((day: any) => {
+                switch (day) {
+                  case "monday": return RRule.MO;
+                  case "tuesday": return RRule.TU;
+                  case "wednesday": return RRule.WE;
+                  case "thursday": return RRule.TH;
+                  case "friday": return RRule.FR;
+                  case "saturday": return RRule.SA;
+                  case "sunday": return RRule.SU;
+                  default: return null;
+                }
+              })
+              .filter(Boolean),
+            until: eventEnd,
+          }).toString();
+        }
 
         return {
           id: event.id,
           title: event.eventName,
-          start: eventStart.toISOString(), // Use toISOString() to ensure correct formatting
-          end: eventEnd.toISOString(), // Ensure end time is included
+          start: eventStart.toISOString(),
+          end: eventEnd.toISOString(),
           duration: { hours: durationHours, minutes: durationMinutes },
           rrule: recurrenceRule,
           allDay: false,
@@ -229,10 +223,8 @@ export default function UserEvents() {
       });
 
       setEvents(formattedEvents);
-    } catch (error) {
-      console.error("Error fetching events:", error);
     }
-  };
+  }, [participatedEventsData]);
 
   const fetchListEvents = async () => {
     try {
@@ -386,7 +378,7 @@ export default function UserEvents() {
         theme: "light",
       });
       setOpenModal(false);
-      fetchEvents();
+      dispatch(fetchParticipatedEvents());
       fetchListEvents();
       handleClose();
     } catch (error) {
@@ -468,7 +460,7 @@ export default function UserEvents() {
           onChange={handleCategoryChange}
           renderValue={(selected) =>
             categories
-              .filter((category) => selected.includes(category.id))
+              .filter((category) => selected.includes(Number(category.id)))
               .map((category) => category.eventCategoryName)
               .join(", ")
           }
@@ -476,7 +468,7 @@ export default function UserEvents() {
         >
           {categories.map((category) => (
             <MenuItem key={category.id} value={category.id}>
-              <Checkbox checked={selectedCategories.includes(category.id)} />
+              <Checkbox checked={selectedCategories.includes(Number(category.id))} />
               <ListItemText primary={category.eventCategoryName} />
             </MenuItem>
           ))}

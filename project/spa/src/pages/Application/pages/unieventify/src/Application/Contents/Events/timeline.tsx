@@ -1,156 +1,25 @@
 import React, { useEffect, useState } from "react";
-import http from "../../../../../../../../http";
-import Cookies from "js-cookie";
-import { Box, Paper, Button, Stack, TextField, Typography } from "@mui/material";
-import { DataGrid, GridRowParams  } from '@mui/x-data-grid';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { Box, CircularProgress, Paper, TextField, Typography } from "@mui/material";
+import { DataGrid, GridRowParams } from '@mui/x-data-grid';
 import colors from "../../../Components/colors";
-import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { Event } from "../../../Components/models";
-import { useAppSelector } from "../../../../../../../../hooks";
-
-interface EventType {
-  id: number;
-  eventName: string;
-  startDateTime: string;
-  endDateTime: string;
-  status?: { statusName: string };
-}
+import { useAppSelector, useAppDispatch } from "../../../../../../../../hooks";
+import { fetchTimelineEvents } from "../../slice";
 
 export default function EventTimeline() {
-  const [events, setEvents] = useState([
-    {
-    id: 0,
-    participants: [],
-    created_by: {
-        id: 0,
-        idNumber: 0,
-        email: '',
-        first_name: '',
-        last_name: '',
-        role: {
-            id: 0,
-            designation: '',
-            rank: 0
-        },
-        department: 0
-    },
-    eventCategory: 
-        {
-            id: 0,
-            eventCategoryName: '',
-        },
-    eventType: 
-    {
-        id: 0,
-        eventTypeName: '',
-    },
-    status: {
-        id: 0,
-        statusName: '',
-    },
-    venue: 
-    {
-      id: 0,
-      venueName: '',
-      location: ''
-    },
-    setup: {
-      id: 0,
-      setupName: '',
-    },
-    department: {
-      id: 0,
-      departmentName: '',
-      collegeName: 0
-    },
-    meetinglink: '',
-    eventName: '',
-    eventDescription: '',
-    startDateTime: '', 
-    endDateTime: '',
-    timestamp: '',
-    approveDocuments: '',
-    images: '',
-    isAnnouncement: false,
-    isAprrovedByDean: false,
-    isAprrovedByChairman: false,
-    majorEvent: false,
-    recurrence_type: '',
-    recurrence_days: '',
-    }
-  ]);
   const [searchTerm, setSearchTerm] = useState('');
-  // const token = Cookies.get("auth_token");
-  const token = useAppSelector(state => state.auth.token);
   const navigate = useNavigate();
-
+  const dispatch = useAppDispatch();
+  
+  // Get timeline data and loading state from Redux store
+  const { timeline, timelineLoading } = useAppSelector(state => state.unieventify);
+  
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await http.get("unieventify/timeline/", {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        });
-        const filteredEvents = (response.data as EventType[]).filter(event => event.status?.statusName !== 'draft');
-        const sortedEvents = filteredEvents.sort(
-          (a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime()
-        );
-  
-        const formatted = sortedEvents.map((event) => ({
-          id: event.id,
-          participants: [],
-          created_by: {
-            id: 0,
-            idNumber: 0,
-            email: '',
-            first_name: '',
-            last_name: '',
-            role: {
-              id: 0,
-              designation: '',
-              rank: 0
-            },
-            department: 0
-          },
-          eventCategory: event.status ? 
-            { id: 0, eventCategoryName: event.status.statusName } 
-            : { id: 0, eventCategoryName: '' },  // Add the id here
-          eventType: { id: 0, eventTypeName: '' },
-          status: event.status ? { id: 0, statusName: event.status.statusName } : { id: 0, statusName: '' },
-          venue: { id: 0, venueName: '', location: '' },
-          setup: { id: 0, setupName: '' },
-          department: { id: 0, departmentName: '', collegeName: 0 },
-          meetinglink: '',
-          eventName: event.eventName,
-          eventDescription: '',
-          startDateTime: event.startDateTime,
-          endDateTime: event.endDateTime,
-          timestamp: '',
-          approveDocuments: '',
-          images: '',
-          isAnnouncement: false,
-          isAprrovedByDean: false,
-          isAprrovedByChairman: false,
-          majorEvent: false,
-          recurrence_type: '',
-          recurrence_days: ''
-        }));        
-  
-        setEvents(formatted);
-      } catch (error) {
-        console.error("Failed to fetch events:", error);
-      }
-    };
-  
-    fetchEvents();
-  }, [token]);  
+    // Dispatch the action to fetch timeline events
+    dispatch(fetchTimelineEvents());
+  }, [dispatch]);
 
-  const filteredEvents = events.filter((event) => {
+  const filteredEvents = timeline.filter((event) => {
     const eventMonth = new Date(event.startDateTime).toLocaleString("en-US", { month: "long" });
     return event.eventName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.eventCategory?.eventCategoryName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -226,17 +95,23 @@ export default function EventTimeline() {
       />
 
       <Paper sx={{ height: '54vh' }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          getRowClassName={getRowClassName}
-          onRowClick={handleRowClick}
-          sx={{
-            '& .white-row': { backgroundColor: 'white' },
-            '& .gray-row': { backgroundColor: '#f7f7f7' },
-            '& .MuiDataGrid-row:hover': { backgroundColor: '#e0f7fa' },
-          }}
-        />
+        {timelineLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            getRowClassName={getRowClassName}
+            onRowClick={handleRowClick}
+            sx={{
+              '& .white-row': { backgroundColor: 'white' },
+              '& .gray-row': { backgroundColor: '#f7f7f7' },
+              '& .MuiDataGrid-row:hover': { backgroundColor: '#e0f7fa' },
+            }}
+          />
+        )}
       </Paper>
     </Box>
   );

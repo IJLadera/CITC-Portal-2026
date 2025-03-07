@@ -3,13 +3,14 @@ import AuthSlice from './pages/authentication/Login/slice';
 import LMSSlice from './pages/Application/pages/lms/slice';
 import storage from 'redux-persist/lib/storage';
 import { persistStore, persistReducer } from 'redux-persist';
-import eventCategoriesReducer from './pages/Application/pages/unieventify/src/Application/Contents/Events/slice'
+import unieventifyReducer from './pages/Application/pages/unieventify/src/Application/slice'
+import UniEventifyApplication from './pages/Application/pages/unieventify/src/Application/application';
 
 // Combine reducers
 const rootReducer = combineReducers({
     auth: AuthSlice,
     lms: LMSSlice,
-    eventCategories: eventCategoriesReducer,
+    unieventify: unieventifyReducer,
 });
 
 // Persist configuration

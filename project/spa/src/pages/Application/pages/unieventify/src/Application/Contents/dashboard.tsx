@@ -40,7 +40,9 @@ import { DeleteConfirmModal } from "../../Components/DeleteConfirmModal";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DateTime } from "luxon";
-import { useAppSelector } from "../../../../../../../hooks";
+import { useAppDispatch, useAppSelector } from "../../../../../../../hooks";
+import { fetchCollegeses, fetchDepartments, fetchEventCategories, fetchEventTypes, fetchSchoolYears, fetchSections, fetchSetRemarks, fetchSetup, fetchStatus, fetchUserRoles, fetchUsers, fetchVenues } from "../slice";
+import { RootState } from "../../../../../../../store";
 
 const dean = "Dean";
 const chairperson = "Chairperson";
@@ -87,17 +89,17 @@ interface YearLevel {
 
 const Dashboard: React.FC = () => {
   // State declarations
-  const [users, setUsers] = useState<User[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [colleges, setColleges] = useState<College[]>([]);
-  const [setups, setSetups] = useState<Setup[]>([]);
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [statuses, setStatuses] = useState<Status[]>([]);
-  const [sections, setSections] = useState<any[]>([]);
-  const [eventCategories, setEventCategories] = useState<any[]>([]);
-  const [eventTypes, setEventTypes] = useState<any[]>([]);
-  const [schoolYears, setSchoolYears] = useState<any[]>([]);
+  // const [users, setUsers] = useState<User[]>([]);
+  // const [departments, setDepartments] = useState<any[]>([]);
+  // const [roles, setRoles] = useState<Role[]>([]);
+  // const [colleges, setColleges] = useState<College[]>([]);
+  // const [setups, setSetups] = useState<Setup[]>([]);
+  // const [venues, setVenues] = useState<Venue[]>([]);
+  // const [statuses, setStatuses] = useState<Status[]>([]);
+  // const [sections, setSections] = useState<any[]>([]);
+  // const [eventCategories, setEventCategories] = useState<any[]>([]);
+  // const [eventTypes, setEventTypes] = useState<any[]>([]);
+  // const [schoolYears, setSchoolYears] = useState<any[]>([]);
   const [activeUsers, setActiveUsers] = useState(false);
   const [selectedEvents, setSelectedEvents] = useState<number[]>([]);
   const [inactiveUsers, setInactiveUsers] = useState<boolean>(false);
@@ -110,7 +112,7 @@ const Dashboard: React.FC = () => {
   const [selectedEventType, setSelectedEventType] = useState<string>("");
   const [selectedSchoolYear, setSelectedSchoolYear] = useState<string>("");
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [admin, setAdmin] = useState(false);
   const [draftEvents, setDraftEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -155,81 +157,128 @@ const Dashboard: React.FC = () => {
   const [openModal2, setOpenModal2] = useState(false);
   const [openPostponeModal, setOpenPostponeModal] = useState(false);
   const [cancel, setCancel] = useState<{ id: number } | null>(null);
-  const [remark, setRemark] = useState<string>("");
+  // const [remark, setRemark] = useState<string>("");
   const [entityToDelete, setEntityToDelete] = useState<Entity | null>(null);
+
+  const dispatch = useAppDispatch()
+
+  const users = useAppSelector((state) => state.unieventify.users)
+  const departments = useAppSelector((state) => state.unieventify.departments)
+  const reduxroles = useAppSelector((state) => state.unieventify.userRole)
+  // const roles = useAppSelector((state) => state.unieventify.userRole)
+  const colleges = useAppSelector((state) => state.unieventify.colleges)
+  const setups = useAppSelector((state) => state.unieventify.setups)
+  const venues = useAppSelector((state) => state.unieventify.venues)
+  const statuses = useAppSelector((state) => state.unieventify.status)
+
+  const sections = useAppSelector((state) => state.unieventify.sections)
+  const eventCategories = useAppSelector((state) => state.unieventify.categories)
+  const eventTypes = useAppSelector((state) => state.unieventify.types)
+  const remark = useAppSelector((state) => state.unieventify.eventremark)
+  const schoolYears = useAppSelector((state) => state.unieventify.schoolyear)
+
+  const roles = Array.isArray(reduxroles) ? reduxroles.filter((role: any) => role.name !== "Admin") : [];
+
+
+  // console.log("suerroles", reduxroles)
+  console.log("roles", roles);
+  console.log("departments", departments);
+  console.log("colleges", colleges);
+  console.log("setups", setups);
+
+  useEffect(() => {
+    dispatch(fetchUsers());
+    dispatch(fetchDepartments());
+    dispatch(fetchUserRoles());
+    dispatch(fetchCollegeses());
+    dispatch(fetchSetup());
+    dispatch(fetchVenues());
+    dispatch(fetchStatus());
+    dispatch(fetchSections());
+    dispatch(fetchEventCategories());
+    dispatch(fetchEventTypes());
+    dispatch(fetchSetRemarks());
+    dispatch(fetchSchoolYears());
+  }, [dispatch]);
+
+  const handleRemarkChange = (newRemark: string) => {
+    dispatch(fetchSetRemarks());
+  };
+
+  console.log("users:", users);
 
   //designation
   const draftRole = ["Dean", "Chairperson"];
 
   // Fetch data from API
-  const fetchData = async () => {
-    try {
-      const [
-        usersResponse,
-        departmentsResponse,
-        rolesResponse,
-        collegesResponse,
-        setupsResponse,
-        venuesResponse,
-        statusesResponse,
-        sectionsResponse,
-        eventCategoriesResponse,
-        // yearLevelsResponse,
-        eventTypesResponse,
-        schoolYearsResponse,
-        remarkResponse,
-      ] = await Promise.all([
-        http.get("unieventify/users/", { headers: { Authorization: `Token ${token}` } }),
-        http.get("unieventify/departments/", {
-          headers: { Authorization: `Token ${token}` },
-        }),
-        http.get("unieventify/userroles/", {
-          headers: { Authorization: `Token ${token}` },
-        }),
-        http.get("unieventify/colleges/", {
-          headers: { Authorization: `Token ${token}` },
-        }),
-        http.get("unieventify/setups/", { headers: { Authorization: `Token ${token}` } }),
-        http.get("unieventify/venues/", { headers: { Authorization: `Token ${token}` } }),
-        http.get("unieventify/status/", { headers: { Authorization: `Token ${token}` } }),
-        http.get("unieventify/sections/", {
-          headers: { Authorization: `Token ${token}` },
-        }),
-        http.get("unieventify/eventcategories/", {
-          headers: { Authorization: `Token ${token}` },
-        }),
-        http.get("unieventify/eventtypes/", {
-          headers: { Authorization: `Token ${token}` },
-        }),
-        http.get("unieventify/schoolyear/", {
-          headers: { Authorization: `Token ${token}` },
-        }),
-        http.get("unieventify/eventremark/", {
-          headers: { Authorization: `Token ${token}` },
-        }),
-      ]);
+  // const fetchData = async () => {
+  //   try {
+  //     const [
+  //       usersResponse,
+  //       departmentsResponse,
+  //       rolesResponse,
+  //       collegesResponse,
+  //       setupsResponse,
+  //       venuesResponse,
+  //       statusesResponse,
+  //       sectionsResponse,
+  //       eventCategoriesResponse,
+  //       // yearLevelsResponse,
+  //       eventTypesResponse,
+  //       schoolYearsResponse,
+  //       remarkResponse,
+  //     ] = await Promise.all([
+  //       http.get("unieventify/users/", { headers: { Authorization: `Token ${token}` } }),
+  //       http.get("unieventify/departments/", {
+  //         headers: { Authorization: `Token ${token}` },
+  //       }),
+  //       http.get("unieventify/userroles/", {
+  //         headers: { Authorization: `Token ${token}` },
+  //       }),
+  //       http.get("unieventify/colleges/", {
+  //         headers: { Authorization: `Token ${token}` },
+  //       }),
+  //       http.get("unieventify/setups/", { headers: { Authorization: `Token ${token}` } }),
+  //       http.get("unieventify/venues/", { headers: { Authorization: `Token ${token}` } }),
+  //       http.get("unieventify/status/", { headers: { Authorization: `Token ${token}` } }),
+  //       http.get("unieventify/sections/", {
+  //         headers: { Authorization: `Token ${token}` },
+  //       }),
+  //       http.get("unieventify/eventcategories/", {
+  //         headers: { Authorization: `Token ${token}` },
+  //       }),
+  //       http.get("unieventify/eventtypes/", {
+  //         headers: { Authorization: `Token ${token}` },
+  //       }),
+  //       http.get("unieventify/schoolyear/", {
+  //         headers: { Authorization: `Token ${token}` },
+  //       }),
+  //       http.get("unieventify/eventremark/", {
+  //         headers: { Authorization: `Token ${token}` },
+  //       }),
+  //     ]);
 
-      // Set state with fetched data.
-      setUsers(usersResponse.data);
-      setDepartments(departmentsResponse.data);
-      setRoles(
-        rolesResponse.data.filter((role: any) => role.name !== "Admin")
-      );
-      setColleges(collegesResponse.data);
-      setSetups(setupsResponse.data);
-      setVenues(venuesResponse.data);
-      setStatuses(statusesResponse.data);
-      setSections(sectionsResponse.data);
-      setEventCategories(eventCategoriesResponse.data);
-      // setYearLevels(yearLevelsResponse.data);
-      setEventTypes(eventTypesResponse.data);
-      setSchoolYears(schoolYearsResponse.data);
-      setRemark(remarkResponse.data);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
+  //     // Set state with fetched data.
+  //     // setUsers(usersResponse.data);
+  //     // setDepartments(departmentsResponse.data);
+  //     // setRoles(
+  //     //   rolesResponse.data.filter((role: any) => role.name !== "Admin")
+  //     // );
+  //     // setColleges(collegesResponse.data);
+  //     // setSetups(setupsResponse.data);
+  //     // setVenues(venuesResponse.data);
+  //     // setStatuses(statusesResponse.data);
+  //     // setSections(sectionsResponse.data);
+  //     // setEventCategories(eventCategoriesResponse.data);
+  //     // // setYearLevels(yearLevelsResponse.data);
+  //     // setEventTypes(eventTypesResponse.data);
+  //     // setSchoolYears(schoolYearsResponse.data);
+  //     // setRemark(remarkResponse.data);
+  //     setLoading(false);
+  //   } catch (error) {
+  //     console.error("Error fetching data:", error);
+  //   }
+  // };
 
   const fetchDraftEvents = async () => {
     try {
@@ -266,22 +315,22 @@ const Dashboard: React.FC = () => {
   }, [token]);
 
   // Fetch user role and data on component mount
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      try {
-        const response = await http.get("auth/users/me", {
-          headers: { Authorization: `Token ${token}` },
-        });
-        setUser(response.data);
-        setAdmin(response.data.is_staff);
-        fetchData();
-      } catch (error) {
-        console.error("Error fetching user role:", error);
-      }
-    };
+    useEffect(() => {
+      const fetchUserRole = async () => {
+        try {
+          const response = await http.get("auth/users/me", {
+            headers: { Authorization: `Token ${token}` },
+          });
+          setUser(response.data);
+          setAdmin(response.data.is_staff);
+          // fetchData();
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+        }
+      };
 
-    fetchUserRole();
-  }, [token]);
+      fetchUserRole();
+    }, [token]);
 
   // Handle filter changes
   // const handleFilterChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
@@ -480,8 +529,19 @@ const Dashboard: React.FC = () => {
           }
         );
       }
-      fetchData(); // Refresh the data
+      // fetchData(); // Refresh the data
       handleCloseDialog();
+      dispatch(fetchDepartments());
+      dispatch(fetchUserRoles());
+      dispatch(fetchCollegeses());
+      dispatch(fetchSetup());
+      dispatch(fetchVenues());
+      dispatch(fetchStatus());
+      dispatch(fetchSections());
+      dispatch(fetchEventCategories());
+      dispatch(fetchEventTypes());
+      dispatch(fetchSetRemarks());
+      dispatch(fetchSchoolYears());
     } catch (error) {
       console.error("Error saving entity:", error);
     }
@@ -494,7 +554,18 @@ const Dashboard: React.FC = () => {
         await http.delete(`unieventify/${entityToDelete.type}/${entityToDelete.id}/`, {
           headers: { Authorization: `Token ${token}` },
         });
-        fetchData(); // Refresh the data after deletion
+        // fetchData(); // Refresh the data after deletion
+        dispatch(fetchDepartments());
+        dispatch(fetchUserRoles());
+        dispatch(fetchCollegeses());
+        dispatch(fetchSetup());
+        dispatch(fetchVenues());
+        dispatch(fetchStatus());
+        dispatch(fetchSections());
+        dispatch(fetchEventCategories());
+        dispatch(fetchEventTypes());
+        dispatch(fetchSetRemarks());
+        dispatch(fetchSchoolYears());
         toast.success("Deleted successfully", {
           position: "top-center",
           autoClose: 5000,
@@ -924,7 +995,8 @@ const Dashboard: React.FC = () => {
 
   const handleOpenDisapproveModal = (eventId: number) => {
     setCancel({ id: eventId }); // Set the event ID to cancel
-    setRemark(""); // Reset remark each time the modal opens
+    // setRemark(""); // Reset remark each time the modal opens
+    dispatch(fetchSetRemarks());
     setOpenPostponeModal(true); // Open the modal
   };
 
@@ -1399,7 +1471,7 @@ const Dashboard: React.FC = () => {
                   autoFocus
                   margin="dense"
                   id="name"
-                  label="Department Name"
+                  label="Department Code"
                   type="text"
                   fullWidth
                   variant="standard"
@@ -1523,7 +1595,7 @@ const Dashboard: React.FC = () => {
         handleDelete={() => handleDisapproveEvent(cancel!.id)} // Pass disapprove function
         type="disapprove"
         remark={remark} // Remark state
-        setRemark={setRemark} // Function to update remark
+        setRemark={handleRemarkChange} // Function to update remark
       />
     </Container>
   );

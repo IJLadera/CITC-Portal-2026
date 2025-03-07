@@ -20,23 +20,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { Department, Role, College } from "../../Components/models";
 
-// interface Department {
-//   id: number;
-//   departmentName: string;
-//   collegeName: number;
-// }
-
-// interface College {
-//   id: number;
-//   collegeName: string;
-//   departments: Department[];
-// }
-
-// interface UserRole {
-//   id: number;
-//   designation: string;
-// }
-
 interface FormData {
   email: string;
   first_name: string;

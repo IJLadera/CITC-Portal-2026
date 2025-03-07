@@ -4,28 +4,22 @@ import http from "../../../../../../../../http";
 import Cookies from "js-cookie";
 import { CircularProgress, Box } from "@mui/material";
 import { useAppSelector } from "../../../../../../../../hooks";
+import { fetchCurrentUser } from "../../slice";
+import { AppDispatch, RootState } from "../../../../../../../../store";
+import { useDispatch } from "react-redux";
 
 
 const EventForm: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState("");
+  // const [currentUser, setCurrentUser] = useState("");
+  const dispatch = useDispatch<AppDispatch>();
   const token = useAppSelector(state => state.auth.token);
+  const currentUser = useAppSelector((state: RootState) => state.unieventify.user);
 
   useEffect(() => {
-    const fetchEventDetails = async () => {
-      try {
-        const userResponse = await http.get(`auth/users/me/`, {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        });
-        setCurrentUser(userResponse.data);
-      } catch (error) {
-        console.error("Error fetching event details:", error);
-      }
-    };
-
-    fetchEventDetails();
-  }, [token]);
+    if (token) {
+      dispatch(fetchCurrentUser());  // Dispatch the action to fetch the user
+    }
+  }, [token, dispatch]);
 
   if (!currentUser)
     return (

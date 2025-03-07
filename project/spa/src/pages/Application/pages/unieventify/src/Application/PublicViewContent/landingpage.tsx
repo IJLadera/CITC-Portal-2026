@@ -24,13 +24,8 @@ import { Carousel } from "flowbite-react"; // You can use MUI or Tailwind equiva
 import Announcement from "../../Components/announcement";
 import { CircularProgress } from "@mui/material";
 import { useAppSelector } from "../../../../../../../hooks";
-import { useDispatch } from "react-redux";
-import { AppDispatch, RootState } from "../../../../../../../store";
-import { fetchEventCategories } from "../Contents/Events/slice";
 
 const defaultTheme = createTheme();
-
-
 
 const firstsemester: any[] = [];
 
@@ -66,15 +61,6 @@ export default function Landingpage() {
   const draft = "draft";
 
   const { first_name, middle_name, last_name } = useAppSelector((state) => state.auth.user);
-
-  const dispatch = useDispatch<AppDispatch>();
-  const { categories } = useAppSelector(
-    (state: RootState) => state.eventCategories
-  );
-
-  useEffect(() => {
-    dispatch(fetchEventCategories());
-  }, [dispatch]);
 
   let latestEventState: ContentState | null = null;
 
@@ -308,16 +294,6 @@ export default function Landingpage() {
         </Box>
       </Box>
       <Box className="flex justify-center">{first_name} {middle_name} {last_name}</Box>
-      <Box>    
-        <div>
-          <h2>Event Categories</h2>
-          <ul>
-            {categories.map((category) => (
-              <li key={category.id}>{category.eventCategoryName}</li>
-            ))}
-          </ul>
-        </div>
-      </Box>
       <Box className="mt-16 flex justify-center">
         {latestEvent?.length > 0 ? (
           <Box

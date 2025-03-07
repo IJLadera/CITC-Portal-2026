@@ -37,7 +37,7 @@ import { fetchEventCategoriesApi, fetchEventTypesApi, fetchCollegesesApi,
   fetchFacultyEventsApi, fetchUserProfileApi, fetchPublicEventsApi } from "../../../../../../../../api"
 import { AppDispatch, RootState } from "../../../../../../../../store";
 import { useDispatch } from "react-redux";
-import { fetchCollegeses, fetchEventCategories, fetchDepartments } from "./slice";
+import { fetchCollegeses, fetchEventCategories, fetchDepartments, fetchDepartmentsByCollege, fetchEventTypes } from "../../slice";
 
 interface EventCategory {
   id: string;
@@ -112,31 +112,33 @@ export default function Events() {
   // const [categories, setCategories] = useState<EventCategory[]>([]);
 
   
+
+  const { categories } = useAppSelector((state: RootState) => state.unieventify);
+  const { colleges } = useAppSelector((state: RootState) => state.unieventify);
+  const { departments } = useAppSelector((state: RootState) => state.unieventify);
+  const { departmentsByCollege } = useAppSelector((state: RootState) => state.unieventify);
+  const { types } = useAppSelector((state: RootState) => state.unieventify);
+
   const dispatch = useDispatch<AppDispatch>();
-  const { categories } = useAppSelector((state: RootState) => state.eventCategories);
-  const { colleges } = useAppSelector((state: RootState) => state.eventCategories);
-  const { departments } = useAppSelector((state: RootState) => state.eventCategories);
+  
   useEffect(() => {
     dispatch(fetchEventCategories());
     dispatch(fetchCollegeses());
     dispatch(fetchDepartments());
+    dispatch(fetchDepartmentsByCollege());
+    dispatch(fetchEventTypes())
   }, [dispatch]);
 
-  // console.log('categories', categories);
-  // console.log('colleges', collegeses);
-  // const [colleges, setColleges] = useState<College[]>([]);
-  // const [departments, setDepartments] = useState<DepartmentTwo[]>([]);
   const [collegess, setCollegess] = useState([]);
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
   const [user, setUser] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]); 
   const [selectedCollege, setSelectedCollege] = useState<number[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentTwo[]>([]);
   const [selectedFaculty, setSelectedFaculty] = useState<number | null>(null);
-  const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [open, setOpen] = useState(false);
-  const [types, setTypes] = useState<EventType[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventApi  | null>(null);
   const token = useAppSelector((state) => state.auth.token);
   const navigate = useNavigate();
@@ -151,54 +153,10 @@ export default function Events() {
   };
 
   useEffect(() => {
-    // fetchCategories();
-    // fetchColleges();
-    // fetchDepartments();
-    // fetchCollegess(); // Fetch college-department relationships
     fetchDepartmentsByColleges();
     fetchFaculties();
     fetchEvents();
-    fetchEventTypes();
   }, []);
-
-  // const fetchCategories = async () => {
-  //     try {
-  //       const categories = await fetchEventCategoriesApi(); // Fetch event categories
-  //       setCategories(categories); // Set the categories after fetching
-  //     } catch (error) {
-  //       console.error("Error fetching categories:", error);
-  //     }
-  //   };
-
-  const fetchEventTypes = async () => {
-    try {
-      const eventTypes = await fetchEventTypesApi(); // Fetch event categories
-      // setCategories(categories); // Set the categories after fetching
-      // const response = await http.get("unieventify/eventtypes/");
-      setTypes(eventTypes);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-
-  // const fetchColleges = async () => {
-  //     try {
-  //       const response = await fetchCollegesesApi();
-  //       setColleges(response);
-  //     } catch (error) {
-  //       console.error("Error fetching colleges:", error);
-  //     }
-  //   };
-
-  // const fetchDepartments = async () => {
-  //   try {
-  //     const response = await http.get("unieventify/departments/");
-  //     setDepartments(response.data);
-  //     console.log(response);
-  //   } catch (error) {
-  //     console.error("Error fetching departments:", error);
-  //   }
-  // };
 
   const fetchDepartmentsByColleges = async () => {
     try {
@@ -215,14 +173,15 @@ export default function Events() {
   const fetchFaculties = async () => {
     try {
       const facultyEvents = await fetchFacultyEventsApi(); // Fetch event categories
-      // setCollegess(facultyEvents); // Set the categories after fetching
       setFaculties(facultyEvents || []);
     } catch (error) {
       console.error("Error fetching faculties:", error);
     }
   };
+  
 
-  const fetchFacultyEvents = async (facultyId: number) => {
+  const fetchFacultyEvents = async (facultyId: any) => {
+    console.log("facultyid", facultyId)
     try {
       const response = await http.get(`unieventify/faculty/events/${facultyId}`, {
         headers: {
@@ -237,6 +196,7 @@ export default function Events() {
       });
       const currentUser = userResponse.data;
 
+      console.log("faculty events: ", response)
       setUser(currentUser);
 
       const eventData = [
@@ -244,7 +204,7 @@ export default function Events() {
         ...(response.data?.created_events || []),
       ];
 
-      const formattedEvents: FormattedEvent[] = eventData
+      const formattedEvents = eventData
         .filter((event) => {
           // If the user is a Dean or Chairperson, only show Faculty-created events
           if (
@@ -265,7 +225,7 @@ export default function Events() {
               : event?.eventCategory?.eventCategoryName?.toLowerCase() ===
               "personal") ||
             event?.isAnnouncement === true ||
-            event?.status?.name === "draft"
+            event?.status?.statusName === "draft"
           ) {
             return false; // Exclude these events
           }
@@ -277,7 +237,7 @@ export default function Events() {
               freq: RRule.WEEKLY,
               interval: 1,
               byweekday: event.recurrence_days
-                .map((day: string) => {
+                .map((day: any) => {
                   switch (day) {
                     case "monday":
                       return RRule.MO;
@@ -297,26 +257,21 @@ export default function Events() {
                       return null;
                   }
                 })
-                .filter((day: string) => day !== null),
+                .filter((day: any) => day !== null),
               until: new Date(event.endDateTime),
             }).toString()
             : null;
 
           return {
-            id: event.id.toString(),
+            id: event.id,
             title: event.eventName, // Hide event name for Dean/Chairperson,
             start: event.startDateTime,
             end: event.endDateTime,
             rrule: recurrenceRule,
-            color: event.color || "#000000",
-            //dili apil ni
             category: event.eventCategory?.id || null,
-            eventDescription: event.eventDescription || "",
-            participants: event.participants || [],
             departments: Array.isArray(event.department)
               ? event.department
               : [],
-
           };
         });
 
@@ -348,7 +303,7 @@ export default function Events() {
       // walay student sa calendar then ang tulo ka eventtype except sa academic
       const formattedEvents = eventData
         .filter((event: any) => {
-          // If the user is a Dean or Chairperson, only show Faculty-created events
+          // If the user is a Dean or Chairperson, only show their created events
           if (
             (currentUser.roles.name === "Dean" ||
               currentUser.roles.name === "Chairperson") &&
@@ -512,6 +467,7 @@ export default function Events() {
   const handleFacultyChange = (facultyId: number) => {
     setSelectedFaculty(facultyId); // Update the selected faculty ID
     fetchFacultyEvents(facultyId); // Fetch events for the selected faculty
+    console.log("facultyId", facultyId)
   };
 
   console.log('events', events);
@@ -521,9 +477,11 @@ export default function Events() {
     const categoryMatches =
       !selectedCategories.length || selectedCategories.includes(event.category);
 
-    const departmentMatches =
+      const departmentMatches =
       !selectedDepartment.length ||
-      event.departments.some((dept: any) => selectedDepartment.includes(dept.id));
+      event.departments.some((dept: any) =>
+        selectedDepartment.some((selectedDept: any) => selectedDept.id === dept.id)
+      );
 
     const collegeMatches =
       !selectedCollege.length ||
@@ -548,7 +506,7 @@ export default function Events() {
       const facultyMatches =
         !selectedFaculty || 
         (Array.isArray(selectedFaculty) && event.participants &&
-          event.participants.some((participant: any) => selectedFaculty.includes(participant.id))
+          event.participants.some((participant: any) => selectedFaculty.includes(participant.uuid))
         );
 
     return (

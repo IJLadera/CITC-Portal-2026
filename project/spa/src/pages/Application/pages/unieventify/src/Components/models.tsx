@@ -92,13 +92,6 @@ export interface Role{
     rank: number
 }
 
-interface DepartmentTwo {
-    id: number;
-    departmentName: string;
-    // collegeName: string;
-    name: string;
-  }
-
 export interface Department{
     id: number,
     name: string,
@@ -141,3 +134,30 @@ export interface YearLevel{
     yearLevel: string
     find: (year: any) => any; 
 }
+
+export interface Document {
+    approveDocuments: string; 
+    timestamp: string; 
+  }
+
+export interface EventNotification {
+    id: number;
+    is_read: boolean;
+    event: {
+      id: number;
+      eventName: string;
+      eventDescription: string;
+      startDateTime: string;
+      endDateTime: string;
+      status: string;
+    };
+  }
+  
+export interface ApprovalEvent {
+    id: number;
+    eventName: string;
+    eventDescription: string;
+    startDateTime: string;
+    endDateTime: string;
+    status: string;
+  }

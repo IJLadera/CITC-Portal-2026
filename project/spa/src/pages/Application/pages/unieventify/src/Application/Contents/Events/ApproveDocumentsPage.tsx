@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import http from "../../../../../../../../http";
 import {
   Box,
   Card,
@@ -14,8 +13,8 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import Cookies from "js-cookie";
-import { useAppSelector } from "../../../../../../../../hooks";
+import { useAppSelector, useAppDispatch } from "../../../../../../../../hooks";
+import { fetchDocuments } from "../../slice";
 
 // Interface to define the structure of the document
 interface Document {
@@ -24,43 +23,38 @@ interface Document {
 }
 
 const ApproveDocumentsPage: React.FC = () => {
-  // const token = Cookies.get("auth_token");
-  const token = useAppSelector(state => state.auth.token);
-  const [documentsByYear, setDocumentsByYear] = useState<{ [year: number]: Document[] }>({});
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const { documentsByYear, loading } = useAppSelector(state => ({
+    documentsByYear: state.unieventify.documentsByYear,
+    loading: state.unieventify.loading
+  }));
+  
   const [expandedYears, setExpandedYears] = useState<{ [year: number]: boolean }>({});
+  const [groupedDocuments, setGroupedDocuments] = useState<{ [year: number]: Document[] }>({});
 
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        const response = await http.get("unieventify/documents/", {
-          headers: { Authorization: `Token ${token}` },
-        });
-        const documents: Document[] = response.data;
+    // Dispatch the action to fetch documents
+    dispatch(fetchDocuments());
+  }, [dispatch]);
 
-        // Group documents by year
-        const groupedByYear = documents.reduce(
-          (acc: { [year: number]: Document[] }, doc: Document) => {
-            const year = new Date(doc.timestamp).getFullYear();
-            if (!acc[year]) {
-              acc[year] = [];
-            }
-            acc[year].push(doc);
-            return acc;
-          },
-          {} as { [year: number]: Document[] }
-        );
+  useEffect(() => {
+    // Group documents by year when documentsByYear changes
+    if (documentsByYear && documentsByYear.length > 0) {
+      const groupedByYear = documentsByYear.reduce(
+        (acc: { [year: number]: Document[] }, doc: Document) => {
+          const year = new Date(doc.timestamp).getFullYear();
+          if (!acc[year]) {
+            acc[year] = [];
+          }
+          acc[year].push(doc);
+          return acc;
+        },
+        {} as { [year: number]: Document[] }
+      );
 
-        setDocumentsByYear(groupedByYear);
-      } catch (error) {
-        console.error("Error fetching approved documents:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDocuments();
-  }, [token]);
+      setGroupedDocuments(groupedByYear);
+    }
+  }, [documentsByYear]);
 
   const currentYear = new Date().getFullYear();
 
@@ -72,7 +66,7 @@ const ApproveDocumentsPage: React.FC = () => {
     return nameParts.slice(0, -1).join("_");
   };
 
-  if (!documentsByYear) {
+  if (loading) {
     return (
       <Box
         sx={{
@@ -104,7 +98,7 @@ const ApproveDocumentsPage: React.FC = () => {
         Approved Documents
       </Typography>
 
-      {Object.keys(documentsByYear)
+      {Object.keys(groupedDocuments)
         .sort((a, b) => parseInt(b) - parseInt(a))
         .map((year) => {
           const yearNumber = parseInt(year); // Convert string to number
@@ -120,7 +114,7 @@ const ApproveDocumentsPage: React.FC = () => {
               </AccordionSummary>
               <AccordionDetails>
                 <Grid container spacing={3}>
-                  {documentsByYear[yearNumber].map((doc, index) => (
+                  {groupedDocuments[yearNumber].map((doc, index) => (
                     <Grid item xs={12} sm={6} md={4} key={index}>
                       <Card
                         elevation={3}

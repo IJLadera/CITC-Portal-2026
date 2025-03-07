@@ -10,6 +10,9 @@ import { FaEye } from "react-icons/fa";
 import { Navigation } from '@mui/icons-material';
 
 import { User } from '../../Components/models';
+import { useAppDispatch, useAppSelector } from '../../../../../../../hooks';
+import { RootState } from '../../../../../../../store';
+import { fetchCurrentUser } from '../slice';
 
 // interface Profile {
 //     id: number;
@@ -17,7 +20,17 @@ import { User } from '../../Components/models';
 //   }
 
 export default function Changepassword() {
-    const [profile, setProfile] = useState<User | null>(null);
+    // const [profile, setProfile] = useState<User | null>(null);
+
+    const dispatch = useAppDispatch();
+
+    const profile = useAppSelector((state: RootState) => state.unieventify.user)
+
+    useEffect(() => {
+        dispatch(fetchCurrentUser());
+    }, [dispatch]);
+
+
     const [old_password, setOld_Password] = useState('');
     const [password, setPassword] = useState('');
     const [password2, setPassword2] = useState('');
@@ -27,26 +40,26 @@ export default function Changepassword() {
     const [loading, setLoading] = useState(false)
     const token = Cookies.get("auth_token");
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                // const token = Cookies.get("auth_token");
-                if (!token) throw new Error("No authentication token found");
+    // useEffect(() => {
+    //     const fetchProfile = async () => {
+    //         try {
+    //             // const token = Cookies.get("auth_token");
+    //             if (!token) throw new Error("No authentication token found");
 
-                const response = await http.get("auth/users/me/", {
-                    headers: {
-                        Authorization: `Token ${token}`,
-                    },
-                });
+    //             const response = await http.get("auth/users/me/", {
+    //                 headers: {
+    //                     Authorization: `Token ${token}`,
+    //                 },
+    //             });
 
-                setProfile(response.data);
-            } catch (error) {
-                console.log(error);
-            }
-        };
+    //             setProfile(response.data);
+    //         } catch (error) {
+    //             console.log(error);
+    //         }
+    //     };
 
-        fetchProfile();
-    }, [token]);
+    //     fetchProfile();
+    // }, [token]);
 
     const handleSubmit = (e: any) => {
         e.preventDefault();

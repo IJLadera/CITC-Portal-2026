@@ -194,7 +194,7 @@ export default function AddUser() {
     );
 
   return (
-    <Container maxWidth="md" style={{backgroundColor: "#2E538A", color: "white", padding: "50px", borderRadius: "3%"}} className="col-span-3">
+    <Container maxWidth="md" style={{backgroundColor: "white", padding: "50px", borderRadius: "3%"}} className="col-span-3">
       <Typography variant="h4" gutterBottom>
         Add New User
       </Typography>

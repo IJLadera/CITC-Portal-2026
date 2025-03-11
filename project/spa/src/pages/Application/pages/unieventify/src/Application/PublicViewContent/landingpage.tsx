@@ -255,6 +255,7 @@ export default function Landingpage() {
 
   return (
     <ThemeProvider theme={defaultTheme}>
+      <Box className="col-span-3" style={{height: "100vh", overflowX: "scroll"}}>
       <Box
         style={{
           backgroundImage: `url(${require("../../images/bgimage.jpg")})`,
@@ -293,7 +294,6 @@ export default function Landingpage() {
           </Button>
         </Box>
       </Box>
-      <Box className="flex justify-center">{first_name} {middle_name} {last_name}</Box>
       <Box className="mt-16 flex justify-center">
         {latestEvent?.length > 0 ? (
           <Box
@@ -582,7 +582,7 @@ export default function Landingpage() {
                 variant="h6"
                 sx={{ fontWeight: "bold", marginRight: "15px" }}
               >
-                <Navbar fluid rounded className="px-2 py-2 sm:px-4">
+                <Navbar fluid rounded className="px-2 py-2 sm:px-4 w-auto">
                   <Navbar.Brand>
                     <span className="self-center whitespace-nowrap text-2xl dark:text-white flex items-center">
                       Event Listing
@@ -940,8 +940,8 @@ export default function Landingpage() {
           </Box>
         </Box>
       </Box>
-
       <FooterComponent />
+      </Box>
     </ThemeProvider>
   );
 }

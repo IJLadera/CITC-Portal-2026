@@ -138,7 +138,7 @@ export default function Events() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]); 
   const [selectedCollege, setSelectedCollege] = useState<number[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentTwo[]>([]);
-  const [selectedFaculty, setSelectedFaculty] = useState<number | null>(null);
+  const [selectedFaculty, setSelectedFaculty] = useState<String | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventApi  | null>(null);
   const token = useAppSelector((state) => state.auth.token);
   const navigate = useNavigate();
@@ -160,8 +160,6 @@ export default function Events() {
 
   const fetchDepartmentsByColleges = async () => {
     try {
-      // const response = await http.get("unieventify/departmentsbycollege/");
-      // setCollegess(response.data || []);
       const departmentByCollege = await fetchDepartmentsByCollegeApi(); // Fetch event categories
       setCollegess(departmentByCollege); // Set the categories after fetching
     } catch (error) {
@@ -272,6 +270,8 @@ export default function Events() {
             departments: Array.isArray(event.department)
               ? event.department
               : [],
+            color: eventTypesColors[event.eventType?.id as keyof typeof eventTypesColors] || "#000000",
+            created_by: event.created_by,
           };
         });
 
@@ -464,7 +464,7 @@ export default function Events() {
     handleClose();
   };
 
-  const handleFacultyChange = (facultyId: number) => {
+  const handleFacultyChange = (facultyId: string) => {
     setSelectedFaculty(facultyId); // Update the selected faculty ID
     fetchFacultyEvents(facultyId); // Fetch events for the selected faculty
     console.log("facultyId", facultyId)
@@ -503,11 +503,9 @@ export default function Events() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
-      const facultyMatches =
+        const facultyMatches = 
         !selectedFaculty || 
-        (Array.isArray(selectedFaculty) && event.participants &&
-          event.participants.some((participant: any) => selectedFaculty.includes(participant.uuid))
-        );
+        (event.created_by && event.created_by.uuid === selectedFaculty);
 
     return (
       categoryMatches &&

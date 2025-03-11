@@ -48,6 +48,10 @@ const router = createBrowserRouter([
             {
                 path: "adduser/",
                 element: <AddUser />,
+            },
+            {
+                path: "unieventifys/",
+                element: <Landingpage />,
             }
         ]
     },

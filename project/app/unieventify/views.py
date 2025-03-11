@@ -1217,7 +1217,7 @@ class ApprovalEvent(ListAPIView):
             return (
                 tblEvent.objects.filter(
                     ~Q(eventCategory__eventCategoryName="Personal"),
-                    Q(created_by__role__name__in=["Mother Org", "Unit Org"]),
+                    Q(created_by__roles__name__in=["Mother Org", "Unit Org"]),
                     Q(status__name="draft"),
                 )
             )
@@ -1228,7 +1228,7 @@ class ApprovalEvent(ListAPIView):
             return (
                 tblEvent.objects.filter(
                     ~Q(eventCategory__eventCategoryName="Personal"),
-                    Q(created_by__role__name__in=["Unit Org", "Faculty"]),
+                    Q(created_by__roles__name__in=["Unit Org", "Faculty"]),
                     Q(created_by__department=user.department.id),
                     Q(status__name="draft")
                 )

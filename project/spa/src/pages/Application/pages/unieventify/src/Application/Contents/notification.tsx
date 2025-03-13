@@ -17,10 +17,12 @@ import colors from "../../Components/colors";
 import http from "../../../../../../../http";
 import { useNavigate } from "react-router-dom";
 import { Editor, EditorState, convertFromRaw, ContentState } from "draft-js";
-import { useAppDispatch, useAppSelector } from "../../../../../../../hooks";
-import { fetchUserAndEvents } from "../slice";
+import { useAppSelector } from "../../../../../../../hooks";
 
 const deanAndChairperson = ['Dean', 'Chairperson']
+
+
+
 
 interface NotificationProps {
   id: number;
@@ -63,73 +65,57 @@ interface UserRole {
 
 
 const Notification = () => {
-  // const [approvalEvents, setApprovalEvents] = useState<Event[]>([]);
-  // const [notifications, setNotifications] = useState<NotificationProps[]>([]);
-  // const [loading, setLoading] = useState(true);
-  // const [error, setError] = useState(null);
-  // const [userRole, setUserRole] = useState<Role | null>(null);
-  // const [user, setUser] = useState<User | null>(null);
+  const [approvalEvents, setApprovalEvents] = useState<Event[]>([]);
+  const [notifications, setNotifications] = useState<NotificationProps[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [userRole, setUserRole] = useState<Role | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const token = useAppSelector((state) => state.auth.token);
   const navigate = useNavigate();
 
-  const dispatch = useAppDispatch();
-
-    const { 
-    approvalEvents, 
-    notifications, 
-    user, 
-    userRole,
-    loading, 
-    error 
-  } = useAppSelector((state) => state.unieventify);
-
   useEffect(() => {
-    // Fetch user and events data
-    dispatch(fetchUserAndEvents());
-  }, [dispatch]);
+    const fetchUserAndEvents = async () => {
+      try {
+        if (!token) {
+          throw new Error("Authentication token is missing.");
+        }
 
-  // useEffect(() => {
-  //   const fetchUserAndEvents = async () => {
-  //     try {
-  //       if (!token) {
-  //         throw new Error("Authentication token is missing.");
-  //       }
+        // Fetch user role
+        const userResponse = await http.get("auth/users/me/", {
+          headers: { Authorization: `Token ${token}` },
+        });
+        setUserRole(userResponse.data.role?.designation);
+        setUser(userResponse.data);
 
-  //       // Fetch user role
-  //       const userResponse = await http.get("auth/users/me/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       });
-  //       setUserRole(userResponse.data.role?.designation);
-  //       setUser(userResponse.data);
+        // Fetch approval events
+        const approvalEventsResponse = await http.get("unieventify/approvalevents/", {
+          headers: { Authorization: `Token ${token}` },
+        });
+        setApprovalEvents(approvalEventsResponse.data);
 
-  //       // Fetch approval events
-  //       const approvalEventsResponse = await http.get("unieventify/approvalevents/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       });
-  //       setApprovalEvents(approvalEventsResponse.data);
+        // Fetch notifications
+        const notificationsResponse = await http.get("unieventify/notifications/", {
+          headers: { Authorization: `Token ${token}` },
+        });
+        // Filter notifications based on event status
+        const filteredNotifications = notificationsResponse.data.filter(
+          (noti: NotificationProps) =>
+            noti.event.status !== "draft" && noti.event.status !== "disapproved"
+        );
 
-  //       // Fetch notifications
-  //       const notificationsResponse = await http.get("unieventify/notifications/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       });
-  //       // Filter notifications based on event status
-  //       const filteredNotifications = notificationsResponse.data.filter(
-  //         (noti: NotificationProps) =>
-  //           noti.event.status !== "draft" && noti.event.status !== "disapproved"
-  //       );
+        // Update state with the filtered notifications
+        setNotifications(filteredNotifications);
+      } catch (err: any) {
+        setError(err.message);
+        console.error("An error occurred while fetching data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  //       // Update state with the filtered notifications
-  //       setNotifications(filteredNotifications);
-  //     } catch (err: any) {
-  //       setError(err.message);
-  //       console.error("An error occurred while fetching data:", err);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchUserAndEvents();
-  // }, [token]);
+    fetchUserAndEvents();
+  }, [token]);
 
   const handleOnClickNotification = (id:any, read: boolean, eventId: number) => {
     if (read === false || read === null) {
@@ -145,7 +131,7 @@ const Notification = () => {
         }
       );
     }
-    navigate(`/citc/portal/unieventify/app/eventdetails/${eventId}`);
+    navigate(`/unieventify/app/eventdetails/${eventId}`);
   };
 
 
@@ -155,10 +141,10 @@ const Notification = () => {
         headers: { Authorization: `Token ${token}` },
       })
       .then(() => {
-        // Refresh data after deletion
-        dispatch(fetchUserAndEvents());
+        setNotifications((prevNotifications) =>
+          prevNotifications.filter((notification) => notification.id !== id)
+        );
       })
-
       .catch((error) => {
         console.error("Error deleting the notification:", error);
       });
@@ -174,8 +160,9 @@ const Notification = () => {
         headers: { Authorization: `Token ${token}` },
       })
       .then(() => {
-        // Refresh data after deletion
-        dispatch(fetchUserAndEvents());
+        setApprovalEvents((prevApprovalEvents) =>
+          prevApprovalEvents.filter((approvalEvent) => approvalEvent.id !== id)
+        );
       })
       .catch((error) => {
         console.error("Error deleting the approval event:", error);

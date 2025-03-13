@@ -92,6 +92,7 @@ interface unieventifyState {
   approvalEvents: Event[];
   notifications: EventNotification[];
   userRole: Role | null;
+  userRoles: Role | null,
   categories: EventCategorySlice[];
   types: EventType[];
   setups: Setup[];
@@ -120,6 +121,7 @@ const initialState: unieventifyState = {
   approvalEvents: [],
   notifications: [],
   userRole: null,
+  userRoles: null,
   categories: [],
   types: [],
   setups: [],
@@ -279,45 +281,6 @@ export const fetchTimelineEvents = createAsyncThunk(
       recurrence_type: '',
       recurrence_days: ''
     }));
-  }
-);
-
-export const fetchUserAndEvents = createAsyncThunk(
-  'notifications/fetchUserAndEvents',
-  async (_, { getState }: any) => {
-    const token = getState().auth.token;
-    
-    if (!token) {
-      throw new Error("Authentication token is missing.");
-    }
-
-    // Fetch user role
-    const userResponse = await http.get("auth/users/me/", {
-      headers: { Authorization: `Token ${token}` },
-    });
-    
-    // Fetch approval events
-    const approvalEventsResponse = await http.get("unieventify/approvalevents/", {
-      headers: { Authorization: `Token ${token}` },
-    });
-    
-    // Fetch notifications
-    const notificationsResponse = await http.get("unieventify/notifications/", {
-      headers: { Authorization: `Token ${token}` },
-    });
-    
-    // Filter notifications based on event status
-    const filteredNotifications = notificationsResponse.data.filter(
-      (noti: EventNotification) =>
-        noti.event.status !== "draft" && noti.event.status !== "disapproved"
-    );
-    
-    return {
-      user: userResponse.data,
-      userRole: userResponse.data.role?.name,
-      approvalEvents: approvalEventsResponse.data,
-      notifications: filteredNotifications
-    };
   }
 );
 
@@ -503,7 +466,7 @@ const unieventifySlice = createSlice({
       })
       .addCase(fetchUserRoles.fulfilled, (state, action) => {
         state.loading = false;
-        state.userRole = action.payload;
+        state.userRoles = action.payload;
       })
       .addCase(fetchUserRoles.rejected, (state, action) => {
         state.loading = false;
@@ -578,22 +541,6 @@ const unieventifySlice = createSlice({
       .addCase(fetchTimelineEvents.rejected, (state, action) => {
         state.timelineLoading = false;
         state.error = action.error.message || 'Failed to load timeline events';
-      })
-
-      .addCase(fetchUserAndEvents.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchUserAndEvents.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload.user;
-        state.userRole = action.payload.userRole;
-        state.approvalEvents = action.payload.approvalEvents;
-        state.notifications = action.payload.notifications;
-      })
-      .addCase(fetchUserAndEvents.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to fetch user and events';
       })
 
       // fetch Event Categories

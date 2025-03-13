@@ -177,25 +177,23 @@ const Dashboard: React.FC = () => {
   const remark = useAppSelector((state) => state.unieventify.eventremark)
   const schoolYears = useAppSelector((state) => state.unieventify.schoolyear)
 
-  const { 
-    approvalEvents, 
-    userRole
-  } = useAppSelector((state) => state.unieventify);
+  const draftEvents = useAppSelector((state) => state.unieventify.approvalEvents)
 
-  const draftNotifications = approvalEvents.filter((notification: any) => notification.status.name === "draft");
+  const roles = Array.isArray(reduxroles) ? reduxroles.filter((role: any) => role.name !== "Admin") : [];
 
-  const roles = Array.isArray(userRole) ? userRole.filter((role: any) => role.name !== "Admin") : [];
-
-
+  const draftNotifications = draftEvents.filter((notification: any) => notification.status.name === "draft");
+  
 
 
   // console.log("suerroles", reduxroles)
-  console.log("userrolesss: ", userRole)
   console.log("roles", roles);
   console.log("departments", departments);
   console.log("colleges", colleges);
   console.log("setups", setups);
-  console.log("user dashboard: ", user)
+  console.log("users:", users);
+  console.log("user dashboard:", user)
+  console.log("user dashboard role:", user?.roles)
+  console.log("draft events:", draftNotifications);
 
   useEffect(() => {
     dispatch(fetchUsers());
@@ -216,80 +214,9 @@ const Dashboard: React.FC = () => {
     dispatch(fetchSetRemarks());
   };
 
-  console.log("users:", users);
 
   //designation
   const draftRole = ["Dean", "Chairperson"];
-
-  // Fetch data from API
-  // const fetchData = async () => {
-  //   try {
-  //     const [
-  //       usersResponse,
-  //       departmentsResponse,
-  //       rolesResponse,
-  //       collegesResponse,
-  //       setupsResponse,
-  //       venuesResponse,
-  //       statusesResponse,
-  //       sectionsResponse,
-  //       eventCategoriesResponse,
-  //       // yearLevelsResponse,
-  //       eventTypesResponse,
-  //       schoolYearsResponse,
-  //       remarkResponse,
-  //     ] = await Promise.all([
-  //       http.get("unieventify/users/", { headers: { Authorization: `Token ${token}` } }),
-  //       http.get("unieventify/departments/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       }),
-  //       http.get("unieventify/userroles/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       }),
-  //       http.get("unieventify/colleges/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       }),
-  //       http.get("unieventify/setups/", { headers: { Authorization: `Token ${token}` } }),
-  //       http.get("unieventify/venues/", { headers: { Authorization: `Token ${token}` } }),
-  //       http.get("unieventify/status/", { headers: { Authorization: `Token ${token}` } }),
-  //       http.get("unieventify/sections/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       }),
-  //       http.get("unieventify/eventcategories/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       }),
-  //       http.get("unieventify/eventtypes/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       }),
-  //       http.get("unieventify/schoolyear/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       }),
-  //       http.get("unieventify/eventremark/", {
-  //         headers: { Authorization: `Token ${token}` },
-  //       }),
-  //     ]);
-
-  //     // Set state with fetched data.
-  //     // setUsers(usersResponse.data);
-  //     // setDepartments(departmentsResponse.data);
-  //     // setRoles(
-  //     //   rolesResponse.data.filter((role: any) => role.name !== "Admin")
-  //     // );
-  //     // setColleges(collegesResponse.data);
-  //     // setSetups(setupsResponse.data);
-  //     // setVenues(venuesResponse.data);
-  //     // setStatuses(statusesResponse.data);
-  //     // setSections(sectionsResponse.data);
-  //     // setEventCategories(eventCategoriesResponse.data);
-  //     // // setYearLevels(yearLevelsResponse.data);
-  //     // setEventTypes(eventTypesResponse.data);
-  //     // setSchoolYears(schoolYearsResponse.data);
-  //     // setRemark(remarkResponse.data);
-  //     setLoading(false);
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);
-  //   }
-  // };
 
   // const fetchDraftEvents = async () => {
   //   try {
@@ -321,9 +248,10 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // Call fetchDraftEvents in useEffect
-  // useEffect(() => {
-  //   fetchDraftEvents();
-  // }, [token]);
+  useEffect(() => {
+    // fetchDraftEvents();
+    // dispatch(fetchUserAndEvents())
+  }, [token]);
 
   // Fetch user role and data on component mount
     useEffect(() => {
@@ -343,13 +271,6 @@ const Dashboard: React.FC = () => {
       fetchUserRole();
     }, [token]);
 
-  // Handle filter changes
-  // const handleFilterChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
-  //   const { name, value } = event.target;
-  //   if (name === "role") setSelectedRole(value as string);
-  //   if (name === "department") setSelectedDepartment(value as string);
-  //   if (name === "college") setSelectedCollege(value as string);
-  // };
 
   // Generate rows for DataGrid
   const getRows = () => {
@@ -378,6 +299,7 @@ const Dashboard: React.FC = () => {
         detailsUrl: `${http}/unieventify/users/${user.uuid}/`,
       }));
   };
+
 
   const getDraftEventRows = () => {
     return draftNotifications.map((event) => ({
@@ -717,7 +639,7 @@ const Dashboard: React.FC = () => {
     try {
       // Determine the approval field based on the current user's role
       const approvalField =
-        user?.role?.name === dean
+        user?.roles[0]?.name === dean
           ? { isAprrovedByDean: true }
           : { isAprrovedByChairman: true };
 
@@ -841,7 +763,7 @@ const Dashboard: React.FC = () => {
         selectedEvents.map(async (eventId) => {
           // Determine the approval field based on the current user's role
           const approvalField =
-            user?.role?.name === dean
+            user?.roles[0]?.name === dean
               ? { isAprrovedByDean: true }
               : { isAprrovedByChairman: true };
 
@@ -1080,6 +1002,13 @@ const Dashboard: React.FC = () => {
         <Typography variant="h4" gutterBottom>
           Dashboard
         </Typography>
+
+        {user?.roles[0]?.name === "Dean" ? (
+            <Box>Dean</Box>
+        ) : 
+        
+        (<Box>not dean</Box>)
+        }
 
         {loading ? (
           <Box

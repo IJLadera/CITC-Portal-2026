@@ -1,8 +1,7 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import AuthSlice from './pages/authentication/Login/slice';
 import LMSSlice from './pages/Application/pages/lms/slice';
-// import storage from 'redux-persist/lib/storage';
-import sessionStorage from 'redux-persist/lib/storage/session';
+import storage from 'redux-persist/lib/storage';
 import { persistStore, persistReducer } from 'redux-persist';
 import unieventifyReducer from './pages/Application/pages/unieventify/src/Application/slice'
 import UniEventifyApplication from './pages/Application/pages/unieventify/src/Application/application';
@@ -17,7 +16,7 @@ const rootReducer = combineReducers({
 // Persist configuration
 const persistConfig = {
     key: 'root',
-    storage: sessionStorage,
+    storage,
     whitelist: ['auth'], // persist only auth slice
 };
 

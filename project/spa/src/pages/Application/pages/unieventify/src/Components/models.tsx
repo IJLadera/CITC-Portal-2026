@@ -8,6 +8,11 @@ export interface User {
     middle_name: string,
     username: string,
     idNumber: number,
+    roles: {
+        uuid: number,
+        name: string,
+        rank: number
+    },
     role: {
         uuid: number,
         name: string,

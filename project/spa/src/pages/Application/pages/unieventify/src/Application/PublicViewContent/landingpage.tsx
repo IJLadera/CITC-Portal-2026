@@ -294,7 +294,7 @@ export default function Landingpage() {
           </Button>
         </Box>
       </Box>
-      <Box className="mt-16 flex justify-center">
+      <Box className="mt-16 flex justify-center" sx={{color: "white"}}>
         {latestEvent?.length > 0 ? (
           <Box
             sx={{ display: "flex", flexDirection: "column", width: "900px" }}
@@ -318,7 +318,8 @@ export default function Landingpage() {
             <Carousel
               slideInterval={3000}
               className="h-full"
-              style={{ minHeight: "400px" }}
+              style={{ minHeight: "400px", color: "white"}}
+
             >
               {latestEvent.length > 0 ? (
                 latestEvent.map((event) => {
@@ -359,6 +360,7 @@ export default function Landingpage() {
                             variant="subtitle1"
                             color="text.secondary"
                             className="line-clamp-3"
+                            style={{color: "white"}}
                           >
                             {latestEventState ? (
                               <Editor
@@ -469,7 +471,7 @@ export default function Landingpage() {
                                 paddingRight: 3,
                                 paddingBottom: 1,
                                 paddingTop: 1,
-                                color: "#1C3D72", // Dark blue
+                                // color: "white", // Dark blue
                                 borderColor: "#FFD700",
                                 fontWeight: "bold",
                               }}

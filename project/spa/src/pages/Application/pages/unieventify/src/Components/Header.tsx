@@ -4,6 +4,8 @@ import { Navbar } from "flowbite-react";
 import logo from "../images/logo.png";
 import { Navigate, useLocation } from 'react-router-dom';
 import Cookies from "js-cookie";
+import { useAppDispatch, useAppSelector } from "../../../../../../hooks";
+import { fetchCurrentUser, fetchUserRole } from "../Application/slice";
 
 export default function Header() {
   const [showLogo, setShowLogo] = useState(true);
@@ -13,6 +15,16 @@ export default function Header() {
   const typingSpeed = 400; // Speed of typing in milliseconds
   const location = useLocation();
   const token = Cookies.get("auth_token");
+
+  const dispatch = useAppDispatch()
+
+  const user = useAppSelector((state) => state.unieventify.user)
+  const highestRankRole = useAppSelector((state) => state.unieventify.userRole)
+
+  useEffect(() => {
+    dispatch(fetchCurrentUser())
+    dispatch(fetchUserRole())
+  }, [])
 
   useEffect(() => {
     // Show the logo for 1.5 seconds
@@ -44,7 +56,7 @@ export default function Header() {
     };
   }, []);
 
-  const notAlumni = ["Dean", "Chairperson"];
+  const notAlumni = ["Dean", "Chairperson", "Admin", "Faculty", "Student", "Unit Org", "Mother Org" ];
 
   return token
     ? <Navigate
@@ -76,7 +88,9 @@ export default function Header() {
                 Home
               </Navbar.Link>
               <Navbar.Link href="/unieventify/events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Public Events</Navbar.Link>
+              {highestRankRole && notAlumni.includes(highestRankRole.name || '') && (
               <Navbar.Link href="/unieventify/app" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Calendar/Events</Navbar.Link>
+            )}
             </Navbar.Collapse>
           </Navbar>
         </div>

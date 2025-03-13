@@ -92,10 +92,10 @@ export default function Editprofile({
   const [yearLevel, setYearLevel] = useState<YearLevel[]>([]);
   const [selectedCollegeName, setSelectedCollegeName] = useState(collegeParams);
   const [selectedRoleName, setSelectedRoleName] = useState(
-    profile.role?.name
+    profile.role?.designation
   );
   const [selectedDepartmentName, setSelectedDepartmentName] = useState(
-    profile.department?.name
+    profile.department?.departmentName
   );
   const [selectedSectionName, setSelectedSectionName] = useState(
     profile.section?.sectionName
@@ -305,7 +305,7 @@ export default function Editprofile({
     if (selectedFile) formData.append("image", selectedFile);
 
     http
-      .patch(`auth/update/${profile.uuid}/`, formData, {
+      .patch(`update_profile/${profile.id}/`, formData, {
         headers: {
           Authorization: `Token ${token}`,
           "Content-Type": "multipart/form-data",
@@ -357,7 +357,7 @@ export default function Editprofile({
             <Typography variant="h6" gutterBottom>
               {profile.username}
             </Typography>
-            <Typography>ID: {profile.id_number}</Typography>
+            <Typography>ID: {profile.idNumber}</Typography>
             <Typography>Email: {profile.email}</Typography>
             <Box className="mt-4 flex space-x-3 lg:mt-6">
               <Button
@@ -487,7 +487,7 @@ export default function Editprofile({
                           },
                         }}
                         renderInput={(params) => (
-                          <TextField {...params} label="" />
+                          <TextField {...params} label=" " />
                         )}
                       />
                     </Box>
@@ -520,7 +520,7 @@ export default function Editprofile({
                       },
                     }}
                     renderInput={(params) => (
-                      <TextField {...params} label="" />
+                      <TextField {...params} label=" " />
                     )}
                   />
                 </Box>
@@ -557,7 +557,7 @@ export default function Editprofile({
                           },
                         }}
                         renderInput={(params) => (
-                          <TextField {...params} label="" />
+                          <TextField {...params} label=" " />
                         )}
                       />
                     </Box>

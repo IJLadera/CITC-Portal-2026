@@ -34,7 +34,8 @@ import { Accordion } from "flowbite-react";
 import http from "../../../../../../http";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
-import { useAppSelector } from '../../../../../../hooks';
+import { useAppDispatch, useAppSelector } from '../../../../../../hooks';
+import { fetchUserRole } from '../Application/slice';
 
 const drawerWidth = 210;
 
@@ -80,6 +81,14 @@ function SideBar(props: SideBarProps) {
     "https://docs.google.com/forms/d/e/1FAIpQLScE7tGtJTIKvVptizmWTz15ErkfUsSD-tJR1Wf3TfHEdpLHWA/viewform";
 
   const dashboardRole = ["Student", "Faculty", "Mother Org", "Unit Org"];
+
+  const highestRankRole = useAppSelector((state) => state.unieventify.userRole)
+
+  const dispatch = useAppDispatch()
+
+  useEffect(() => {
+    dispatch(fetchUserRole())
+  }, [])
 
   useEffect(() => {
     http
@@ -152,7 +161,7 @@ function SideBar(props: SideBarProps) {
     >
       <Toolbar />
       <Divider />
-      {!dashboardRole.includes(currentUser?.role?.name || "") && (
+      {!dashboardRole.includes(highestRankRole?.name || "") && (
         <List>
           <ListItem disablePadding>
             <ListItemButton
@@ -463,7 +472,7 @@ function SideBar(props: SideBarProps) {
                 Hobnob
               </MenuItem>
               <MenuItem
-                onClick={() => handleMenuItemClick("/auth/app/profile")}
+                onClick={() => handleMenuItemClick("/profile")}
               >
                 Profile
               </MenuItem>

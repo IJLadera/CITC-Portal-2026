@@ -56,6 +56,7 @@ export default function Profile() {
     }
   };
 
+
   // const highestRankRole = profile?.roles?.find(role => role.rank === 1);
 
   useEffect(() => {
@@ -161,8 +162,8 @@ export default function Profile() {
               </Typography>
               <Typography>ID: {profile.idNumber}</Typography>
               <Typography>Email: {profile.email}</Typography>
-              <Box className="mt-4 flex space-x-3 lg:mt-6">
-                <Box
+              {/* <Box className="mt-4 flex space-x-3 lg:mt-6"> */}
+                {/* <Box
                   onClick={() => handleClick(true)}
                   className="cursor-pointer inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-center text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:border-gray-700 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
                 >
@@ -174,7 +175,7 @@ export default function Profile() {
                 >
                   Change Password
                 </a>
-              </Box>
+              </Box> */}
             </Grid>
             <Grid item xs={12} md={8}>
               <Box

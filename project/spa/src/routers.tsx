@@ -25,6 +25,7 @@ import Reports from "./pages/Application/pages/unieventify/src/Application/Conte
 import AddUser from "./pages/Application/pages/unieventify/src/Application/Contents/adduser";
 import UserUploadCSV from "./pages/Application/pages/unieventify/src/Application/Contents/uploadusercsv";
 import EventDetails from "./pages/Application/pages/unieventify/src/Components/eventComponents/eventDetails";
+import Forgotpassword from "./pages/Application/pages/unieventify/src/Authentication/forgotpassword";
 
 const router = createBrowserRouter([
     {
@@ -150,6 +151,11 @@ const router = createBrowserRouter([
         path: "calendar/",
         element: <MyCalendar />,
     },
+
+    {
+        path: "changepassword/",
+        element: <Forgotpassword />
+    }
 
 
 ])

@@ -17,7 +17,8 @@ import colors from "../../Components/colors";
 import http from "../../../../../../../http";
 import { useNavigate } from "react-router-dom";
 import { Editor, EditorState, convertFromRaw, ContentState } from "draft-js";
-import { useAppSelector } from "../../../../../../../hooks";
+import { useAppDispatch, useAppSelector } from "../../../../../../../hooks";
+import { fetchCurrentUser, fetchNotifications } from "../slice";
 
 const deanAndChairperson = ['Dean', 'Chairperson']
 
@@ -66,13 +67,30 @@ interface UserRole {
 
 const Notification = () => {
   const [approvalEvents, setApprovalEvents] = useState<Event[]>([]);
-  const [notifications, setNotifications] = useState<NotificationProps[]>([]);
+  // const [notifications, setNotifications] = useState<NotificationProps[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [userRole, setUserRole] = useState<Role | null>(null);
+  // const [userRole, setUserRole] = useState<Role | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const token = useAppSelector((state) => state.auth.token);
   const navigate = useNavigate();
+
+  const dispatch = useAppDispatch()
+
+  const notificationss = useAppSelector((state) => state.unieventify.notifications)
+
+  const approvaleventss = useAppSelector((state) => state.unieventify.approvalEvents)
+
+  const users = useAppSelector((state) => state.unieventify.user)
+
+  const filteredNotifications = notificationss.filter((noti) => noti.event.status !== "draft" && noti.event.status !== "disapproved");
+
+
+
+  useEffect(() => {
+    dispatch(fetchCurrentUser());
+    dispatch(fetchNotifications())
+  }, [dispatch])
 
   useEffect(() => {
     const fetchUserAndEvents = async () => {
@@ -85,7 +103,7 @@ const Notification = () => {
         const userResponse = await http.get("auth/users/me/", {
           headers: { Authorization: `Token ${token}` },
         });
-        setUserRole(userResponse.data.role?.designation);
+        // setUserRole(userResponse.data.role?.designation);
         setUser(userResponse.data);
 
         // Fetch approval events
@@ -105,7 +123,7 @@ const Notification = () => {
         );
 
         // Update state with the filtered notifications
-        setNotifications(filteredNotifications);
+        // setNotifications(filteredNotifications);
       } catch (err: any) {
         setError(err.message);
         console.error("An error occurred while fetching data:", err);
@@ -140,11 +158,11 @@ const Notification = () => {
       .delete(`unieventify/notifications/${id}/`, {
         headers: { Authorization: `Token ${token}` },
       })
-      .then(() => {
-        setNotifications((prevNotifications) =>
-          prevNotifications.filter((notification) => notification.id !== id)
-        );
-      })
+      // .then(() => {
+      //   setNotifications((prevNotifications) =>
+      //     prevNotifications.filter((notification) => notification.id !== id)
+      //   );
+      // })
       .catch((error) => {
         console.error("Error deleting the notification:", error);
       });
@@ -281,8 +299,8 @@ const Notification = () => {
       </Typography>
 
       {/* Notifications */}
-      {notifications.length > 0 ? (
-        notifications.map((notification) => {
+      {filteredNotifications.length > 0 ? (
+        filteredNotifications.map((notification) => {
           let contentState;
           try {
             contentState = notification.event.eventDescription

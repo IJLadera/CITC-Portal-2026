@@ -5,42 +5,48 @@ import { MdEvent } from "react-icons/md";
 import { FaNotesMedical } from "react-icons/fa6";
 import { Modal, Button, Label, Textarea, FileInput } from "flowbite-react";
 import { useEffect, useState } from "react";
-import { useAppDispatch } from "../../../hooks";
+import { useAppDispatch, useAppSelector } from "../../../hooks";
 import { mutateLoggedIn } from "../../authentication/Login/slice";
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import { fetchUserProfileApi } from "../../../api";
 import { Role } from "../../../pages/Application/pages/unieventify/src/Components/models"
+import { fetchUserRole } from "../pages/unieventify/src/Application/slice";
 
 export default function SideBar () {
     const [openModal, setOpenModal] = useState(false)
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
     const [role, setRole] = useState<Role>();
+
+    // const dispatch = useAppDispatch()
+    const highestRankRole = useAppSelector((state) => state.unieventify.userRole)
     
+
 
 
     // Fetch role when the component mounts
     useEffect(() => {
-        fetchRole();
+        // fetchRole();
+        dispatch(fetchUserRole())
     }, []);
 
-    // Fetch user profile and set the role
-    const fetchRole = async () => {
-        const userProfile = await fetchUserProfileApi(); // Fetch user profile
-        console.log("Fetched user profile:", userProfile);
+    // // Fetch user profile and set the role
+    // const fetchRole = async () => {
+    //     const userProfile = await fetchUserProfileApi(); // Fetch user profile
+    //     console.log("Fetched user profile:", userProfile);
 
-        if (userProfile.roles && userProfile.roles.length > 0) {
-            const highestRankRole = userProfile.roles.reduce((minRole: Role, currentRole: Role) => {
-                return currentRole.rank < minRole.rank ? currentRole : minRole;
-            }, userProfile.roles[0]);
+    //     if (userProfile.roles && userProfile.roles.length > 0) {
+    //         const highestRankRole = userProfile.roles.reduce((minRole: Role, currentRole: Role) => {
+    //             return currentRole.rank < minRole.rank ? currentRole : minRole;
+    //         }, userProfile.roles[0]);
 
-            console.log("Highest rank role:", highestRankRole);
-            setRole(highestRankRole);
-        } else {
-            console.error("No roles found for user.");
-        }
-    };
+    //         console.log("Highest rank role:", highestRankRole);
+    //         setRole(highestRankRole);
+    //     } else {
+    //         console.error("No roles found for user.");
+    //     }
+    // };
 
     return (
         <aside id="default-sidebar" className="fixed z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
@@ -87,7 +93,7 @@ export default function SideBar () {
                         <span className="flex-1 ms-3 whitespace-nowrap">Add Post</span>
                         </a>
                     </li>
-                    {role && role.name === "Admin" && (
+                    {highestRankRole && highestRankRole.name === "Admin" && (
                         <li onClick={() => navigate('adduser')}>
                         <NavLink to="" className={({isActive}) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
                             <FaUserPlus className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
@@ -96,6 +102,13 @@ export default function SideBar () {
                         </NavLink>
                         </li>
                     )}
+                    <li onClick={() => navigate('/profile')}>
+                        <NavLink to="" className={({isActive}) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
+                            <MdEvent className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
+                            <span className="flex-1 ms-3 whitespace-nowrap">Profile</span>
+                            {/* <span className="inline-flex items-center justify-center w-3 h-3 p-3 ms-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">3</span> */}
+                        </NavLink>
+                    </li>                    
                     <li onClick={() => {
                         dispatch(mutateLoggedIn(false))
                         navigate('/login')

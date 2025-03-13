@@ -121,6 +121,7 @@ export default function Profile() {
 
   return (
     <Box
+      className="col-span-3"
       sx={{
         flexGrow: 1,
         px: { xs: "2vw", sm: "5vw" },
@@ -128,7 +129,8 @@ export default function Profile() {
         bgcolor: "white",
         color: "black",
         borderRadius: "8px",
-        minHeight: "100vh",
+        height: "100vh",
+        overflow: "scroll"
       }}
     >
       {!editProfile ? (

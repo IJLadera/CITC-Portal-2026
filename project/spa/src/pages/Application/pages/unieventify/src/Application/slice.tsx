@@ -284,6 +284,45 @@ export const fetchTimelineEvents = createAsyncThunk(
   }
 );
 
+export const fetchApprovalEvents = createAsyncThunk(
+  'eventData/fetchApprovalEvents',
+  async (_, { getState }: any) => {
+    const token = getState().auth.token;
+    const response = await http.get("unieventify/approvalevents/", {
+      headers: { Authorization: `Token ${token}` }
+    });
+    return response.data;
+  }
+);
+
+export const fetchNotifications = createAsyncThunk(
+  'eventData/fetchNotifications',
+  async (_, { getState }: any) => {
+    const token = getState().auth.token;
+    const response = await http.get("unieventify/notifications/", {
+      headers: { Authorization: `Token ${token}` }
+    });
+    return response.data;
+  }
+);
+
+export const fetchUserRole = createAsyncThunk(
+  'eventData/fetchUserRole',
+  async (_, { getState }: any) => {
+    const token = getState().auth.token;
+    const response = await http.get("auth/users/me", {
+      headers: { Authorization: `Token ${token}` }
+    });
+
+    const highestRankRole = response.data.roles.reduce((minRole: any, currentRole: any) => {
+      return currentRole.rank < minRole.rank ? currentRole : minRole;
+    }, response.data.roles[0]);
+
+    return highestRankRole;
+  }
+);
+
+
 export const fetchUserRoles = createAsyncThunk(
   'eventData/fetchUserRoles',
   async (_, { getState }: any) => {
@@ -460,6 +499,19 @@ const unieventifySlice = createSlice({
         state.error = action.error.message || 'Failed to current uder details';
       })
 
+      .addCase(fetchUserRole.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUserRole.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userRole = action.payload;
+      })
+      .addCase(fetchUserRole.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to current uder details';
+      })      
+
       .addCase(fetchUserRoles.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -542,6 +594,34 @@ const unieventifySlice = createSlice({
         state.timelineLoading = false;
         state.error = action.error.message || 'Failed to load timeline events';
       })
+
+      //fetch approval events
+      .addCase(fetchApprovalEvents.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchApprovalEvents.fulfilled, (state, action) => {
+        state.loading = false;
+        state.approvalEvents = action.payload;
+      })
+      .addCase(fetchApprovalEvents.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to load timeline events';
+      })
+
+      //fetch notifications
+      .addCase(fetchNotifications.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchNotifications.fulfilled, (state, action) => {
+        state.loading = false;
+        state.notifications = action.payload;
+      })
+      .addCase(fetchNotifications.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to load timeline events';
+      })      
 
       // fetch Event Categories
       .addCase(fetchEventCategories.pending, (state) => {

@@ -41,7 +41,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DateTime } from "luxon";
 import { useAppDispatch, useAppSelector } from "../../../../../../../hooks";
-import { fetchCollegeses, fetchDepartments, fetchEventCategories, fetchEventTypes, fetchSchoolYears, fetchSections, fetchSetRemarks, fetchSetup, fetchStatus, fetchUserRoles, fetchUsers, fetchVenues } from "../slice";
+import { fetchApprovalEvents, fetchCollegeses, fetchDepartments, fetchEventCategories, fetchEventTypes, fetchSchoolYears, fetchSections, fetchSetRemarks, fetchSetup, fetchStatus, fetchUserRole, fetchUserRoles, fetchUsers, fetchVenues } from "../slice";
 import { RootState } from "../../../../../../../store";
 
 const dean = "Dean";
@@ -164,7 +164,8 @@ const Dashboard: React.FC = () => {
 
   const users = useAppSelector((state) => state.unieventify.users)
   const departments = useAppSelector((state) => state.unieventify.departments)
-  const reduxroles = useAppSelector((state) => state.unieventify.userRole)
+  const reduxroles = useAppSelector((state) => state.unieventify.userRoles)
+  const roles = Array.isArray(reduxroles) ? reduxroles.filter((role: any) => role.name !== "Admin") : []
   // const roles = useAppSelector((state) => state.unieventify.userRole)
   const colleges = useAppSelector((state) => state.unieventify.colleges)
   const setups = useAppSelector((state) => state.unieventify.setups)
@@ -179,11 +180,11 @@ const Dashboard: React.FC = () => {
 
   const draftEvents = useAppSelector((state) => state.unieventify.approvalEvents)
 
-  const roles = Array.isArray(reduxroles) ? reduxroles.filter((role: any) => role.name !== "Admin") : [];
-
   const draftNotifications = draftEvents.filter((notification: any) => notification.status.name === "draft");
   
+  const highestrole = useAppSelector((state) => state.unieventify.userRole)
 
+  console.log("highest role", highestrole)
 
   // console.log("suerroles", reduxroles)
   console.log("roles", roles);
@@ -199,6 +200,7 @@ const Dashboard: React.FC = () => {
     dispatch(fetchUsers());
     dispatch(fetchDepartments());
     dispatch(fetchUserRoles());
+    dispatch(fetchUserRole())
     dispatch(fetchCollegeses());
     dispatch(fetchSetup());
     dispatch(fetchVenues());
@@ -208,6 +210,7 @@ const Dashboard: React.FC = () => {
     dispatch(fetchEventTypes());
     dispatch(fetchSetRemarks());
     dispatch(fetchSchoolYears());
+    dispatch(fetchApprovalEvents());
   }, [dispatch]);
 
   const handleRemarkChange = (newRemark: string) => {
@@ -475,6 +478,7 @@ const Dashboard: React.FC = () => {
       dispatch(fetchEventTypes());
       dispatch(fetchSetRemarks());
       dispatch(fetchSchoolYears());
+      dispatch(fetchApprovalEvents())
     } catch (error) {
       console.error("Error saving entity:", error);
     }
@@ -499,6 +503,7 @@ const Dashboard: React.FC = () => {
         dispatch(fetchEventTypes());
         dispatch(fetchSetRemarks());
         dispatch(fetchSchoolYears());
+        dispatch(fetchApprovalEvents());
         toast.success("Deleted successfully", {
           position: "top-center",
           autoClose: 5000,

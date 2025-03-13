@@ -44,6 +44,8 @@ export default function Header() {
     };
   }, []);
 
+  const notAlumni = ["Dean", "Chairperson"];
+
   return token
     ? <Navigate
       to="unieventify/"

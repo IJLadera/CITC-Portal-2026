@@ -58,7 +58,11 @@ const router = createBrowserRouter([
                         element: <Landingpage />
                     }
                 ]
-            }
+            },
+            {
+                path: "profile/",
+                element: <Profile />,
+            },            
         ]
     },
     {

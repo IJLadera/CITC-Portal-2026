@@ -6,11 +6,15 @@ from .serializers import CreateUserSerializer, UpdateUserSerializer, ChangePassw
 from .permissions import IsUserOrIsAdminOrReadOnly
 
 class UpdateProfileView(UpdateAPIView):
-    queryset = User.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsUserOrIsAdminOrReadOnly]
     serializer_class = UpdateUserSerializer
 
+    def get_object(self):
+        return self.request.user  # Get the authenticated user
+
 class ChangePasswordView(UpdateAPIView):
-    queryset = User.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsUserOrIsAdminOrReadOnly]
     serializer_class = ChangePasswordSerializer
+
+    def get_object(self):
+        return self.request.user  # Get the authenticated user

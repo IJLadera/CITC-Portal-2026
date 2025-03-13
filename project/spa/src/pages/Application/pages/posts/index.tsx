@@ -29,7 +29,7 @@ export default function Post() {
                     <Friends />
                 </div>
                 <div className="max-h-screen overflow-y-scroll px-5 pb-28 pt-5">
-                    <h3 className="text-lg text-white font-semibold mb-4">Unieventify Major Events</h3>
+                    <h3 className="text-lg text-white font-semibold mb-4">Unieventify Major Events </h3>
                     {loading ? (
                         <p className="text-white">Loading events...</p>
                     ) : error ? (

@@ -51,7 +51,7 @@ export default function Header() {
       state={{ from: location }} // pass current location to redirect back
     />
     : (
-      <div className='flex flex-col'>
+      <div className='flex flex-col col-span-3'>
         <div>
           <Navbar fluid rounded>
             <Navbar.Brand href="/">

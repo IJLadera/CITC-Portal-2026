@@ -51,7 +51,13 @@ const router = createBrowserRouter([
             },
             {
                 path: "unieventifys/",
-                element: <Landingpage />,
+                element: <Header />,
+                children: [
+                    {
+                        path: "",
+                        element: <Landingpage />
+                    }
+                ]
             }
         ]
     },

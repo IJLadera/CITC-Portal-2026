@@ -30,7 +30,7 @@ from auditlog.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 
 from django.db.models.functions import TruncMonth
-from django.db.models import Count, Max, F, Subquery, OuterRef, IntegerField, CharField, Value, Min
+from django.db.models import Count, Max, F, Subquery, OuterRef, IntegerField, CharField, Value, Min, OuterRef, Subquery, Q
 from rest_framework.response import Response
 from rest_framework import status, serializers
 from datetime import datetime, timedelta, timezone as dj_timezone, date
@@ -39,7 +39,6 @@ import json
 import csv
 import io
 import chardet
-from django.db.models import Q
 from django.utils import timezone
 from django.core.mail import send_mail, send_mass_mail
 from django.template.loader import render_to_string
@@ -359,6 +358,9 @@ class EventStatisticsView(APIView):
     def get_queryset(self):
         user = self.request.user
         user_role = user.roles.order_by('rank').first().name
+        first_role_subquery = UserRole.objects.filter(
+            user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
+        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
         
         # Base query to exclude personal events and draft statuses
         queryset = tblEvent.objects.exclude(
@@ -369,12 +371,12 @@ class EventStatisticsView(APIView):
         if user_role == 'Admin':
             return queryset
         elif user_role == 'Dean':
-            return queryset.exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            return queryset.exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
         elif user_role in ['Chairperson', 'Faculty']:
             return queryset.filter(
                 Q(department=user.department) | 
                 Q(participants__in=[user])
-            ).exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            ).exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
         elif user_role == 'Student':
             return queryset.filter(
                 Q(department=user.department) & 
@@ -382,12 +384,12 @@ class EventStatisticsView(APIView):
             )
         elif user_role == 'Mother Org':
             return queryset.filter(
-                created_by__role__name__in=['Mother Org', 'Unit Org']
+                Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))
             )
         elif user_role == 'Unit Org':
             return queryset.filter(
-                (Q(department=user.department.id) & Q(created_by__role__name__in=['Mother Org', 'Unit Org'])) |
-                Q(created_by__role__name='Mother Org')
+                (Q(department=user.department.id) & Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))) |
+                Q(Subquery(first_role_subquery).in_("Mother Org"))
             )
         return tblEvent.objects.none()
 
@@ -536,7 +538,9 @@ class EventStatisticsByCategoryView(APIView):
     def get_queryset(self):
         user = self.request.user
         user_role = user.roles.order_by('rank').first().name
-
+        first_role_subquery = UserRole.objects.filter(
+            user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
+        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
 
         # Base query to exclude personal events and draft statuses
         queryset = tblEvent.objects.exclude(eventCategory__eventCategoryName__iexact='personal').exclude(status__name__iexact='draft').exclude(eventCategory__isnull=True).exclude(eventCategory__eventCategoryName='').exclude(status__name__iexact='disapproved')
@@ -546,13 +550,13 @@ class EventStatisticsByCategoryView(APIView):
             return queryset
         
         elif user_role == 'Dean':
-            return queryset.exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            return queryset.exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
 
         elif user_role in ['Chairperson', 'Faculty']:
             return queryset.filter(
                 Q(department=user.department) | 
                 Q(participants__in=[user])
-            ).exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            ).exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
 
         elif user_role == 'Student':
             return queryset.filter(
@@ -562,13 +566,13 @@ class EventStatisticsByCategoryView(APIView):
 
         elif user_role == 'Mother Org':
             return queryset.filter(
-                created_by__role__name__in=['Mother Org', 'Unit Org']
+                Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))
             )
 
         elif user_role == 'Unit Org':
             return queryset.filter(
-                (Q(department=user.department) & Q(created_by__role__name__in=['Mother Org', 'Unit Org'])) |
-                Q(created_by__role__name='Mother Org')
+                (Q(department=user.department) & Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))) |
+                Q(Subquery(first_role_subquery).in_("Mother Org"))
             )
 
         return tblEvent.objects.none()
@@ -651,6 +655,9 @@ class EventStatisticsByDepartmentView(APIView):
     def get_queryset(self):
         user = self.request.user
         user_role = user.roles.order_by('rank').first().name
+        first_role_subquery = UserRole.objects.filter(
+            user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
+        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
 
         # Base query to exclude personal events and draft statuses
         queryset = tblEvent.objects.exclude(eventCategory__eventCategoryName__iexact='personal') \
@@ -664,13 +671,13 @@ class EventStatisticsByDepartmentView(APIView):
             return queryset
         
         elif user_role == 'Dean':
-            return queryset.exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            return queryset.exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
 
         elif user_role in ['Chairperson', 'Faculty']:
             return queryset.filter(
                 Q(department=user.department) | 
                 Q(participants__in=[user])
-            ).exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            ).exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
 
         elif user_role == 'Student':
             return queryset.filter(
@@ -680,13 +687,13 @@ class EventStatisticsByDepartmentView(APIView):
 
         elif user_role == 'Mother Org':
             return queryset.filter(
-                created_by__role__name__in=['Mother Org', 'Unit Org']
+                Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))
             )
 
         elif user_role == 'Unit Org':
             return queryset.filter(
-                (Q(department=user.department) & Q(created_by__role__name__in=['Mother Org', 'Unit Org'])) |
-                Q(created_by__role__name='Mother Org')
+                (Q(department=user.department) & Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))) |
+                Q(Subquery(first_role_subquery).in_("Mother Org"))
             )
 
         return tblEvent.objects.none()
@@ -769,6 +776,9 @@ class EventStatisticsCancelledView(APIView):
     def get_queryset(self):
         user = self.request.user
         user_role = user.roles.order_by('rank').first().name
+        first_role_subquery = UserRole.objects.filter(
+            user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
+        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
 
         # Base query to include only events with 'Cancelled' status and exclude personal events
         queryset = tblEvent.objects.filter(status__name='cancelled').exclude(eventCategory__eventCategoryName__iexact='personal') 
@@ -778,13 +788,13 @@ class EventStatisticsCancelledView(APIView):
             return queryset
         
         elif user_role == 'Dean':
-            return queryset.exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            return queryset.exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
 
         elif user_role in ['Chairperson', 'Faculty']:
             return queryset.filter(
                 Q(department=user.department) | 
                 Q(participants__in=[user])
-            ).exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            ).exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
 
         elif user_role == 'Student':
             return queryset.filter(
@@ -794,13 +804,13 @@ class EventStatisticsCancelledView(APIView):
 
         elif user_role == 'Mother Org':
             return queryset.filter(
-                created_by__role__name__in=['Mother Org', 'Unit Org']
+                Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))
             )
 
         elif user_role == 'Unit Org':
             return queryset.filter(
-                (Q(department=user.department) & Q(created_by__role__name__in=['Mother Org', 'Unit Org'])) |
-                Q(created_by__role__name='Mother Org')
+                (Q(department=user.department) & Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))) |
+                Q(Subquery(first_role_subquery).in_("Mother Org"))
             )
 
         # If the role is not covered, return an empty queryset
@@ -1213,11 +1223,15 @@ class ApprovalEvent(ListAPIView):
         # Check if the user has the required designation
         if user_role=="Dean":
             # Retrieve distinct events needing approval for Dean/Chairperson
+            # Subquery to get the first role (by rank) for each created_by user
+            first_role_subquery = UserRole.objects.filter(
+                user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
+            ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
 
             return (
                 tblEvent.objects.filter(
                     ~Q(eventCategory__eventCategoryName="Personal"),
-                    Q(created_by__role__name__in=["Mother Org", "Unit Org"]),
+                    Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])),
                     Q(status__name="draft"),
                 )
             )
@@ -1225,10 +1239,13 @@ class ApprovalEvent(ListAPIView):
         # Check if the user is a Chairperson with an assigned department
         if user_role == "Chairperson" and user.department.id:
             # Retrieve event logs for Unit Org or Faculty within the same department
+            first_role_subquery = UserRole.objects.filter(
+                user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
+            ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
             return (
                 tblEvent.objects.filter(
                     ~Q(eventCategory__eventCategoryName="Personal"),
-                    Q(created_by__role__name__in=["Unit Org", "Faculty"]),
+                    Q(Subquery(first_role_subquery).in_(["Unit Org", "Faculty"])),
                     Q(created_by__department=user.department.id),
                     Q(status__name="draft")
                 )
@@ -1672,6 +1689,9 @@ class ApproveDocumentsListView(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         user_role = user.roles.order_by('rank').first().name
+        first_role_subquery = UserRole.objects.filter(
+            user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
+        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
 
         # Base query to exclude empty or null approveDocuments
         queryset = tblEvent.objects.exclude(approveDocuments__isnull=True).exclude(approveDocuments='').exclude(status__name__iexact='draft').exclude(status__name__iexact='disapproved')
@@ -1681,14 +1701,14 @@ class ApproveDocumentsListView(ListAPIView):
             return queryset
         
         elif user_role == 'Dean':
-            return queryset.exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            return queryset.exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
 
         # Chairperson and Faculty: Filter by user's department and participants
         elif user_role in ['Chairperson', 'Faculty']:
             return queryset.filter(
                 Q(department=user.department) | 
                 Q(participants__in=[user]) 
-            ).exclude(created_by__role__name__in=['Mother Org', 'Unit Org'])
+            ).exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
 
         # Student: Filter by user's department and if they are a participant
         elif user_role == 'Student':
@@ -1700,14 +1720,14 @@ class ApproveDocumentsListView(ListAPIView):
         # Mother Org: Filter by created_by for unit org or mother org
         elif user_role == 'Mother Org':
             return queryset.filter(
-                created_by__role__name__in=['Mother Org', 'Unit Org']
+                Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))
             )
 
         # Unit Org: Filter by user's department and created_by as mother org
         elif user_role == 'Unit Org':
             return queryset.filter(
-                (Q(department=user.department) & Q(created_by__role__name__in=['Mother Org', 'Unit Org'])) |
-                Q(created_by__role__name='Mother Org')
+                (Q(department=user.department) & Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))) |
+                Q(Subquery(first_role_subquery).in_("Mother Org"))
             )
 
         # Default to an empty queryset if role is not covered

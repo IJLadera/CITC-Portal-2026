@@ -109,6 +109,10 @@ class CustomUserSerializer(UserSerializer):
         )
         read_only_fields = (settings.LOGIN_FIELD,'first_name', 'last_name', 'id_number', 'avatar', 'is_student', 'is_employee', 'is_develop', 'is_active', 'is_staff', 'is_superuser', 'roles', 'date_joined', 'department', 'section', 'organization')
 
+    def get_roles(self, obj):
+        roles = obj.roles.all().order_by("rank")  # Order by rank
+        
+        return RoleSerializer(roles, many=True).data
 
 class StudentSerializers(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

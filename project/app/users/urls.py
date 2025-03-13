@@ -5,6 +5,7 @@ urlpatterns = [
     path('', include('djoser.urls')),
     path('', include('djoser.urls.authtoken')),
 
-    path('update/<uuid:uuid>/', UpdateProfileView.as_view(), name='update-profile'),
-    path('change-password/<uuid:uuid>/', ChangePasswordView.as_view(), name='change-password'),
+    path('update_profile/', UpdateProfileView.as_view(), name='auth_update_profile'),
+    path('change_password/', ChangePasswordView.as_view(), name='auth_change_password'),
+
 ]

@@ -24,7 +24,7 @@ import ApproveDocumentsPage from "./pages/Application/pages/unieventify/src/Appl
 import Reports from "./pages/Application/pages/unieventify/src/Application/Contents/reports";
 import AddUser from "./pages/Application/pages/unieventify/src/Application/Contents/adduser";
 import UserUploadCSV from "./pages/Application/pages/unieventify/src/Application/Contents/uploadusercsv";
-import EventDetails from "./pages/Application/pages/unieventify/src/Components/eventComponents/eventDetails";
+import EventDetails from "./pages/Application/pages/unieventify/src/Application/PublicViewContent/eventDetails";
 import Forgotpassword from "./pages/Application/pages/unieventify/src/Authentication/forgotpassword";
 
 const router = createBrowserRouter([
@@ -51,11 +51,15 @@ const router = createBrowserRouter([
                 element: <AddUser />,
             },
             {
-                path: "unieventify/",
+                path: "saunieventify/",
                 element: <Header />,
                 children: [
                     {
                         path: "",
+                        element: <Landingpage />
+                    },
+                    {
+                        path: "public-events/",
                         element: <Landingpage />
                     }
                 ]
@@ -75,10 +79,6 @@ const router = createBrowserRouter([
         element: <Header />,
         errorElement: <Error />,
         children: [
-            {
-                path: "",
-                element: <Landingpage />
-            },
             {
                 path: "events/",
                 element: <Publicevents />,
@@ -155,6 +155,10 @@ const router = createBrowserRouter([
     {
         path: "changepassword/",
         element: <Forgotpassword />
+    },
+    {
+        path: "publicevents/:id",
+        element: <EventDetails />
     }
 
 

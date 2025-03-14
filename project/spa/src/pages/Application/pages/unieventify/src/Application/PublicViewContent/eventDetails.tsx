@@ -14,7 +14,7 @@ export default function EventDetails() {
         const fetchEventDetails = async () => {
             try {
                 const response = await http.get(
-                    `public-events/${id}/`
+                    `unieventify/public-events/${id}/`
                 );
                 setEvent(response.data);
             } catch (error) {

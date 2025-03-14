@@ -230,7 +230,7 @@ export default function Landingpage() {
   };
 
   const handleclick = (id: number) => {
-    navigate(`/events/${id}`);
+    navigate(`/publicevents/${id}`);
   };
 
   const handleButtonClick = () => {

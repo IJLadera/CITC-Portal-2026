@@ -316,7 +316,7 @@ function SideBar(props: SideBarProps) {
             <ListItemText>Announcement</ListItemText>
           </ListItemButton>
         </ListItem>
-        <ListItem disablePadding>
+        {/* <ListItem disablePadding>
           <ListItemButton
             onClick={(event) => {
               onClickToNavigate(event, "profile");
@@ -328,7 +328,7 @@ function SideBar(props: SideBarProps) {
             </ListItemIcon>
             <ListItemText>Profile</ListItemText>
           </ListItemButton>
-        </ListItem>
+        </ListItem> */}
         {isAdmin || role !== 5 ? (
           <ListItem disablePadding>
             <ListItemButton

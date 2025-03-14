@@ -88,7 +88,7 @@ function Login() {
             const result = await loginAPI(auth);
             if (result.status === 200) {
                 const token = result.data.auth_token;
-                const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 3 minutes expiration
+                const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 1 day expiration
                 
                 // Clear any previous persisted data first
                 persistor.purge().then(() => {

@@ -80,7 +80,7 @@ interface Event {
   };
   status: {
     id: number;
-    statusName: string;
+    name: string;
   };
   setup: {
     id: number;
@@ -110,7 +110,7 @@ interface Cancel{
 
 interface Status {
   id: number;
-  statusName: string;
+  name: string;
 }
 
 interface Remark{
@@ -146,7 +146,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
     },
     status: {
       id: 0,
-      statusName: '',
+      name: '',
     },
     setup: {
       id: 0,
@@ -269,7 +269,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
     try {
       // Determine the approval field based on the current user's role
       const approvalField =
-        currentUser?.role?.designation === dean
+        currentUser?.role?.name === dean
           ? { isAprrovedByDean: true }
           : { isAprrovedByChairman: true };
 
@@ -350,7 +350,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
 
       // If status was determined, update the event status
       if (status) {
-        const findStatus = statuses.find((stat) => stat.statusName === status);
+        const findStatus = statuses.find((stat) => stat.name === status);
         if (findStatus?.id) {
           await http.patch(
             `unieventify/events/${id}/`,
@@ -368,25 +368,25 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
 
   const showApproveButton = (() => {
     // Ensure the event is in "draft" status
-    if (event?.status?.statusName !== draft) {
+    if (event?.status?.name !== draft) {
       return false;
     }
     // Check if the user is a Dean
-    if (currentUser?.role?.designation === "Dean") {
+    if (currentUser?.role?.name === "Dean") {
       return (
-        event?.created_by?.role?.designation === "Mother Org" ||
-        event?.created_by?.role?.designation === "Unit Org"
+        event?.created_by?.role?.name === "Mother Org" ||
+        event?.created_by?.role?.name === "Unit Org"
       );
     }
 
     // Check if the user is a Chairperson with the same department
     if (
-      currentUser?.role?.designation === "Chairperson" &&
+      currentUser?.role?.name === "Chairperson" &&
       currentUser?.department?.id === event?.created_by?.department
     ) {
       return (
-        event?.created_by?.role?.designation === "Unit Org" ||
-        event?.created_by?.role?.designation === "Faculty"
+        event?.created_by?.role?.name === "Unit Org" ||
+        event?.created_by?.role?.name === "Faculty"
       );
     }
 
@@ -410,7 +410,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
 
         // Find the status id for "cancelled"
         const findstatus = statuses?.find(
-          (stat) => stat.statusName === cancelled
+          (stat) => stat.name === cancelled
         ); // Ensure "cancelled" is in quotes
         if (findstatus?.id) {
           // Proceed only if `findstatus` is found
@@ -489,7 +489,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
       if (postpone) {
         // Find the status id for "postponed"
         const findstatus = statuses?.find(
-          (stat) => stat.statusName === postponed
+          (stat) => stat.name === postponed
         ); // Ensure "postponed" is in quotes
 
         if (findstatus?.id) {
@@ -565,12 +565,12 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
 
   //filter the remarks
   const findRemark = remarks?.find((remark: any) => remark.events?.id === event?.id);
-  const postponedStatus = event?.status?.statusName === postponed;
-  const disapprovedStatus = event?.status?.statusName === disapprove;
-  const cancelledStatus = event?.status?.statusName === cancelled;
-  const draftStatus = event?.status?.statusName === draft;
+  const postponedStatus = event?.status?.name === postponed;
+  const disapprovedStatus = event?.status?.name === disapprove;
+  const cancelledStatus = event?.status?.name === cancelled;
+  const draftStatus = event?.status?.name === draft;
   const userOrAdmin = event.created_by?.id === currentUser?.id || admin;
-  const doneStatus = event?.status?.statusName === done;
+  const doneStatus = event?.status?.name === done;
 
   const timeAgo = (timestamp: any) => {
     const now = new Date();
@@ -883,7 +883,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
                   Status:
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
-                  {formData.status?.statusName || event.status?.statusName}
+                  {formData.status?.name || event.status?.name}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -939,7 +939,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
                       <TableBody>
                         {Object.entries(
                           event.participants.reduce((acc: any, participant: any) => {
-                            const role = participant.role.designation;
+                            const role = participant.role?.name;
                             acc[role] = (acc[role] || 0) + 1;
                             return acc;
                           }, {})
@@ -1096,7 +1096,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
             />  
           </Box>
         )}
-        {showApproveButton && currentUser?.role?.designation === dean && (
+        {showApproveButton && currentUser?.role?.name === dean && (
           <CustomButton
             color={isAprrovedByDean ? "success" : "primary"}
             onClick={handleApproval}
@@ -1107,7 +1107,7 @@ export default function EventDetails({ event, admin, currentUser }:EventDetailsP
           </CustomButton>
         )}
         {showApproveButton &&
-          currentUser?.role?.designation === chairperson && (
+          currentUser?.role?.name === chairperson && (
             <CustomButton
               color={isAprrovedByChairman ? "success" : "primary"}
               onClick={handleApproval}

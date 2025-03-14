@@ -157,7 +157,6 @@ export default function AddUser() {
     http
       .post("auth/users/", data, { headers })
       .then((response) => {
-        console.log("User added successfully", response.data);
         toast.success("User added successfully!");
         setFormData({
           email: "",

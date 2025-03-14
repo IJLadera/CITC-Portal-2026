@@ -179,7 +179,6 @@ export default function Events() {
   
 
   const fetchFacultyEvents = async (facultyId: any) => {
-    console.log("facultyid", facultyId)
     try {
       const response = await http.get(`unieventify/faculty/events/${facultyId}`, {
         headers: {
@@ -194,7 +193,6 @@ export default function Events() {
       });
       const currentUser = userResponse.data;
 
-      console.log("faculty events: ", response)
       setUser(currentUser);
 
       const eventData = [
@@ -467,10 +465,7 @@ export default function Events() {
   const handleFacultyChange = (facultyId: string) => {
     setSelectedFaculty(facultyId); // Update the selected faculty ID
     fetchFacultyEvents(facultyId); // Fetch events for the selected faculty
-    console.log("facultyId", facultyId)
   };
-
-  console.log('events', events);
 
   // Filter logic
   const filteredEvents = events.filter((event: any) => {

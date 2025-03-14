@@ -11,7 +11,6 @@ export default function UniEventifyApplication() {
   const location = useLocation();
   const token = useAppSelector(state => state.auth.token)
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
-  console.log("isauthenticated",token)
 
   useEffect(() => {
     if (token) {

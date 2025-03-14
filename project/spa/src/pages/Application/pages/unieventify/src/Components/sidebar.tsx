@@ -100,7 +100,6 @@ function SideBar(props: SideBarProps) {
       .then((response) => {
         setRole(response.data.roles[0].rank);
         setCurrentUser(response.data);
-        console.log("current user", response)
         if (response.data.is_staff) {
           setIsAdmin(true);
         }

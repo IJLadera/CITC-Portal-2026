@@ -184,17 +184,6 @@ const Dashboard: React.FC = () => {
   
   const highestrole = useAppSelector((state) => state.unieventify.userRole)
 
-  console.log("highest role", highestrole)
-
-  // console.log("suerroles", reduxroles)
-  console.log("roles", roles);
-  console.log("departments", departments);
-  console.log("colleges", colleges);
-  console.log("setups", setups);
-  console.log("users:", users);
-  console.log("user dashboard:", user)
-  console.log("user dashboard role:", user?.roles)
-  console.log("draft events:", draftNotifications);
 
   useEffect(() => {
     dispatch(fetchUsers());
@@ -438,11 +427,7 @@ const Dashboard: React.FC = () => {
   const handleSave = async () => {
     try {
       let updatedEntity = { ...currentEntity };
-      
-      // Debugging: Check the final payload before sending
-      console.log("Final Payload:", updatedEntity);
 
-      // Adjust properties based on entity type
       if (currentEntityType === "departments") {
         if (updatedEntity.college) {
           updatedEntity.name = updatedEntity.name;
@@ -486,7 +471,6 @@ const Dashboard: React.FC = () => {
 
   const handleDelete = async () => {
     try {
-      console.log("Entity to delete:", entityToDelete);
       if (entityToDelete) {
         await http.delete(`unieventify/${entityToDelete.type}/${entityToDelete.id}/`, {
           headers: { Authorization: `Token ${token}` },

@@ -139,7 +139,6 @@ export default function Landingpage() {
     http
       .get("unieventify/eventcategories/")
       .then((response) => setEventCategory(response.data))
-      .catch((error) => console.log(error));
 
     // Fetch public events from the API and filter out those with status 'draft'
     http

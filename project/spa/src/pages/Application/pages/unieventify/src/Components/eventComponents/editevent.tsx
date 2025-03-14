@@ -327,8 +327,6 @@ const EditEvent = ({
       .catch((error) => console.error("Error fetching participants:", error));
   }, [token]);
 
-  console.log("users", participants);
-
   useEffect(() => {
     if (isEdit && !currentUser.is_staff && !personal) {
       setShowAdditionalFields(true);

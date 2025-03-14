@@ -21,6 +21,10 @@ export default function Header() {
   const user = useAppSelector((state) => state.unieventify.user)
   const highestRankRole = useAppSelector((state) => state.unieventify.userRole)
 
+  // if(!token){
+  //   return <Navigate to="/login" />;
+  // }
+
   useEffect(() => {
     dispatch(fetchCurrentUser())
     dispatch(fetchUserRole())

@@ -12,6 +12,8 @@ export default function UniEventifyApplication() {
   const token = useAppSelector(state => state.auth.token)
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
 
+
+
   useEffect(() => {
     if (token) {
       http
@@ -33,6 +35,10 @@ export default function UniEventifyApplication() {
       setIsAuthenticated(false);
     }
   }, [token]);
+
+  if(!token){
+    return <Navigate to="/login" />;
+  }
 
   if (isAuthenticated === null) {
     // Show a loading state while checking authentication

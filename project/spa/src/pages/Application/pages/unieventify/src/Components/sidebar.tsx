@@ -35,7 +35,10 @@ import http from "../../../../../../http";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { useAppDispatch, useAppSelector } from '../../../../../../hooks';
-import { fetchUserRole } from '../Application/slice';
+import { fetchCurrentUser, fetchUserRole, fetchUserRoles, fetchUsers, fetchEvents,
+  fetchParticipatedEvents, fetchListEvents, fetchTimelineEvents, fetchApprovalEvents, fetchNotifications,
+  fetchEventCategories, fetchEventTypes, fetchSchoolYears, fetchSetRemarks, fetchSetup, fetchVenues,
+  fetchStatus, fetchSections, fetchCollegeses, fetchDepartments, fetchDepartmentsByCollege, fetchDocuments } from '../Application/slice';
 
 const drawerWidth = 210;
 
@@ -88,6 +91,28 @@ function SideBar(props: SideBarProps) {
 
   useEffect(() => {
     dispatch(fetchUserRole())
+    dispatch(fetchUserRoles())
+    dispatch(fetchCurrentUser())
+    dispatch(fetchUsers())
+    dispatch(fetchEvents())
+    dispatch(fetchParticipatedEvents())
+    dispatch(fetchListEvents())
+    dispatch(fetchTimelineEvents())
+    dispatch(fetchApprovalEvents())
+    dispatch(fetchNotifications())
+    dispatch(fetchEventCategories())
+    dispatch(fetchEventTypes())
+    dispatch(fetchSchoolYears())
+    dispatch(fetchSetRemarks())
+    dispatch(fetchSetup())
+    dispatch(fetchVenues())
+    dispatch(fetchStatus())
+    dispatch(fetchSections())
+    dispatch(fetchCollegeses())
+    dispatch(fetchDepartments())
+    dispatch(fetchDepartmentsByCollege())
+    dispatch(fetchDocuments())
+
   }, [])
 
   useEffect(() => {
@@ -344,7 +369,6 @@ function SideBar(props: SideBarProps) {
           },
         });
         setProfile(response.data);
-        console.log("profile", response.data);
       } catch (error) {
         setError(error as Error);
       } finally {

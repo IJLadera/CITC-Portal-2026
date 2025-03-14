@@ -32,10 +32,10 @@ const ApproveDocumentsPage: React.FC = () => {
   const [expandedYears, setExpandedYears] = useState<{ [year: number]: boolean }>({});
   const [groupedDocuments, setGroupedDocuments] = useState<{ [year: number]: Document[] }>({});
 
-  useEffect(() => {
-    // Dispatch the action to fetch documents
-    dispatch(fetchDocuments());
-  }, [dispatch]);
+  // useEffect(() => {
+  //   // Dispatch the action to fetch documents
+  //   dispatch(fetchDocuments());
+  // }, [dispatch]);
 
   useEffect(() => {
     // Group documents by year when documentsByYear changes

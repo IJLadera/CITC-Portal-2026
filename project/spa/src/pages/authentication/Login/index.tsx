@@ -9,6 +9,7 @@ import { loginAPI } from './api';
 import { toast, ToastContainer } from 'react-toastify'; // Importing toast and ToastContainer
 import 'react-toastify/dist/ReactToastify.css'; // Import toast styles
 import Cookies from 'js-cookie';
+import { persistor } from '../../../store';
 
 function Login() {
     const dispatch = useAppDispatch()
@@ -79,20 +80,31 @@ function Login() {
       };
     
 
-    const onSubmitForm = async (event: SyntheticEvent) => {
+      const onSubmitForm = async (event: SyntheticEvent) => {
         event.preventDefault();
         if (!checkLoginAttempts(auth.email)) return;
         setIsDisabled(true);
         try {
-            const result = await loginAPI(auth); // Attempt login API call
+            const result = await loginAPI(auth);
             if (result.status === 200) {
-                // If login is successful
-                dispatch(storeToken(result.data.auth_token));
-                dispatch(mutateLoggedIn(true));
-                navigate('/');
+                const token = result.data.auth_token;
+                const expiresAt = Date.now() + 3 * 60 * 1000; // 3 minutes expiration
                 
+                // Clear any previous persisted data first
+                persistor.purge().then(() => {
+                    // Then set new token and login state
+                    sessionStorage.setItem('auth_token', token);
+                    sessionStorage.setItem('expires_at', expiresAt.toString());
+                    
+                    dispatch(storeToken(token));
+                    dispatch(mutateLoggedIn(true));
+                    
+                    // Force persist the new state
+                    persistor.persist();
+                    
+                    navigate('/');
+                });
             } else {
-                // If result is not successful
                 toast.error('Invalid email or password. Please try again.');
             }
             setIsDisabled(false);
@@ -100,26 +112,10 @@ function Login() {
         } catch (error: any) {
             setIsDisabled(false);
             incrementLoginAttempts(auth.email);
-            const errorResponse = error.response
-            ? error.response.data
-            : error.message;
-          if (typeof errorResponse === "object") {
-            const errorMessages = Object.keys(errorResponse)
-              .map((key) => `${key}: ${errorResponse[key].join(", ")}`)
-              .join("\n");
-            toast.error(`${errorMessages}`, {
-              position: "top-center",
-              autoClose: 5000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-              theme: "light",
-            });
-          }
+            toast.error('Login failed. Please try again.');
         }
-    }
+    };
+    
 
     return (
         <div className="App-header">

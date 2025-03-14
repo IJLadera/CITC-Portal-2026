@@ -26,9 +26,9 @@ export default function Changepassword() {
 
     const profile = useAppSelector((state: RootState) => state.unieventify.user)
 
-    useEffect(() => {
-        dispatch(fetchCurrentUser());
-    }, [dispatch]);
+    // useEffect(() => {
+    //     dispatch(fetchCurrentUser());
+    // }, [dispatch]);
 
 
     const [old_password, setOld_Password] = useState('');

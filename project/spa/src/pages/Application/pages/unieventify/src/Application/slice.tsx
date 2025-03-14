@@ -152,7 +152,7 @@ export const fetchCurrentUser = createAsyncThunk(
 
 // Fetch Users
 export const fetchUsers = createAsyncThunk(
-  'eventData/fetchUsers',
+  'unieventify/fetchUsers',
   async (_, { getState }: any) => {
     const token = getState().auth.token;
     const response = await http.get("unieventify/users/", {
@@ -285,7 +285,7 @@ export const fetchTimelineEvents = createAsyncThunk(
 );
 
 export const fetchApprovalEvents = createAsyncThunk(
-  'eventData/fetchApprovalEvents',
+  'unieventify/fetchApprovalEvents',
   async (_, { getState }: any) => {
     const token = getState().auth.token;
     const response = await http.get("unieventify/approvalevents/", {
@@ -296,7 +296,7 @@ export const fetchApprovalEvents = createAsyncThunk(
 );
 
 export const fetchNotifications = createAsyncThunk(
-  'eventData/fetchNotifications',
+  'unieventify/fetchNotifications',
   async (_, { getState }: any) => {
     const token = getState().auth.token;
     const response = await http.get("unieventify/notifications/", {
@@ -307,7 +307,7 @@ export const fetchNotifications = createAsyncThunk(
 );
 
 export const fetchUserRole = createAsyncThunk(
-  'eventData/fetchUserRole',
+  'unieventify/fetchUserRole',
   async (_, { getState }: any) => {
     const token = getState().auth.token;
     const response = await http.get("auth/users/me", {
@@ -324,7 +324,7 @@ export const fetchUserRole = createAsyncThunk(
 
 
 export const fetchUserRoles = createAsyncThunk(
-  'eventData/fetchUserRoles',
+  'unieventify/fetchUserRoles',
   async (_, { getState }: any) => {
     const token = getState().auth.token;
     const response = await http.get("unieventify/userroles/", {
@@ -438,7 +438,7 @@ export const fetchCollegeses = createAsyncThunk(
 
 
 export const fetchDepartments = createAsyncThunk(
-  'eventData/fetchDepartments',
+  'unieventify/fetchDepartments',
   async (_, { getState }: any) => {
     const token = getState().auth.token;
     const response = await http.get("unieventify/departments/", {
@@ -480,7 +480,7 @@ export const fetchDocuments = createAsyncThunk(
 
 // Create the slice
 const unieventifySlice = createSlice({
-  name: 'eventCategories',
+  name: 'unieventify',
   initialState,
   reducers: {},
   extraReducers: (builder) => {

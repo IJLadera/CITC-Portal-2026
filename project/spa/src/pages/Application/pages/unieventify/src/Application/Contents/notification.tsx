@@ -87,10 +87,10 @@ const Notification = () => {
 
 
 
-  useEffect(() => {
-    dispatch(fetchCurrentUser());
-    dispatch(fetchNotifications())
-  }, [dispatch])
+  // useEffect(() => {
+  //   dispatch(fetchCurrentUser());
+  //   dispatch(fetchNotifications())
+  // }, [dispatch])
 
   useEffect(() => {
     const fetchUserAndEvents = async () => {

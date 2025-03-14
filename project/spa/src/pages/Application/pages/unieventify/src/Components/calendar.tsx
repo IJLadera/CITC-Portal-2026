@@ -34,7 +34,6 @@ const MyCalendar: React.FC = () => {
   // Event click handler
   const handleEventClick = (info: any) => {
     alert('Event clicked: ' + info.event.title);
-    console.log('Event ID:', info.event.id); // Use event ID here
   };
 
   // Convert rrule to FullCalendar-compatible events (handling start and end times)

@@ -121,13 +121,48 @@ export default function Events() {
 
   const dispatch = useDispatch<AppDispatch>();
   
-  useEffect(() => {
-    dispatch(fetchEventCategories());
-    dispatch(fetchCollegeses());
-    dispatch(fetchDepartments());
-    dispatch(fetchDepartmentsByCollege());
-    dispatch(fetchEventTypes())
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(fetchEventCategories());
+  //   dispatch(fetchCollegeses());
+  //   dispatch(fetchDepartments());
+  //   dispatch(fetchDepartmentsByCollege());
+  //   dispatch(fetchEventTypes())
+  // }, [dispatch]);
+
+  console.log("categories length:", categories.length)
+
+  // useEffect(() => {
+  //   fetchEventCategories();
+  //   fetchCollegeses();
+  //   fetchDepartments();
+  //   fetchDepartmentsByCollege();
+  //   fetchEventTypes();
+
+  //   // // Check if categories exist in state before fetching
+  //   // if (categories.length === 0) {
+  //   //   dispatch(fetchEventCategories());
+  //   // }
+    
+  //   // Check if colleges exist in state before fetching
+  //   // if (colleges.length === 0) {
+  //   //   dispatch(fetchCollegeses());
+  //   // }
+    
+  //   // // Check if departments exist in state before fetching
+  //   // if (departments.length === 0) {
+  //   //   dispatch(fetchDepartments());
+  //   // }
+    
+  //   // // Check if departmentsByCollege exist in state before fetching
+  //   // if (Object.keys(departmentsByCollege).length === 0) {
+  //   //   dispatch(fetchDepartmentsByCollege());
+  //   // }
+    
+  //   // // Check if eventTypes exist in state before fetching
+  //   // if (types.length === 0) {
+  //   //   dispatch(fetchEventTypes());
+  //   // }
+  // }, [dispatch, categories, colleges, departments, departmentsByCollege, types]);
 
   const [collegess, setCollegess] = useState([]);
   const [faculties, setFaculties] = useState<Faculty[]>([]);
@@ -466,7 +501,7 @@ export default function Events() {
     setSelectedFaculty(facultyId); // Update the selected faculty ID
     fetchFacultyEvents(facultyId); // Fetch events for the selected faculty
   };
-
+console.log("events", events);
   // Filter logic
   const filteredEvents = events.filter((event: any) => {
     const categoryMatches =

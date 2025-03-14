@@ -12,6 +12,8 @@ import { NavLink } from "react-router-dom";
 import { fetchUserProfileApi } from "../../../api";
 import { Role } from "../../../pages/Application/pages/unieventify/src/Components/models"
 import { fetchUserRole } from "../pages/unieventify/src/Application/slice";
+import { persistor } from "../../../store";
+import Cookies from "js-cookie";
 
 export default function SideBar () {
     const [openModal, setOpenModal] = useState(false)
@@ -21,9 +23,7 @@ export default function SideBar () {
 
     // const dispatch = useAppDispatch()
     const highestRankRole = useAppSelector((state) => state.unieventify.userRole)
-    
-
-
+    const token = useAppSelector((state) => state.auth.token)
 
     // Fetch role when the component mounts
     useEffect(() => {
@@ -47,6 +47,55 @@ export default function SideBar () {
     //         console.error("No roles found for user.");
     //     }
     // };
+
+    useEffect(() => {
+        const checkSessionExpiration = () => {
+            const expiresAt = sessionStorage.getItem('expires_at');
+            if (expiresAt && Date.now() > parseInt(expiresAt)) {
+                dispatch(mutateLoggedIn(false));
+                sessionStorage.removeItem('persist:root');
+                sessionStorage.removeItem('auth_token');
+                sessionStorage.removeItem('expires_at');
+                navigate('/login');
+                Cookies.remove("auth_token")
+            }
+        };
+    
+        const interval = setInterval(checkSessionExpiration, 5000); // Check every 5 seconds
+        return () => clearInterval(interval);
+    }, [dispatch, navigate]);
+
+    // Logout handler function
+    const handleLogout = () => {
+        sessionStorage.clear();         // Clear session storage
+        localStorage.clear();           // Clear local storage (if needed)
+        persistor.purge();              // Clear Redux Persist storage
+        dispatch(mutateLoggedIn(false)); // Update auth state
+        navigate('/login');             // Redirect to login
+    };
+
+    // Auto-logout on session expiration (e.g., 3 minutes)
+    useEffect(() => {
+        const expirationTimer = setTimeout(() => {
+            handleLogout();  // Trigger logout when session expires
+        }, 3 * 60 * 1000); // 3 minutes in milliseconds
+
+        return () => clearTimeout(expirationTimer); // Cleanup on unmount
+    }, [dispatch, navigate]);
+
+    useEffect(() => {
+        const token = sessionStorage.getItem('auth_token');
+        const expiresAt = sessionStorage.getItem('expires_at');
+    
+        if (token && expiresAt && Date.now() < parseInt(expiresAt)) {
+            dispatch(mutateLoggedIn(true));
+        } else {
+            sessionStorage.removeItem('auth_token');
+            sessionStorage.removeItem('expires_at');
+            dispatch(mutateLoggedIn(false));
+        }
+    }, [dispatch]);
+
 
     return (
         <aside id="default-sidebar" className="fixed z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
@@ -80,8 +129,8 @@ export default function SideBar () {
                             {/* <span className="inline-flex items-center justify-center w-3 h-3 p-3 ms-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">3</span> */}
                         </NavLink>
                     </li>
-                    <li onClick={() => navigate('/unieventifys')}>
-                        <NavLink to="" className={({isActive}) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
+                    <li onClick={() => navigate('/unieventify')}>
+                        <NavLink to="/unieventify" className={({isActive}) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
                             <MdEvent className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
                             <span className="flex-1 ms-3 whitespace-nowrap">Unieventify</span>
                             {/* <span className="inline-flex items-center justify-center w-3 h-3 p-3 ms-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">3</span> */}
@@ -109,10 +158,7 @@ export default function SideBar () {
                             {/* <span className="inline-flex items-center justify-center w-3 h-3 p-3 ms-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">3</span> */}
                         </NavLink>
                     </li>                    
-                    <li onClick={() => {
-                        dispatch(mutateLoggedIn(false))
-                        navigate('/login')
-                    }}>
+                    <li onClick={handleLogout}>
                         <a href="#" className="flex items-center p-2 text-white rounded-lg dark:text-white dark:hover:bg-gray-700 group">
                         <PiSignOutLight className="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
                         <span className="flex-1 ms-3 whitespace-nowrap">Sign Out</span>

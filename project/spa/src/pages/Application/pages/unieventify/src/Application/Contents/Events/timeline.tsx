@@ -14,10 +14,10 @@ export default function EventTimeline() {
   // Get timeline data and loading state from Redux store
   const { timeline, timelineLoading } = useAppSelector(state => state.unieventify);
   
-  useEffect(() => {
-    // Dispatch the action to fetch timeline events
-    dispatch(fetchTimelineEvents());
-  }, [dispatch]);
+  // useEffect(() => {
+  //   // Dispatch the action to fetch timeline events
+  //   dispatch(fetchTimelineEvents());
+  // }, [dispatch]);
 
   const filteredEvents = timeline.filter((event) => {
     const eventMonth = new Date(event.startDateTime).toLocaleString("en-US", { month: "long" });

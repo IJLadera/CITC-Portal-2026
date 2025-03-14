@@ -185,22 +185,22 @@ const Dashboard: React.FC = () => {
   const highestrole = useAppSelector((state) => state.unieventify.userRole)
 
 
-  useEffect(() => {
-    dispatch(fetchUsers());
-    dispatch(fetchDepartments());
-    dispatch(fetchUserRoles());
-    dispatch(fetchUserRole())
-    dispatch(fetchCollegeses());
-    dispatch(fetchSetup());
-    dispatch(fetchVenues());
-    dispatch(fetchStatus());
-    dispatch(fetchSections());
-    dispatch(fetchEventCategories());
-    dispatch(fetchEventTypes());
-    dispatch(fetchSetRemarks());
-    dispatch(fetchSchoolYears());
-    dispatch(fetchApprovalEvents());
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(fetchUsers());
+  //   dispatch(fetchDepartments());
+  //   dispatch(fetchUserRoles());
+  //   dispatch(fetchUserRole())
+  //   dispatch(fetchCollegeses());
+  //   dispatch(fetchSetup());
+  //   dispatch(fetchVenues());
+  //   dispatch(fetchStatus());
+  //   dispatch(fetchSections());
+  //   dispatch(fetchEventCategories());
+  //   dispatch(fetchEventTypes());
+  //   dispatch(fetchSetRemarks());
+  //   dispatch(fetchSchoolYears());
+  //   dispatch(fetchApprovalEvents());
+  // }, [dispatch]);
 
   const handleRemarkChange = (newRemark: string) => {
     dispatch(fetchSetRemarks());

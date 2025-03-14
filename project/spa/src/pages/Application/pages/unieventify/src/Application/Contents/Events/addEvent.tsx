@@ -15,11 +15,11 @@ const EventForm: React.FC = () => {
   const token = useAppSelector(state => state.auth.token);
   const currentUser = useAppSelector((state: RootState) => state.unieventify.user);
 
-  useEffect(() => {
-    if (token) {
-      dispatch(fetchCurrentUser());  // Dispatch the action to fetch the user
-    }
-  }, [token, dispatch]);
+  // useEffect(() => {
+  //   if (token) {
+  //     dispatch(fetchCurrentUser());  // Dispatch the action to fetch the user
+  //   }
+  // }, [token, dispatch]);
 
   if (!currentUser)
     return (

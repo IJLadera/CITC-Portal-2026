@@ -137,11 +137,13 @@ export default function UserEvents() {
   const [created, setCreated] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchEventCategories());
-    dispatch(fetchParticipatedEvents());
+    // if (categories.length === 0) {
+    //   dispatch(fetchEventCategories());
+    // }
+    // dispatch(fetchParticipatedEvents());
     // fetchCategories();
     // fetchEvents();
-    fetchListEvents();
+    fetchUserEvents();
   }, []);
 
 
@@ -226,7 +228,7 @@ export default function UserEvents() {
     }
   }, [participatedEventsData]);
 
-  const fetchListEvents = async () => {
+  const fetchUserEvents = async () => {
     try {
       const response = await http.get("unieventify/userevents/", {
         headers: {
@@ -379,7 +381,7 @@ export default function UserEvents() {
       });
       setOpenModal(false);
       dispatch(fetchParticipatedEvents());
-      fetchListEvents();
+      fetchUserEvents();
       handleClose();
     } catch (error) {
       toast.error("Something Wrong in Deleting. Please try again later.", {

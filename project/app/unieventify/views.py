@@ -849,41 +849,62 @@ class EventStatisticsCancelledView(APIView):
     def get_queryset(self):
         user = self.request.user
         user_role = user.roles.order_by('rank').first().name
-        first_role_subquery = UserRole.objects.filter(
-            user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
-        ).order_by('role__rank').values('role__name')[:1]  # Get the first role's name
 
         # Base query to include only events with 'Cancelled' status and exclude personal events
-        queryset = tblEvent.objects.filter(status__name='cancelled').exclude(eventCategory__eventCategoryName__iexact='personal') 
+        queryset = tblEvent.objects.filter(
+            status__name='cancelled'
+        ).exclude(
+            eventCategory__eventCategoryName__iexact='personal'
+        )
+
+        # Identify users with specific first roles
+        mother_unit_org_users = User.objects.filter(
+            roles__name__in=["Mother Org", "Unit Org"]
+        ).annotate(
+            first_role_rank=Min('roles__rank')
+        ).filter(
+            roles__rank=F('first_role_rank')
+        )
 
         # Apply role-based restrictions
         if user_role == 'Admin':
             return queryset
         
         elif user_role == 'Dean':
-            return queryset.exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
+            # Exclude events created by Mother Org or Unit Org users
+            return queryset.exclude(created_by__in=mother_unit_org_users)
 
         elif user_role in ['Chairperson', 'Faculty']:
+            # Filter by department or participation, excluding Mother/Unit Org created events
             return queryset.filter(
                 Q(department=user.department) | 
                 Q(participants__in=[user])
-            ).exclude(Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"])))
+            ).exclude(created_by__in=mother_unit_org_users)
 
         elif user_role == 'Student':
+            # Filter by department AND participation
             return queryset.filter(
                 Q(department=user.department) & 
                 Q(participants__in=[user])
             )
 
         elif user_role == 'Mother Org':
-            return queryset.filter(
-                Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))
-            )
+            # Only events created by Mother Org or Unit Org users
+            return queryset.filter(created_by__in=mother_unit_org_users)
 
         elif user_role == 'Unit Org':
+            # Events in user's department created by Mother/Unit Org OR any events created by Mother Org
+            mother_org_users = User.objects.filter(
+                roles__name="Mother Org"
+            ).annotate(
+                first_role_rank=Min('roles__rank')
+            ).filter(
+                roles__rank=F('first_role_rank')
+            )
+            
             return queryset.filter(
-                (Q(department=user.department) & Q(Subquery(first_role_subquery).in_(["Mother Org", "Unit Org"]))) |
-                Q(Subquery(first_role_subquery).in_("Mother Org"))
+                Q(department=user.department, created_by__in=mother_unit_org_users) |
+                Q(created_by__in=mother_org_users)
             )
 
         # If the role is not covered, return an empty queryset

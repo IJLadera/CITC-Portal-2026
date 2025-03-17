@@ -360,7 +360,7 @@ class EventStatisticsView(APIView):
         user_role = user.roles.order_by('rank').first().name
         first_role_subquery = UserRole.objects.filter(
             user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
-        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
+        ).order_by('role__rank').values('role__name')[:1]  # Get the first role's name
         
         # Base query to exclude personal events and draft statuses
         queryset = tblEvent.objects.exclude(
@@ -540,7 +540,7 @@ class EventStatisticsByCategoryView(APIView):
         user_role = user.roles.order_by('rank').first().name
         first_role_subquery = UserRole.objects.filter(
             user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
-        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
+        ).order_by('role__rank').values('role__name')[:1]  # Get the first role's name
 
         # Base query to exclude personal events and draft statuses
         queryset = tblEvent.objects.exclude(eventCategory__eventCategoryName__iexact='personal').exclude(status__name__iexact='draft').exclude(eventCategory__isnull=True).exclude(eventCategory__eventCategoryName='').exclude(status__name__iexact='disapproved')
@@ -657,7 +657,7 @@ class EventStatisticsByDepartmentView(APIView):
         user_role = user.roles.order_by('rank').first().name
         first_role_subquery = UserRole.objects.filter(
             user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
-        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
+        ).order_by('role__rank').values('role__name')[:1]  # Get the first role's name
 
         # Base query to exclude personal events and draft statuses
         queryset = tblEvent.objects.exclude(eventCategory__eventCategoryName__iexact='personal') \
@@ -778,7 +778,7 @@ class EventStatisticsCancelledView(APIView):
         user_role = user.roles.order_by('rank').first().name
         first_role_subquery = UserRole.objects.filter(
             user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
-        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
+        ).order_by('role__rank').values('role__name')[:1]  # Get the first role's name
 
         # Base query to include only events with 'Cancelled' status and exclude personal events
         queryset = tblEvent.objects.filter(status__name='cancelled').exclude(eventCategory__eventCategoryName__iexact='personal') 
@@ -1226,7 +1226,7 @@ class ApprovalEvent(ListAPIView):
             # Subquery to get the first role (by rank) for each created_by user
             first_role_subquery = UserRole.objects.filter(
                 user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
-            ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
+            ).order_by('role__rank').values('role__name')[:1]  # Get the first role's name
 
             return (
                 tblEvent.objects.filter(
@@ -1241,7 +1241,7 @@ class ApprovalEvent(ListAPIView):
             # Retrieve event logs for Unit Org or Faculty within the same department
             first_role_subquery = UserRole.objects.filter(
                 user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
-            ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
+            ).order_by('role__rank').values('role__name')[:1]  # Get the first role's name
             return (
                 tblEvent.objects.filter(
                     ~Q(eventCategory__eventCategoryName="Personal"),
@@ -1691,7 +1691,7 @@ class ApproveDocumentsListView(ListAPIView):
         user_role = user.roles.order_by('rank').first().name
         first_role_subquery = UserRole.objects.filter(
             user=OuterRef('created_by')  # Reference to the created_by user in tblEvent
-        ).order_by('roles__rank').values('roles__name')[:1]  # Get the first role's name
+        ).order_by('role__rank').values('role__name')[:1]  # Get the first role's name
 
         # Base query to exclude empty or null approveDocuments
         queryset = tblEvent.objects.exclude(approveDocuments__isnull=True).exclude(approveDocuments='').exclude(status__name__iexact='draft').exclude(status__name__iexact='disapproved')

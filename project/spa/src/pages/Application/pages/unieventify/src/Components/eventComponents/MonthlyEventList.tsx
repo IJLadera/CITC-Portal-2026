@@ -4,19 +4,6 @@ import { format } from 'date-fns';
 
 import {Event} from '../models'
 
-interface Eventies {
-    id: number;
-    eventName: string;
-    startDateTime: string;
-    endDateTime: string;
-    venue: {
-        location: string;
-    };
-    status: {
-        statusName: string;
-    }; 
-}
-
 type GroupedEvents = {
     [key: string]: Event[];
 };

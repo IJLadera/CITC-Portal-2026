@@ -30,13 +30,13 @@ interface EditprofileProps {
 
 interface Department {
   id: number;
-  departmentName: string;
-  collegeName: string;
+  name: string;
+  college: College[];
 }
 
 interface College {
   id: number;
-  collegeName: string;
+  name: string;
 }
 
 interface Role{
@@ -44,10 +44,10 @@ interface Role{
   designation: string;
 }
 
-interface Department{
-  id: number;
-  departmentName: string;
-}
+// interface Department{
+//   id: number;
+//   departmentName: string;
+// }
 
 interface Section {
   id: number;
@@ -95,7 +95,7 @@ export default function Editprofile({
     profile.role?.designation
   );
   const [selectedDepartmentName, setSelectedDepartmentName] = useState(
-    profile.department?.departmentName
+    profile.department?.name
   );
   const [selectedSectionName, setSelectedSectionName] = useState(
     profile.section?.sectionName
@@ -113,7 +113,7 @@ export default function Editprofile({
     middle_name: profile.middle_name,
     idNumber: profile.idNumber,
     role: profile.role?.id || null,
-    college: profile.department?.collegeName || null,
+    college: profile.department?.college || null,
     department: profile.department?.id || null,
     yearLevel: profile.section?.tblYearLevel || null,
     section: profile.section?.id || null,
@@ -141,13 +141,14 @@ export default function Editprofile({
       })
       .catch((error) => console.log(error));
 
-    http
-      .get("unieventify/departments/")
+      http
+      .get("unieventify/departments")
       .then((response) => {
         setDepartments(response.data);
-        const designations = response.data.map(
-          (department: any) => department.departmentName
-        );
+        // Filter out any undefined values and make sure departmentName is a string
+        const designations = response.data
+          .filter((department: any) => department && department.name)
+          .map((department: any) => department.name);
         setDepartmentName(designations);
       })
       .catch((error) => console.log(error));
@@ -210,19 +211,19 @@ export default function Editprofile({
     setSelectedDepartmentName(value);
     // Find the department by departmentName to get its ID
     const department = departments.find(
-      (department) => department.departmentName === value
+      (department) => department.name === value
     );
     // Set the ID and college ID to state
     if (department) {
       setEditProfileInfo({
         ...editProfileInfo,
         department: department.id,
-        college: department?.collegeName,
+        college: department?.college,
       });
       const college = colleges.find(
-        (college: any) => college.id === department?.collegeName
+        (college: any) => college.id === department?.college
       );
-      setSelectedCollegeName(college?.collegeName);
+      setSelectedCollegeName(college?.name);
     }
   };
 
@@ -305,7 +306,7 @@ export default function Editprofile({
     if (selectedFile) formData.append("image", selectedFile);
 
     http
-      .patch(`update_profile/${profile.id}/`, formData, {
+      .patch(`auth/update_profile/`, formData, {
         headers: {
           Authorization: `Token ${token}`,
           "Content-Type": "multipart/form-data",
@@ -503,25 +504,21 @@ export default function Editprofile({
                   <Autocomplete
                     disablePortal
                     id="department"
-                    options={departmentName}
+                    options={departmentName || []} // Add fallback empty array
                     disabled={isDisabled}
-                    onChange={(event, newValue) =>
-                      handleDepartmentsChange(newValue)
-                    }
-                    value={selectedDepartmentName}
+                    onChange={(event, newValue) => handleDepartmentsChange(newValue)}
+                    value={selectedDepartmentName || null} // Add null fallback
                     sx={{
                       "& .MuiOutlinedInput-root": {
-                        borderRadius: "8px", // Adjust the border-radius
-                        height: "43px", // Set the desired height
+                        borderRadius: "8px",
+                        height: "43px",
                         "& .MuiInputBase-input": {
-                          height: "auto", // Ensure the input text aligns properly within the field
-                          padding: "10px", // Adjust the padding if needed
+                          height: "auto",
+                          padding: "10px",
                         },
                       },
                     }}
-                    renderInput={(params) => (
-                      <TextField {...params} label=" " />
-                    )}
+                    renderInput={(params) => <TextField {...params} label=" " />}
                   />
                 </Box>
                 <Divider

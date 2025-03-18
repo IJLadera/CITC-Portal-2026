@@ -51,7 +51,7 @@ const router = createBrowserRouter([
                 element: <AddUser />,
             },
             {
-                path: "saunieventify/",
+                path: "unieventify/",
                 element: <Header />,
                 children: [
                     {
@@ -60,7 +60,7 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "public-events/",
-                        element: <Landingpage />
+                        element: <Publicevents />
                     }
                 ]
             },
@@ -87,10 +87,10 @@ const router = createBrowserRouter([
                 path: "app/",
                 element: <UniEventifyApplication />,
                 children: [
-                    {
-                        path: "profile/",
-                        element: <Profile />
-                    },
+                    // {
+                    //     path: "profile/",
+                    //     element: <Profile />
+                    // },
                     {
                         path: "notifications/",
                         element: <Notification />

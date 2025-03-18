@@ -25,6 +25,8 @@ export default function SideBar () {
     const highestRankRole = useAppSelector((state) => state.unieventify.userRole)
     const token = useAppSelector((state) => state.auth.token)
 
+    
+
     // Fetch role when the component mounts
     useEffect(() => {
         // fetchRole();
@@ -67,18 +69,30 @@ export default function SideBar () {
 
     // Logout handler function
     const handleLogout = () => {
-        sessionStorage.clear();         // Clear session storage
-        localStorage.clear();           // Clear local storage (if needed)
-        persistor.purge();              // Clear Redux Persist storage
-        dispatch(mutateLoggedIn(false)); // Update auth state
-        navigate('/login');             // Redirect to login
+        // First dispatch the logout action to clear the Redux state
+        dispatch(mutateLoggedIn(false));
+        
+        // Clear all storage
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('expires_at');
+        sessionStorage.removeItem('persist:root');
+        
+        // Clear cookies
+        Cookies.remove("auth_token");
+        Cookies.remove("login_attempts_*");
+        
+        // Purge the persistor
+        persistor.purge().then(() => {
+            // Force a page reload to ensure clean state
+            window.location.href = '/login';
+        });
     };
 
     // Auto-logout on session expiration (e.g., 3 minutes)
     useEffect(() => {
         const expirationTimer = setTimeout(() => {
             handleLogout();  // Trigger logout when session expires
-        }, 24 * 60 * 60 * 1000); // 3 minutes in milliseconds
+        }, 24 * 60 * 60 * 1000); // 1 day expiration
 
         return () => clearTimeout(expirationTimer); // Cleanup on unmount
     }, [dispatch, navigate]);
@@ -129,9 +143,9 @@ export default function SideBar () {
                             {/* <span className="inline-flex items-center justify-center w-3 h-3 p-3 ms-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">3</span> */}
                         </NavLink>
                     </li>
-                    <li onClick={() => navigate('/saunieventify')}>
-                        <NavLink to="/saunieventify" className={({isActive}) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
-                            <MdEvent className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
+                    <li onClick={() => navigate('unieventify')}>
+                        <NavLink to="unieventify" className={({isActive}) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
+                            <PiBooksThin className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
                             <span className="flex-1 ms-3 whitespace-nowrap">Unieventify</span>
                             {/* <span className="inline-flex items-center justify-center w-3 h-3 p-3 ms-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">3</span> */}
                         </NavLink>

@@ -271,7 +271,7 @@ export default function Landingpage() {
             <Box className="mb-10 mr-3" style={{ color: colors.yellow }}>
               Creating Connections,
             </Box>
-            <Box>on detail at a time</Box>
+            <Box>one detail at a time</Box>
           </Box>
         </Box>
         <Box className="flex justify-center pt-10">

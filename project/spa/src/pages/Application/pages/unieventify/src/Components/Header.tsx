@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Navbar } from "flowbite-react";
 import logo from "../images/logo.png";
 import { Navigate, useLocation } from 'react-router-dom';
 import Cookies from "js-cookie";
 import { useAppDispatch, useAppSelector } from "../../../../../../hooks";
 import { fetchCurrentUser, fetchUserRole } from "../Application/slice";
+import { NavLink } from "react-router-dom";
 
 export default function Header() {
   const [showLogo, setShowLogo] = useState(true);
@@ -14,9 +15,9 @@ export default function Header() {
   const text = "Unieventify";
   const typingSpeed = 400; // Speed of typing in milliseconds
   const location = useLocation();
-  const token = Cookies.get("auth_token");
+  // const token = Cookies.get("auth_token");
 
-  console.log("sidebar token", token)
+  const token = useAppSelector((state) => state.auth.token)
 
   const dispatch = useAppDispatch()
 
@@ -62,15 +63,11 @@ export default function Header() {
     };
   }, []);
 
+  const navigate = useNavigate();
+
   const notAlumni = ["Dean", "Chairperson", "Admin", "Faculty", "Student", "Unit Org", "Mother Org" ];
 
-  return token
-    ? <Navigate
-      to="unieventify/"
-      replace
-      state={{ from: location }} // pass current location to redirect back
-    />
-    : (
+  return (
       <div className='flex flex-col col-span-3'>
         <div>
           <Navbar fluid rounded>
@@ -93,7 +90,7 @@ export default function Header() {
               <Navbar.Link href="/unieventify" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>
                 Home
               </Navbar.Link>
-              <Navbar.Link href="/unieventify/public-events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Public Events</Navbar.Link>
+              <Navbar.Link to="/unieventify/public-events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Public Events</Navbar.Link>
               {highestRankRole && notAlumni.includes(highestRankRole.name || '') && (
               <Navbar.Link href="/unieventify/app" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Calendar/Events</Navbar.Link>
             )}

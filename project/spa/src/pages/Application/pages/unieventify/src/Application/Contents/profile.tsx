@@ -19,12 +19,13 @@ import {
 import SideBar from "../../Components/sidebar";
 
 import {User, College, YearLevel} from "../../Components/models";
-import { useAppSelector } from "../../../../../../../hooks";
+import { useAppDispatch, useAppSelector } from "../../../../../../../hooks";
 import { fetchUserProfileApi, fetchCollegesesApi, fetchYearLevelsApi } from "../../../../../../../api"
+import { fetchCollegeses, fetchCurrentUser } from "../slice";
 
 
 export default function Profile() {
-  const [profile, setProfile] = useState<User | null>(null);
+  // const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -33,46 +34,65 @@ export default function Profile() {
   const [colleges, setColleges] = useState<College[]>([]);
   const [yearLevels, setYearLevels] = useState<YearLevel | null>(null);
 
-  const fetchProfile = async () => {
-    try {
-      if (!token) throw new Error("No authentication token found");
-  
-      const userProfile = await fetchUserProfileApi(); // Fetch user profile
-  
-      // Find the role with the lowest rank (highest priority)
-      const highestRankRole = userProfile.roles.reduce((minRole: any, currentRole: any) => {
-        return currentRole.rank < minRole.rank ? currentRole : minRole;
-      }, userProfile.roles[0]); // Start with the first role as the minimum
-      
-      // Assuming you set the profile state to store the highest rank role
-      setProfile({
-        ...userProfile,
-        highestRankRole,  // Add the highest rank role to the profile
+  const dispatch = useAppDispatch();
+
+  const profile = useAppSelector((state) => state.unieventify.user);
+  const userRole = useAppSelector((state) => state.unieventify.userRole);  
+  const collegeData = useAppSelector((state) => state.unieventify.colleges);
+
+  console.log(collegeData)
+
+  useEffect(() => {
+    dispatch(fetchCurrentUser())
+      .then(() => setLoading(false))
+      .catch((err) => {
+        setError(err);
+        setLoading(false);
       });
-    } catch (error: any) {
-      setError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    dispatch(fetchCollegeses());  
+  }, [])
+
+  // const fetchProfile = async () => {
+  //   try {
+  //     if (!token) throw new Error("No authentication token found");
+  
+  //     const userProfile = await fetchUserProfileApi(); // Fetch user profile
+  
+  //     // Find the role with the lowest rank (highest priority)
+  //     const highestRankRole = userProfile.roles.reduce((minRole: any, currentRole: any) => {
+  //       return currentRole.rank < minRole.rank ? currentRole : minRole;
+  //     }, userProfile.roles[0]); // Start with the first role as the minimum
+      
+  //     // Assuming you set the profile state to store the highest rank role
+  //     setProfile({
+  //       ...userProfile,
+  //       highestRankRole,  // Add the highest rank role to the profile
+  //     });
+  //   } catch (error: any) {
+  //     setError(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
 
   // const highestRankRole = profile?.roles?.find(role => role.rank === 1);
 
   useEffect(() => {
     if (!editProfile) {
-      fetchProfile(); // Call fetchProfile when editProfile is false
+      dispatch(fetchCurrentUser()); // Call fetchProfile when editProfile is false
+      dispatch(fetchCollegeses()) 
     }
 
-    // Fetch colleges using fetchColleges
-    const fetchCollegesData = async () => {
-      try {
-        const collegesData = await fetchCollegesesApi(); // Assuming fetchColleges returns a promise
-        setColleges(collegesData); // Set colleges state with the fetched data
-      } catch (error) {
-        console.error("Error fetching colleges:", error); // Handle error
-      }
-    };
+    // // Fetch colleges using fetchColleges
+    // const fetchCollegesData = async () => {
+    //   try {
+    //     const collegesData = await fetchCollegesesApi(); // Assuming fetchColleges returns a promise
+    //     setColleges(collegesData); // Set colleges state with the fetched data
+    //   } catch (error) {
+    //     console.error("Error fetching colleges:", error); // Handle error
+    //   }
+    // };
 
     // Fetch year levels using fetchYearLevels
     const fetchYearLevelsData = async () => {
@@ -85,17 +105,19 @@ export default function Profile() {
     };
 
     // Call the fetch functions
-    fetchCollegesData();
+    // fetchCollegesData();
     fetchYearLevelsData();
-  }, [editProfile]); // This effect runs when editProfile changes
+  }, [editProfile, dispatch]); // This effect runs when editProfile changes
 
-  const college = colleges?.find(
+  const college = collegeData?.find(
     (college) => college.id === profile?.department?.college
   );
 
   const yearLevel = yearLevels?.find(
     (year: any) => year.id === profile?.section?.tblYearLevel
   );
+
+  console.log('profile', profile)
 
   if (loading) {
     return (
@@ -207,7 +229,7 @@ export default function Profile() {
                     sx={{ my: 2, backgroundColor: "#FAB417", borderWidth: 1 }}
                   />
                   <Typography variant="body1">
-                    Role: <strong>{profile.highestRankRole.name}</strong>
+                    Role: <strong>{userRole && userRole.name}</strong>
                     {/* {highestRankRole ? (
                         <p>Highest Role: {highestRankRole.name} (Rank {highestRankRole.rank})</p>
                       ) : (

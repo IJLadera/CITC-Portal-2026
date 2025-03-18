@@ -795,7 +795,7 @@ const EditEvent = ({
         formData.append("recurrence_days", JSON.stringify(selectedDays));
       }
       http
-        .patch(`events/${eventID}/`, formData, {
+        .patch(`unieventify/events/${eventID}/`, formData, {
           headers: {
             Authorization: `Token ${token}`,
             "Content-Type": "multipart/form-data",

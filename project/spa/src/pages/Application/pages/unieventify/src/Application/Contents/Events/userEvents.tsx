@@ -336,7 +336,7 @@ export default function UserEvents() {
 
   const handleViewDetails = () => {
     if (selectedEvent) {
-      navigate(`/auth/app/eventdetails/${selectedEvent.id}`);
+      navigate(`/unieventify/app/eventdetails/${selectedEvent.id}`);
       handleClose();
     } else {
       // Handle the case where selectedEvent is null (e.g., show an error or return early)

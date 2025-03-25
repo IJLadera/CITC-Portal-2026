@@ -22,18 +22,18 @@ const UserUploadCSV = () => {
         e.preventDefault();
         setIsDisabled(true);
         setLoading(true);
-        
+
         const formData = new FormData();
-    
+
         if (!file) {
             alert("Please select a file before uploading.");
             setIsDisabled(false);
             setLoading(false);
             return; // Stop execution if no file is selected
         }
-    
+
         formData.append("file", file); // Now `file` is guaranteed to be a `File`
-    
+
         try {
             const response = await http.post("unieventify/upload-user/", formData, {
                 headers: {
@@ -41,7 +41,7 @@ const UserUploadCSV = () => {
                     "Content-Type": "multipart/form-data",
                 },
             });
-    
+
             alert("Successfully Uploaded.");
         } catch (error) {
             alert(`Unsuccessful Upload. ${error}`);
@@ -49,7 +49,7 @@ const UserUploadCSV = () => {
             setIsDisabled(false);
             setLoading(false);
         }
-    };    
+    };
 
     return (
         <div>

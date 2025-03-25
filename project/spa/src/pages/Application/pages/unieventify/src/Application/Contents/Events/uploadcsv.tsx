@@ -22,9 +22,9 @@ const EventUploadCSV = () => {
         const formData = new FormData();
         if (file) {
             formData.append('file', file);
-          } else {
+        } else {
             console.error('No file selected');
-          }
+        }
 
         try {
             const response = await http.post('upload-csv/', formData, {

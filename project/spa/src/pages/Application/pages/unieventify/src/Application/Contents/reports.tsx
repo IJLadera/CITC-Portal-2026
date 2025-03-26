@@ -94,7 +94,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching semester data:", error));
     // Fetch event statistics
     http
-      .get("unieventify/events/statistics/byCategories", {
+      .get("unieventify/events/statistics/byCategories/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -106,7 +106,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching data:", error));
 
     http
-      .get("unieventify/events/statistics/byDepartment", {
+      .get("unieventify/events/statistics/byDepartment/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -135,7 +135,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching data:", error));
 
     http
-      .get("unieventify/events/statistics/created", {
+      .get("unieventify/events/statistics/created/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -152,7 +152,7 @@ const Reports: React.FC = () => {
       .catch((error) => console.error("Error fetching data:", error));
 
     http
-      .get("unieventify/events/statistics/cancelled", {
+      .get("unieventify/events/statistics/cancelled/", {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -508,11 +508,11 @@ const Reports: React.FC = () => {
 
     departments.forEach((stat) => {
       const { department, statistics } = stat;
-      
+
       // Add department title
       doc.setFontSize(15);
       doc.text(`${department}`, 14, yPosition);
-    
+
       statistics.forEach((stat) => {
         const { events } = stat;
         const departmentData = events?.map((event) => [
@@ -520,7 +520,7 @@ const Reports: React.FC = () => {
           event.name,
           event.created_by,
         ]);
-    
+
         // Add table below the department title
         autoTable(doc, {
           startY: yPosition + 10, // Start after the department title
@@ -531,7 +531,7 @@ const Reports: React.FC = () => {
           styles: { fontSize: 10, cellPadding: 4 },
           tableWidth: "auto",
         });
-    
+
         // Manually update the Y position for the next department
         // yPosition += doc.internal.pageSize.height - doc.lastPosition.y - 10; // Calculate new Y position
         yPosition += 10;

@@ -16,7 +16,7 @@ export default function DifEventDetails() {
   useEffect(() => {
     const fetchEventDetails = async () => {
       try {
-        const response = await http.get(`unieventify/events/${id}`, {
+        const response = await http.get(`unieventify/events/${id}/`, {
           headers: {
             Authorization: `Token ${token}`,
           },

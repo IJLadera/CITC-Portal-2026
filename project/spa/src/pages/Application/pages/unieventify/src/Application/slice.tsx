@@ -28,7 +28,7 @@ interface TimelineEvent {
   eventName: string;
   startDateTime: string;
   endDateTime: string;
-  status?: { 
+  status?: {
     id: number;
     statusName: string;
   };
@@ -142,7 +142,7 @@ const initialState: unieventifyState = {
 export const fetchCurrentUser = createAsyncThunk(
   'unieventify/fetchCurrentUser',
   async () => {
-    const response = await http.get('auth/users/me');
+    const response = await http.get('auth/users/me/');
     if (response.status !== 200) {
       throw new Error('Failed to fetch current user');
     }
@@ -177,21 +177,21 @@ export const fetchParticipatedEvents = createAsyncThunk(
   'unieventify/fetchParticipatedEvents',
   async (_, { getState }: any) => {
     const token = getState().auth.token;
-    
+
     if (!token) {
       throw new Error("Authentication token is missing.");
     }
-    
+
     const response = await http.get('unieventify/participatedevents/', {
       headers: {
         Authorization: `Token ${token}`,
       },
     });
-    
+
     if (response.status !== 200) {
       throw new Error('Failed to fetch participated events');
     }
-    
+
     return response.data; // Just return the raw data
   }
 );
@@ -200,21 +200,21 @@ export const fetchListEvents = createAsyncThunk(
   'unieventify/fetchListEvents',
   async (_, { getState }: any) => {
     const token = getState().auth.token;
-    
+
     if (!token) {
       throw new Error("Authentication token is missing.");
     }
-    
+
     const response = await http.get('unieventify/participatedevents/', {
       headers: {
         Authorization: `Token ${token}`,
       },
     });
-    
+
     if (response.status !== 200) {
       throw new Error('Failed to fetch participated events');
     }
-    
+
     return response.data; // Just return the raw data
   }
 );
@@ -229,19 +229,19 @@ export const fetchTimelineEvents = createAsyncThunk(
         Authorization: `Token ${token}`,
       },
     });
-    
+
     if (response.status !== 200) {
       throw new Error('Failed to fetch timeline events');
     }
-    
-    const filteredEvents = response.data.filter((event: any) => 
+
+    const filteredEvents = response.data.filter((event: any) =>
       event.status?.statusName !== 'draft'
     );
-    
+
     const sortedEvents = filteredEvents.sort(
       (a: any, b: any) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime()
     );
-    
+
     return sortedEvents.map((event: any) => ({
       id: event.id,
       participants: [],
@@ -258,8 +258,8 @@ export const fetchTimelineEvents = createAsyncThunk(
         },
         department: 0
       },
-      eventCategory: event.status ? 
-        { id: 0, eventCategoryName: event.status.statusName } 
+      eventCategory: event.status ?
+        { id: 0, eventCategoryName: event.status.statusName }
         : { id: 0, eventCategoryName: '' },
       eventType: { id: 0, eventTypeName: '' },
       status: event.status ? { id: 0, statusName: event.status.statusName } : { id: 0, statusName: '' },
@@ -310,7 +310,7 @@ export const fetchUserRole = createAsyncThunk(
   'unieventify/fetchUserRole',
   async (_, { getState }: any) => {
     const token = getState().auth.token;
-    const response = await http.get("auth/users/me", {
+    const response = await http.get("auth/users/me/", {
       headers: { Authorization: `Token ${token}` }
     });
 
@@ -349,7 +349,7 @@ export const fetchEventCategories = createAsyncThunk(
 export const fetchEventTypes = createAsyncThunk(
   'unieventify/fetchEventTypes',
   async () => {
-    const response = await http.get('unieventify/eventtypes');
+    const response = await http.get('unieventify/eventtypes/');
     if (response.status !== 200) {
       throw new Error('Failed to fetch event types');
     }
@@ -360,7 +360,7 @@ export const fetchEventTypes = createAsyncThunk(
 export const fetchSchoolYears = createAsyncThunk(
   'unieventify/fetchSchoolYears',
   async () => {
-    const response = await http.get('unieventify/schoolyear');
+    const response = await http.get('unieventify/schoolyear/');
     if (response.status !== 200) {
       throw new Error('Failed to fetch event types');
     }
@@ -371,7 +371,7 @@ export const fetchSchoolYears = createAsyncThunk(
 export const fetchSetRemarks = createAsyncThunk(
   'unieventify/fetchSetRemark',
   async () => {
-    const response = await http.get('unieventify/eventremark');
+    const response = await http.get('unieventify/eventremark/');
     if (response.status !== 200) {
       throw new Error('Failed to fetch event types');
     }
@@ -382,7 +382,7 @@ export const fetchSetRemarks = createAsyncThunk(
 export const fetchSetup = createAsyncThunk(
   'unieventify/fetchSetup',
   async () => {
-    const response = await http.get('unieventify/setups');
+    const response = await http.get('unieventify/setups/');
     if (response.status !== 200) {
       throw new Error('Failed to fetch event types');
     }
@@ -393,7 +393,7 @@ export const fetchSetup = createAsyncThunk(
 export const fetchVenues = createAsyncThunk(
   'unieventify/fetchVenues',
   async () => {
-    const response = await http.get('unieventify/venues');
+    const response = await http.get('unieventify/venues/');
     if (response.status !== 200) {
       throw new Error('Failed to fetch event types');
     }
@@ -404,7 +404,7 @@ export const fetchVenues = createAsyncThunk(
 export const fetchStatus = createAsyncThunk(
   'unieventify/fetchStatus',
   async () => {
-    const response = await http.get('unieventify/status');
+    const response = await http.get('unieventify/status/');
     if (response.status !== 200) {
       throw new Error('Failed to fetch event types');
     }
@@ -415,7 +415,7 @@ export const fetchStatus = createAsyncThunk(
 export const fetchSections = createAsyncThunk(
   'unieventify/fetchSections',
   async () => {
-    const response = await http.get('unieventify/sections');
+    const response = await http.get('unieventify/sections/');
     if (response.status !== 200) {
       throw new Error('Failed to fetch event types');
     }
@@ -468,11 +468,11 @@ export const fetchDocuments = createAsyncThunk(
         Authorization: `Token ${token}`,
       },
     });
-    
+
     if (response.status !== 200) {
       throw new Error('Failed to fetch documents');
     }
-    
+
     // Return the raw documents array to be processed in the component
     return response.data;
   }
@@ -510,7 +510,7 @@ const unieventifySlice = createSlice({
       .addCase(fetchUserRole.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to current uder details';
-      })      
+      })
 
       .addCase(fetchUserRoles.pending, (state) => {
         state.loading = true;
@@ -552,7 +552,7 @@ const unieventifySlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to load event categories';
       })
-      
+
       //participated events
       .addCase(fetchParticipatedEvents.pending, (state) => {
         state.loading = true;
@@ -621,7 +621,7 @@ const unieventifySlice = createSlice({
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to load timeline events';
-      })      
+      })
 
       // fetch Event Categories
       .addCase(fetchEventCategories.pending, (state) => {
@@ -678,7 +678,7 @@ const unieventifySlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to load event types';
       })
-      
+
       //fetch EventTypes
       .addCase(fetchStatus.pending, (state) => {
         state.loading = true;
@@ -691,7 +691,7 @@ const unieventifySlice = createSlice({
       .addCase(fetchStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to load event types';
-      })      
+      })
 
       // fetch College
       .addCase(fetchCollegeses.pending, (state) => {

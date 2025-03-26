@@ -98,16 +98,16 @@ urlpatterns = [
 
     path('events/statistics/', EventStatisticsView.as_view(), name='event-statistics'),
     
-    path('events/statistics/created', EventStatisticsCreatedView.as_view(), name='event-statistics-created'),
+    path('events/statistics/created/', EventStatisticsCreatedView.as_view(), name='event-statistics-created'),
 
-    path('events/statistics/cancelled', EventStatisticsCancelledView.as_view(), name='event-statistics-cancelled'),
+    path('events/statistics/cancelled/', EventStatisticsCancelledView.as_view(), name='event-statistics-cancelled'),
 
     #designation count
     path('designation-count/', DesignationCountView.as_view(), name='designation_count'),
 
-    path('events/statistics/byCategories', EventStatisticsByCategoryView.as_view(), name='event-statistics-by-category'),
+    path('events/statistics/byCategories/', EventStatisticsByCategoryView.as_view(), name='event-statistics-by-category'),
 
-    path('events/statistics/byDepartment', EventStatisticsByDepartmentView.as_view(), name='event-statistics-by-Department'),
+    path('events/statistics/byDepartment/', EventStatisticsByDepartmentView.as_view(), name='event-statistics-by-Department'),
 
     path('events/personal/', PersonalEventsView.as_view(), name='event-personal'),
     path('events/personal/<int:pk>/', PersonalEventsInfoView.as_view(), name='event-personal-Info'),
@@ -128,14 +128,14 @@ urlpatterns = [
     path('approvalevents/', ApprovalEvent.as_view(), name='event-approval'),
     path('approvalevents/<int:pk>/', ApprovalEventsDetails.as_view(), name='event-approval'),
 
-    path('unavail-slots/personal', UnavalaibleSlotPersonalView.as_view(), name='school-year-available-slots'),
-    path('unavail-slots/nonpersonal', UnavailablesSlotNonPersonalView.as_view(), name='school-year-available-slots'),
+    path('unavail-slots/personal/', UnavalaibleSlotPersonalView.as_view(), name='school-year-available-slots'),
+    path('unavail-slots/nonpersonal/', UnavailablesSlotNonPersonalView.as_view(), name='school-year-available-slots'),
 
-    path('faculty/events', FacultyEventsListView.as_view(), name='faculty-events'),
-    path('faculty/events/<uuid:uuid>', FacultyEventsDetailView.as_view(), name='faculty-events'),
+    path('faculty/events/', FacultyEventsListView.as_view(), name='faculty-events'),
+    path('faculty/events/<uuid:uuid>/', FacultyEventsDetailView.as_view(), name='faculty-events'),
     
-    path('roles/events', AllRoleEventsListView.as_view(), name='role-events'),
-    path('roles/events/<int:pk>', AllRoleEventsDetailView.as_view(), name='role-events'),
+    path('roles/events/', AllRoleEventsListView.as_view(), name='role-events'),
+    path('roles/events/<int:pk>/', AllRoleEventsDetailView.as_view(), name='role-events'),
 
     path('announcement/', AnnouncementListView.as_view(), name='announcement'),
     path('documents/', ApproveDocumentsListView.as_view(), name='documents'),

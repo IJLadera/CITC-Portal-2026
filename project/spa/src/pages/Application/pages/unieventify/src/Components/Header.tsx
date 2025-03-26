@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { Navbar } from "flowbite-react";
 import logo from "../images/logo.png";
 import { Navigate, useLocation } from 'react-router-dom';
 import Cookies from "js-cookie";
 import { useAppDispatch, useAppSelector } from "../../../../../../hooks";
 import { fetchCurrentUser, fetchUserRole } from "../Application/slice";
-import { NavLink } from "react-router-dom";
 
 export default function Header() {
   const [showLogo, setShowLogo] = useState(true);
@@ -18,6 +17,8 @@ export default function Header() {
   // const token = Cookies.get("auth_token");
 
   const token = useAppSelector((state) => state.auth.token)
+
+  console.log("sidebar token", token)
 
   const dispatch = useAppDispatch()
 
@@ -63,8 +64,6 @@ export default function Header() {
     };
   }, []);
 
-  const navigate = useNavigate();
-
   const notAlumni = ["Dean", "Chairperson", "Admin", "Faculty", "Student", "Unit Org", "Mother Org" ];
 
   return (
@@ -87,10 +86,10 @@ export default function Header() {
             </Navbar.Brand>
             <Navbar.Toggle />
             <Navbar.Collapse >
-              <Navbar.Link href="/unieventify" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>
+              <Navbar.Link href="/public-unieventify" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>
                 Home
               </Navbar.Link>
-              <Navbar.Link to="/unieventify/public-events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Public Events</Navbar.Link>
+              <Navbar.Link href="/public-unieventify/public-events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Public Events</Navbar.Link>
               {highestRankRole && notAlumni.includes(highestRankRole.name || '') && (
               <Navbar.Link href="/unieventify/app" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Calendar/Events</Navbar.Link>
             )}

@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 export default function Post() {
     const dispatch = useAppDispatch();
     const { first_name, middle_name, last_name } = useAppSelector((state) => state.auth.user);
-    const { events, loading, error } = useAppSelector((state) => state.unieventify); // Adjust based on your state structure
+    const { events } = useAppSelector((state) => state.unieventify); // Adjust based on your state structure
     const navigate = useNavigate()
 
     useEffect(() => {

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Event Postponed Notification</title>
+</head>
+<body>
+    <h2>Event Postponed: {{ event.eventName }}</h2>
+    <p>Dear {{ participant.first_name }} {{ participant.last_name }},</p>
+    
+    <p>We regret to inform you that the event <strong>{{ event.eventName }}</strong>, originally scheduled for <strong>{{ event.startDateTime }} - {{ event.endDateTime }}</strong>, has been postponed.</p>
+
+    <h3>Event Details:</h3>
+    <p><strong>Category:</strong> {{ event.eventCategory.eventCategoryName }}</p>
+    <p><strong>Event Type:</strong> {{ event.eventType.eventTypeName }}</p>
+    <p><strong>Description:</strong></p>
+    <div>{{ event_description_html|safe }}</div>  <!-- Render HTML-safe event description -->
+    
+    <p>We will keep you updated with any further changes. Thank you for your understanding.</p>
+    
+    <p>Best regards,<br>
+    Event Management Team</p>
+</body>
+</html>

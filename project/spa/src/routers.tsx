@@ -27,6 +27,7 @@ import UserUploadCSV from "./pages/Application/pages/unieventify/src/Application
 import EventDetails from "./pages/Application/pages/unieventify/src/Application/PublicViewContent/eventDetails";
 import Forgotpassword from "./pages/Application/pages/unieventify/src/Authentication/forgotpassword";
 
+
 const router = createBrowserRouter([
     {
         path: '/',
@@ -67,7 +68,7 @@ const router = createBrowserRouter([
             {
                 path: "profile/",
                 element: <Profile />,
-            },            
+            },
         ]
     },
     {
@@ -159,8 +160,11 @@ const router = createBrowserRouter([
     {
         path: "publicevents/:id",
         element: <EventDetails />
+    },
+    {
+        path: "*",
+        element: <Error />
     }
-
 
 ])
 

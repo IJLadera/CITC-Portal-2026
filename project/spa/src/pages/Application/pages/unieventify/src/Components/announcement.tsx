@@ -8,7 +8,7 @@ interface AnnouncementProps {
     event: any;
 }
 
-export default function Announcement({ event } : AnnouncementProps) {
+export default function Announcement({ event }: AnnouncementProps) {
 
     // Helper function to create the editor state from event description
     const getEditorContent = () => {
@@ -39,7 +39,7 @@ export default function Announcement({ event } : AnnouncementProps) {
                         </p>
                         <div className="mt-1 text-sm font-normal text-gray-600 dark:text-gray-400">
                             {editorState ? (
-                                <Editor editorState={editorState} readOnly={true} onChange={() => {}}/>
+                                <Editor editorState={editorState} readOnly={true} onChange={() => { }} />
                             ) : (
                                 <span>{event.eventDescription || "No description provided."}</span>
                             )}

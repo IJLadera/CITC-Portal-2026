@@ -204,7 +204,7 @@ export const fetchEventStatisticsApi = async () => {
 
 export const fetchEventStatisticsCreatedApi = async () => {
   try {
-    const response = await http.get('unieventify/events/statistics/created');
+    const response = await http.get('unieventify/events/statistics/created/');
     return response.data;
   } catch (error) {
     throw error;
@@ -213,7 +213,7 @@ export const fetchEventStatisticsCreatedApi = async () => {
 
 export const fetchEventStatisticsCancelledApi = async () => {
   try {
-    const response = await http.get('unieventify/events/statistics/cancelled');
+    const response = await http.get('unieventify/events/statistics/cancelled/');
     return response.data;
   } catch (error) {
     throw error;
@@ -222,7 +222,7 @@ export const fetchEventStatisticsCancelledApi = async () => {
 
 export const fetchDesignationCountApi = async () => {
   try {
-    const response = await http.get('unieventify/designation-count');
+    const response = await http.get('unieventify/designation-count/');
     return response.data;
   } catch (error) {
     throw error;
@@ -231,7 +231,7 @@ export const fetchDesignationCountApi = async () => {
 
 export const fetchDesignationByCategoriesApi = async () => {
   try {
-    const response = await http.get('unieventify/events/statistics/byCategories');
+    const response = await http.get('unieventify/events/statistics/byCategories/');
     return response.data;
   } catch (error) {
     throw error;
@@ -240,7 +240,7 @@ export const fetchDesignationByCategoriesApi = async () => {
 
 export const fetchDesignationByDepartmentApi = async () => {
   try {
-    const response = await http.get('unieventify/events/statistics/byDepartment');
+    const response = await http.get('unieventify/events/statistics/byDepartment/');
     return response.data;
   } catch (error) {
     throw error;
@@ -303,7 +303,7 @@ export const fetchApprovalEventsApi = async () => {
 
 export const fetchUnavailableSlotsPersonalApi = async () => {
   try {
-    const response = await http.get('unieventify/unavail-slots/personal');
+    const response = await http.get('unieventify/unavail-slots/personal/');
     return response.data;
   } catch (error) {
     throw error;
@@ -312,7 +312,7 @@ export const fetchUnavailableSlotsPersonalApi = async () => {
 
 export const fetchUnavailableSlotsNonPersonalApi = async () => {
   try {
-    const response = await http.get('unieventify/unavail-slots/nonpersonal');
+    const response = await http.get('unieventify/unavail-slots/nonpersonal/');
     return response.data;
   } catch (error) {
     throw error;
@@ -321,7 +321,7 @@ export const fetchUnavailableSlotsNonPersonalApi = async () => {
 
 export const fetchFacultyEventsApi = async () => {
   try {
-    const response = await http.get('unieventify/faculty/events');
+    const response = await http.get('unieventify/faculty/events/');
     return response.data;
   } catch (error) {
     throw error;
@@ -330,7 +330,7 @@ export const fetchFacultyEventsApi = async () => {
 
 export const fetchRolesEventsApi = async () => {
   try {
-    const response = await http.get('unieventify/roles/events');
+    const response = await http.get('unieventify/roles/events/');
     return response.data;
   } catch (error) {
     throw error;

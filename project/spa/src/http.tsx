@@ -5,7 +5,7 @@ import store from './store';
 
 
 const http = axios.create({
-    baseURL: 'http://localhost:8000/api/v1/'
+  baseURL: 'http://127.0.0.1:8000/api/v1/'
 });
 
 // http.interceptors.request.use(config => {
@@ -18,11 +18,11 @@ const http = axios.create({
 // })
 
 http.interceptors.request.use((config) => {
-    const token = store.getState().auth.token; 
-    if (token) {
-      config.headers.Authorization = `Token ${token}`;
-    }
-    return config;
-  });
+  const token = store.getState().auth.token;
+  if (token) {
+    config.headers.Authorization = `Token ${token}`;
+  }
+  return config;
+});
 
 export default http;

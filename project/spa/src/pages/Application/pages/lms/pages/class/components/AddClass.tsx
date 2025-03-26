@@ -6,13 +6,13 @@ interface ButtonProps {
     onClick: () => void
 }
 
-export default function AddClass ({onClick}:ButtonProps) {
+export default function AddClass({ onClick }: ButtonProps) {
 
     const [show, setShow] = useState(false)
 
     return (
         <>
-            <a href="/" onClick={(event) => { event.preventDefault(); onClick()}}>
+            <a href="/" onClick={(event) => { event.preventDefault(); onClick() }}>
                 <div className="h-56 w-auto border-4 rounded-md border-slate-300 border-dashed">
                     <div className="w-full h-full flex items-center justify-center text-slate-300">
                         <FaPlus className="h-10 w-10" />

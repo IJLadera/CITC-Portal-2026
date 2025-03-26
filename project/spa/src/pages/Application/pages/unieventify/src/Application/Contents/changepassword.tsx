@@ -64,7 +64,7 @@ export default function Changepassword() {
     const handleSubmit = (e: any) => {
         e.preventDefault();
         if (!profile) return;
-         
+
         setIsDisabled(!isDisabled);
         setLoading(!loading);
         const passwords = {

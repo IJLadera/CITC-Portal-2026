@@ -123,7 +123,7 @@ const Dashboard: React.FC = () => {
   const [currentEntity, setCurrentEntity] = useState<Partial<Entity>>({
     id: 0 || "",
     eventTypeName: "",
-    departName:"",
+    departName: "",
     college: "",
     rank: "",
     section: "",
@@ -181,7 +181,7 @@ const Dashboard: React.FC = () => {
   const draftEvents = useAppSelector((state) => state.unieventify.approvalEvents)
 
   const draftNotifications = draftEvents.filter((notification: any) => notification.status.name === "draft");
-  
+
   const highestrole = useAppSelector((state) => state.unieventify.userRole)
 
 
@@ -246,22 +246,22 @@ const Dashboard: React.FC = () => {
   }, [token]);
 
   // Fetch user role and data on component mount
-    useEffect(() => {
-      const fetchUserRole = async () => {
-        try {
-          const response = await http.get("auth/users/me", {
-            headers: { Authorization: `Token ${token}` },
-          });
-          setUser(response.data);
-          setAdmin(response.data.is_staff);
-          // fetchData();
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-        }
-      };
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const response = await http.get("auth/users/me/", {
+          headers: { Authorization: `Token ${token}` },
+        });
+        setUser(response.data);
+        setAdmin(response.data.is_staff);
+        // fetchData();
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+      }
+    };
 
-      fetchUserRole();
-    }, [token]);
+    fetchUserRole();
+  }, [token]);
 
 
   // Generate rows for DataGrid
@@ -284,8 +284,8 @@ const Dashboard: React.FC = () => {
         role: user.role ? user.role.name : "N/A",
         college: user.department
           ? colleges.find(
-              (college) => college.id === user.department.college
-            )?.name || "N/A"
+            (college) => college.id === user.department.college
+          )?.name || "N/A"
           : "N/A",
         active: user.is_active,
         detailsUrl: `${http}/unieventify/users/${user.uuid}/`,
@@ -410,7 +410,7 @@ const Dashboard: React.FC = () => {
         name: entity?.name,
         rank: entity?.rank || "",
       });
-    }else {
+    } else {
       // Default handling or additional cases
       setCurrentEntity(entity || {});
     }
@@ -716,7 +716,7 @@ const Dashboard: React.FC = () => {
         const remarks = Array.isArray(remark) ? remark.find((rem: any) => rem.events.id === eventId) : null;
         if (remarks) {
           // Remove the event remark for the approved event
-          await http.delete(`unieventify/eventremark/${remarks.id}`, {
+          await http.delete(`unieventify/eventremark/${remarks.id}/`, {
             headers: { Authorization: `Token ${token}` },
           });
         }
@@ -808,7 +808,7 @@ const Dashboard: React.FC = () => {
             const remarks = Array.isArray(remark) ? remark.find((rem: any) => rem.events.id === eventId) : null;
             if (remarks) {
               // Remove the event remark for the approved event
-              await http.delete(`unieventify/eventremark/${remarks.id}`, {
+              await http.delete(`unieventify/eventremark/${remarks.id}/`, {
                 headers: { Authorization: `Token ${token}` },
               });
             }
@@ -993,10 +993,10 @@ const Dashboard: React.FC = () => {
         </Typography>
 
         {user?.roles[0]?.name === "Dean" ? (
-            <Box>Dean</Box>
-        ) : 
-        
-        (<Box>not dean</Box>)
+          <Box>Dean</Box>
+        ) :
+
+          (<Box>not dean</Box>)
         }
 
         {loading ? (
@@ -1045,7 +1045,7 @@ const Dashboard: React.FC = () => {
             {admin ? (
               <Box>
                 <Box sx={{ mt: 5 }}>
-                  <CustomButton onClick={() => navigate("/unieventify/app/adduser/")} startIcon=""> 
+                  <CustomButton onClick={() => navigate("/unieventify/app/adduser/")} startIcon="">
                     Add a User
                   </CustomButton>
                   {admin && (
@@ -1230,7 +1230,7 @@ const Dashboard: React.FC = () => {
                       handleDelete={handleDelete}
                       type="delete"
                       remark={null}
-                      setRemark={() => {}}
+                      setRemark={() => { }}
                     />
                   </Box>
                 )}

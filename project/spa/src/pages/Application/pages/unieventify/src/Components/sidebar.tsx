@@ -1,4 +1,4 @@
-import {Role, User} from './models'
+import { Role, User } from './models'
 import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -35,10 +35,12 @@ import http from "../../../../../../http";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { useAppDispatch, useAppSelector } from '../../../../../../hooks';
-import { fetchCurrentUser, fetchUserRole, fetchUserRoles, fetchUsers, fetchEvents,
+import {
+  fetchCurrentUser, fetchUserRole, fetchUserRoles, fetchUsers, fetchEvents,
   fetchParticipatedEvents, fetchListEvents, fetchTimelineEvents, fetchApprovalEvents, fetchNotifications,
   fetchEventCategories, fetchEventTypes, fetchSchoolYears, fetchSetRemarks, fetchSetup, fetchVenues,
-  fetchStatus, fetchSections, fetchCollegeses, fetchDepartments, fetchDepartmentsByCollege, fetchDocuments } from '../Application/slice';
+  fetchStatus, fetchSections, fetchCollegeses, fetchDepartments, fetchDepartmentsByCollege, fetchDocuments
+} from '../Application/slice';
 
 const drawerWidth = 210;
 
@@ -192,7 +194,7 @@ function SideBar(props: SideBarProps) {
               onClick={(event) => {
                 onClickToNavigate(event, "dashboard/");
               }}
-              style={getItemStyle("/auth/app/dashboard")}
+              style={getItemStyle("dashboard/")}
             >
               <ListItemIcon>
                 <DashboardIcon sx={{ color: "#FAB417", fontSize: 30 }} />
@@ -207,7 +209,7 @@ function SideBar(props: SideBarProps) {
         <Accordion.Panel
           className="hover:bg-none bg-red-500 p-8"
           onClick={(event) => {
-            onClickToNavigate(event, "/auth/app");
+            onClickToNavigate(event, "/unieventify/app/");
           }}
         >
           <Accordion.Title
@@ -224,7 +226,7 @@ function SideBar(props: SideBarProps) {
             onClick={(event) => {
               onClickToNavigate(event, "events/");
             }}
-            style={getItemStyle("/auth/app/")}
+            style={getItemStyle("events/")}
           >
             Events
           </Accordion.Content>
@@ -233,7 +235,7 @@ function SideBar(props: SideBarProps) {
             onClick={(event) => {
               onClickToNavigate(event, "userevents");
             }}
-            style={getItemStyle("/auth/app/userevents")}
+            style={getItemStyle("userevents")}
           >
             Your Events
           </Accordion.Content>
@@ -243,7 +245,7 @@ function SideBar(props: SideBarProps) {
               onClick={(event) => {
                 onClickToNavigate(event, "timeline");
               }}
-              style={getItemStyle("/auth/app/timeline")}
+              style={getItemStyle("timeline")}
             >
               Timeline
             </Accordion.Content>
@@ -253,7 +255,7 @@ function SideBar(props: SideBarProps) {
             onClick={(event) => {
               onClickToNavigate(event, "addevent");
             }}
-            style={getItemStyle("/auth/app/addevent")}
+            style={getItemStyle("addevent")}
           >
             Add Event
           </Accordion.Content>
@@ -261,9 +263,9 @@ function SideBar(props: SideBarProps) {
             <Accordion.Content
               className="pt-1 ml-12 border-none cursor-pointer"
               onClick={(event) => {
-                onClickToNavigate(event, "/auth/app/CSVUpload");
+                onClickToNavigate(event, "uploaduser");
               }}
-              style={getItemStyle("/auth/app/CSVUpload")}
+              style={getItemStyle("uploaduser")}
             >
               Upload CSV
             </Accordion.Content>
@@ -276,7 +278,7 @@ function SideBar(props: SideBarProps) {
             onClick={(event) => {
               onClickToNavigate(event, "documents");
             }}
-            style={getItemStyle("/auth/app/Documents")}
+            style={getItemStyle("documents")}
           >
             Documents
           </Accordion.Content>
@@ -289,7 +291,7 @@ function SideBar(props: SideBarProps) {
             onClick={(event) => {
               onClickToNavigate(event, "notifications");
             }}
-            style={getItemStyle("/auth/app/notification")}
+            style={getItemStyle("notifications")}
           >
             <ListItemIcon>
               <Badge badgeContent={unreadCount} color="error">
@@ -306,7 +308,7 @@ function SideBar(props: SideBarProps) {
             onClick={(event) => {
               onClickToNavigate(event, "announcement");
             }}
-            style={getItemStyle("/auth/app/announcement")}
+            style={getItemStyle("announcement")}
           >
             <ListItemIcon>
               <Badge color="error">
@@ -335,7 +337,7 @@ function SideBar(props: SideBarProps) {
               onClick={(event) => {
                 onClickToNavigate(event, "reports");
               }}
-              style={getItemStyle("/auth/app/report")}
+              style={getItemStyle("reports")}
             >
               <ListItemIcon>
                 <TextSnippetIcon sx={{ color: "#FAB417", fontSize: 30 }} />
@@ -399,7 +401,7 @@ function SideBar(props: SideBarProps) {
     fetchUnreadCount();
   }, []);
 
-  if (!(profile ))
+  if (!(profile))
     return (
       <Box
         sx={{

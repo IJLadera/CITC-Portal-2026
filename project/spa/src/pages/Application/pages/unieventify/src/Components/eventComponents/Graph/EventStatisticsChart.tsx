@@ -12,7 +12,7 @@ export default function EventStatisticsChart() {
   useEffect(() => {
     // Fetch the event statistics data from the API
     http
-      .get("events/statistics/created", {
+      .get("events/statistics/created/", {
         headers: {
           Authorization: `Token ${token}`,
         },

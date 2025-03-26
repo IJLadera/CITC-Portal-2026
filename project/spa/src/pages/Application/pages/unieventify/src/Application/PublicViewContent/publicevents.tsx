@@ -15,7 +15,7 @@ import { CircularProgress, Box } from "@mui/material";
 
 const defaultTheme = createTheme();
 
-interface eventCategory{
+interface eventCategory {
     id: number,
     eventCategoryName: string
 }

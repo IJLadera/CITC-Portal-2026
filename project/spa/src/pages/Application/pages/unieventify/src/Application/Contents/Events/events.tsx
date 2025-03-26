@@ -32,9 +32,11 @@ import colors from "../../../Components/colors";
 import { toast, ToastContainer } from "react-toastify";
 import { Department } from "../../../../../lms/models";
 import { useAppSelector } from "../../../../../../../../hooks";
-import { fetchEventCategoriesApi, fetchEventTypesApi, fetchCollegesesApi, 
-  fetchDepartmentsApi, fetchDepartmentsByCollegeApi, fetchEventsApi, 
-  fetchFacultyEventsApi, fetchUserProfileApi, fetchPublicEventsApi } from "../../../../../../../../api"
+import {
+  fetchEventCategoriesApi, fetchEventTypesApi, fetchCollegesesApi,
+  fetchDepartmentsApi, fetchDepartmentsByCollegeApi, fetchEventsApi,
+  fetchFacultyEventsApi, fetchUserProfileApi, fetchPublicEventsApi
+} from "../../../../../../../../api"
 import { AppDispatch, RootState } from "../../../../../../../../store";
 import { useDispatch } from "react-redux";
 import { fetchCollegeses, fetchEventCategories, fetchDepartments, fetchDepartmentsByCollege, fetchEventTypes } from "../../slice";
@@ -67,7 +69,7 @@ interface FormattedEvent {
   participants: Faculty[];
 }
 
-interface FormattedEventTwo{
+interface FormattedEventTwo {
   id: number;
   title: string;
   start: string;
@@ -111,7 +113,7 @@ export default function Events() {
   const [events, setEvents] = useState<any[]>([]);
   // const [categories, setCategories] = useState<EventCategory[]>([]);
 
-  
+
 
   const { categories } = useAppSelector((state: RootState) => state.unieventify);
   const { colleges } = useAppSelector((state: RootState) => state.unieventify);
@@ -120,7 +122,7 @@ export default function Events() {
   const { types } = useAppSelector((state: RootState) => state.unieventify);
 
   const dispatch = useDispatch<AppDispatch>();
-  
+
   // useEffect(() => {
   //   dispatch(fetchEventCategories());
   //   dispatch(fetchCollegeses());
@@ -142,22 +144,22 @@ export default function Events() {
   //   // if (categories.length === 0) {
   //   //   dispatch(fetchEventCategories());
   //   // }
-    
+
   //   // Check if colleges exist in state before fetching
   //   // if (colleges.length === 0) {
   //   //   dispatch(fetchCollegeses());
   //   // }
-    
+
   //   // // Check if departments exist in state before fetching
   //   // if (departments.length === 0) {
   //   //   dispatch(fetchDepartments());
   //   // }
-    
+
   //   // // Check if departmentsByCollege exist in state before fetching
   //   // if (Object.keys(departmentsByCollege).length === 0) {
   //   //   dispatch(fetchDepartmentsByCollege());
   //   // }
-    
+
   //   // // Check if eventTypes exist in state before fetching
   //   // if (types.length === 0) {
   //   //   dispatch(fetchEventTypes());
@@ -170,11 +172,11 @@ export default function Events() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState("");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]); 
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedCollege, setSelectedCollege] = useState<number[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentTwo[]>([]);
   const [selectedFaculty, setSelectedFaculty] = useState<String | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<EventApi  | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventApi | null>(null);
   const token = useAppSelector((state) => state.auth.token);
   const navigate = useNavigate();
 
@@ -211,11 +213,11 @@ export default function Events() {
       console.error("Error fetching faculties:", error);
     }
   };
-  
+
 
   const fetchFacultyEvents = async (facultyId: any) => {
     try {
-      const response = await http.get(`unieventify/faculty/events/${facultyId}`, {
+      const response = await http.get(`unieventify/faculty/events/${facultyId}/`, {
         headers: {
           Authorization: `Token ${token}`,
         },
@@ -443,8 +445,8 @@ export default function Events() {
       setEvents([]); // Ensure events is always an array
     }
   };
-  
-  
+
+
 
   const formControlStyles = {
     mb: 2,
@@ -480,7 +482,7 @@ export default function Events() {
   const handleDepartmentChange = (event: SelectChangeEvent<number[]>) => {
     const selectedIds = event.target.value as number[];
     const selectedDepartments = departments.filter((dept) => selectedIds.includes(dept.id));
-    setSelectedDepartment(selectedDepartments); 
+    setSelectedDepartment(selectedDepartments);
   };
 
   const handleMonthChange = (event: SelectChangeEvent<string[]>) => {
@@ -501,13 +503,13 @@ export default function Events() {
     setSelectedFaculty(facultyId); // Update the selected faculty ID
     fetchFacultyEvents(facultyId); // Fetch events for the selected faculty
   };
-console.log("events", events);
+  console.log("events", events);
   // Filter logic
   const filteredEvents = events.filter((event: any) => {
     const categoryMatches =
       !selectedCategories.length || selectedCategories.includes(event.category);
 
-      const departmentMatches =
+    const departmentMatches =
       !selectedDepartment.length ||
       event.departments.some((dept: any) =>
         selectedDepartment.some((selectedDept: any) => selectedDept.id === dept.id)
@@ -533,9 +535,9 @@ console.log("events", events);
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
-        const facultyMatches = 
-        !selectedFaculty || 
-        (event.created_by && event.created_by.uuid === selectedFaculty);
+    const facultyMatches =
+      !selectedFaculty ||
+      (event.created_by && event.created_by.uuid === selectedFaculty);
 
     return (
       categoryMatches &&

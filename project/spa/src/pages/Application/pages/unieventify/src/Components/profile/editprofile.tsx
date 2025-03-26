@@ -39,7 +39,7 @@ interface College {
   name: string;
 }
 
-interface Role{
+interface Role {
   id: number;
   designation: string;
 }
@@ -75,7 +75,7 @@ export default function Editprofile({
   collegeParams,
   currentUser,
   yearLevelParams,
-} : EditprofileProps) {
+}: EditprofileProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const navigate = useNavigate();
@@ -141,8 +141,8 @@ export default function Editprofile({
       })
       .catch((error) => console.log(error));
 
-      http
-      .get("unieventify/departments")
+    http
+      .get("unieventify/departments/")
       .then((response) => {
         setDepartments(response.data);
         // Filter out any undefined values and make sure departmentName is a string

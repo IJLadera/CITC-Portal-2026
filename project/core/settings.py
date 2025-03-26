@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'app.users',
     'app.lms',
     'app.unieventify',
+    'app.base_application'
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -76,7 +77,9 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / "spa/build"
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -149,6 +152,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
+STATICFILES_DIRS = [
+    BASE_DIR / "spa" / "build" / "static",
+    BASE_DIR / "spa" / "build"
+]
+
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
@@ -182,7 +190,8 @@ DJOSER = {
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://127.0.0.1:8000',
 ]
 
 CORS_ALLOWED_METHODS = [
@@ -201,6 +210,7 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    'Access-Control-Allow-Origin'
 ]
 
 CLOUDINARY_STORAGE = {
@@ -216,3 +226,5 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

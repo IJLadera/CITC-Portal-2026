@@ -10,10 +10,10 @@ interface CreatePostProps {
 }
 
 const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose }) => {
-  const [title, setTitle] = useState('');
+  // const [title, setTitle] = useState('');
   const [eventDescription, setEventDescription] = useState('');
-  const [startDateTime, setStartDateTime] = useState('');
-  const [endDateTime, setEndDateTime] = useState('');
+  // const [startDateTime, setStartDateTime] = useState('');
+  // const [endDateTime, setEndDateTime] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const token = useAppSelector(state => state.auth.token);
 
@@ -26,16 +26,16 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose }) => {
   const handleSubmit = async () => {
     try {
       const formData = new FormData();
-      formData.append('title', title);
+      // formData.append('title', title);
       formData.append('description', eventDescription);
       
-      if (startDateTime) {
-        formData.append('startDateTime', new Date(startDateTime).toISOString());
-      }
+      // if (startDateTime) {
+      //   formData.append('startDateTime', new Date(startDateTime).toISOString());
+      // }
       
-      if (endDateTime) {
-        formData.append('endDateTime', new Date(endDateTime).toISOString());
-      }
+      // if (endDateTime) {
+      //   formData.append('endDateTime', new Date(endDateTime).toISOString());
+      // }
       
       if (image) {
         formData.append('image', image);
@@ -60,10 +60,10 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose }) => {
   };
 
   const resetForm = () => {
-    setTitle('');
+    // setTitle('');
     setEventDescription('');
-    setStartDateTime('');
-    setEndDateTime('');
+    // setStartDateTime('');
+    // setEndDateTime('');
     setImage(null);
   };
 
@@ -75,7 +75,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose }) => {
           <h3 className="text-xl font-medium text-gray-900 dark:text-white">Create a New Post</h3>
           
           {/* Title Input */}
-          <div>
+          {/* <div>
             <Label htmlFor="title" value="Title" />
             <input 
               type="text" 
@@ -85,10 +85,10 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose }) => {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               placeholder="Enter post title"
             />
-          </div>
+          </div> */}
 
           {/* Date and Time Inputs */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="startDateTime" value="Start Date and Time" />
               <input 
@@ -109,7 +109,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose }) => {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Image Upload */}
           <div>
@@ -137,7 +137,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose }) => {
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={!title || !eventDescription}
+              disabled={!eventDescription}
             >
               Create Post
             </Button>

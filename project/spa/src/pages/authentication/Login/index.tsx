@@ -119,7 +119,7 @@ function Login() {
 
   return (
     <div className="App-header">
-      <img src={process.env.PUBLIC_URL + 'inverted-logo.png'} className="App-logo" alt="logo" />
+      <img src={process.env.NODE_ENV == 'development' ? process.env.PUBLIC_URL + 'inverted-logo.png' : '/static/inverted-logo.png'} className="App-logo" alt="logo" />
       <form className='mt-5' onSubmit={onSubmitForm}>
         <FloatingLabel className='mt-5 text-white' placeholder='Email' label='' variant='outlined' name="email" type='email' onChange={onChangeInput} />
         <FloatingLabel className='mt-5 text-white' placeholder='Password' label='' variant='outlined' name="password" type='password' onChange={onChangeInput} />

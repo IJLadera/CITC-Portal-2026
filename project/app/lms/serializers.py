@@ -4,6 +4,7 @@ from rest_framework import serializers
 from .models import (
     College,
     Department,
+    Post,
     SchoolYear,
     YearLevel,
     Section,
@@ -13,6 +14,8 @@ from .models import (
     Attendance
 )
 from app.users.serializers import StudentSerializers
+
+from app.unieventify.serializers import CreatedBySerializer
 
 
 User = get_user_model()
@@ -149,3 +152,10 @@ class StudentClassSerializers(serializers.ModelSerializer):
         data['subject'] = instance.subject.name
         data['teacher'] = '{}, {}'.format(instance.teacher.last_name, instance.teacher.first_name)
         return data
+    
+class PostSerializers(serializers.ModelSerializer):
+    created_by = CreatedBySerializer(read_only=True)
+    class Meta:
+        fields = '__all__'
+        model = Post
+

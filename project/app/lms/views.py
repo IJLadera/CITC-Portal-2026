@@ -5,21 +5,27 @@ from django.shortcuts import render
 from django.http import StreamingHttpResponse
 from django.conf import settings
 
+from django.shortcuts import get_object_or_404
+
 
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
     CreateAPIView,
-    UpdateAPIView
+    UpdateAPIView,
+    RetrieveUpdateDestroyAPIView
 )
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+
+from app.users.permissions import IsOwnerOrReadOnly
 
 from core.permissions import TeachersPermission
 from core.paginations import LargeNumberOfData
 from .models import (
     College,
     Department,
+    Post,
     SchoolYear,
     YearLevel,
     Section,
@@ -28,9 +34,11 @@ from .models import (
     Status,
     Attendance
 )
+
 from .serializers import (
     CollegeSerializer,
     DepartmentSerializer,
+    PostSerializers,
     SchoolYearSerializer,
     YearLevelSerializer,
     SectionSerializer,
@@ -146,3 +154,22 @@ class ExportPunctualityAPIView(APIView):
         # response['Content-Encoding'] = 'UTF-8'
 
         return response
+    
+class PostListAPIView(ListCreateAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializers
+    permission_classes = []
+
+    def perform_create(self, serializer):
+        # Automatically set the created_by to the current user when creating a post
+        serializer.save(created_by=self.request.user)    
+
+class PostListDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializers
+    permission_classes = [IsOwnerOrReadOnly]
+
+    def get_object(self): 
+        uuid = self.kwargs.get("uuid")
+        return get_object_or_404(Post, uuid=uuid)          
+

@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom';
 import http from '../../../../../../../http';
 import Eventskeleton from '../../Components/eventComponents/eventskeleton'
 import EventDetailsPublic from '../../Components/eventComponents/eventDetails';
 
 
 export default function EventDetails() {
-    const navigate = useNavigate();
     const { id } = useParams();
     const [event, setEvent] = useState(null);
 

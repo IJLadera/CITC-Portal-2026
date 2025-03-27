@@ -1,18 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Card, Label, TextInput } from "flowbite-react";
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import http from '../../../../../../../http';
-import { HiMail } from 'react-icons/hi';
 import 'react-toastify/dist/ReactToastify.css';
 import Cookies from "js-cookie";
 import { FaEye } from "react-icons/fa";
-import { Navigation } from '@mui/icons-material';
 
-import { User } from '../../Components/models';
 import { useAppDispatch, useAppSelector } from '../../../../../../../hooks';
 import { RootState } from '../../../../../../../store';
-import { fetchCurrentUser } from '../slice';
 
 // interface Profile {
 //     id: number;

@@ -6,7 +6,6 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import rrulePlugin from "@fullcalendar/rrule";
-import Cookies from "js-cookie";
 import "./fullcalendar.css";
 import {
   Box,
@@ -27,80 +26,21 @@ import {
   SelectChangeEvent
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { RRule, RRule as RRuleNamespace, Weekday } from "rrule";
+import { RRule } from "rrule";
 import colors from "../../../Components/colors";
-import { toast, ToastContainer } from "react-toastify";
-import { Department } from "../../../../../lms/models";
+import { ToastContainer } from "react-toastify";
 import { useAppSelector } from "../../../../../../../../hooks";
-import {
-  fetchEventCategoriesApi, fetchEventTypesApi, fetchCollegesesApi,
-  fetchDepartmentsApi, fetchDepartmentsByCollegeApi, fetchEventsApi,
-  fetchFacultyEventsApi, fetchUserProfileApi, fetchPublicEventsApi
+import { 
+  fetchDepartmentsByCollegeApi,
+  fetchFacultyEventsApi,
 } from "../../../../../../../../api"
-import { AppDispatch, RootState } from "../../../../../../../../store";
-import { useDispatch } from "react-redux";
-import { fetchCollegeses, fetchEventCategories, fetchDepartments, fetchDepartmentsByCollege, fetchEventTypes } from "../../slice";
-
-interface EventCategory {
-  id: string;
-  eventCategoryName: string;
-}
-
-interface EventType {
-  id: number;
-  eventTypeName: string;
-}
-
-interface FormattedEvent {
-  id: number;
-  title: string;
-  start: string;
-  end: string;
-  // duration: {
-  //   hours: number;
-  //   minutes: number;
-  // };
-  rrule: string | null;
-  // allDay: boolean;
-  category: number | null;
-  color: string;
-  departments: string[];
-  eventDescription: string;
-  participants: Faculty[];
-}
-
-interface FormattedEventTwo {
-  id: number;
-  title: string;
-  start: string;
-  end: string;
-  duration: {
-    hours: number;
-    minutes: number;
-  };
-  rrule: string | null;
-  allDay: boolean;
-  category: number | null;
-  color: string;
-  departments: string[];
-  eventDescription: string;
-  participants: Faculty[];
-}
+import { RootState } from "../../../../../../../../store";
 
 interface Faculty {
   uuid: number;
   first_name: string;
   last_name: string;
 }
-
-
-interface College {
-  id: number;
-  collegeName: string;
-  name: string;
-}
-
-
 interface DepartmentTwo {
   id: number;
   // departmentName: string;
@@ -118,53 +58,10 @@ export default function Events() {
   const { categories } = useAppSelector((state: RootState) => state.unieventify);
   const { colleges } = useAppSelector((state: RootState) => state.unieventify);
   const { departments } = useAppSelector((state: RootState) => state.unieventify);
-  const { departmentsByCollege } = useAppSelector((state: RootState) => state.unieventify);
   const { types } = useAppSelector((state: RootState) => state.unieventify);
 
-  const dispatch = useDispatch<AppDispatch>();
-
-  // useEffect(() => {
-  //   dispatch(fetchEventCategories());
-  //   dispatch(fetchCollegeses());
-  //   dispatch(fetchDepartments());
-  //   dispatch(fetchDepartmentsByCollege());
-  //   dispatch(fetchEventTypes())
-  // }, [dispatch]);
 
   console.log("categories length:", categories.length)
-
-  // useEffect(() => {
-  //   fetchEventCategories();
-  //   fetchCollegeses();
-  //   fetchDepartments();
-  //   fetchDepartmentsByCollege();
-  //   fetchEventTypes();
-
-  //   // // Check if categories exist in state before fetching
-  //   // if (categories.length === 0) {
-  //   //   dispatch(fetchEventCategories());
-  //   // }
-
-  //   // Check if colleges exist in state before fetching
-  //   // if (colleges.length === 0) {
-  //   //   dispatch(fetchCollegeses());
-  //   // }
-
-  //   // // Check if departments exist in state before fetching
-  //   // if (departments.length === 0) {
-  //   //   dispatch(fetchDepartments());
-  //   // }
-
-  //   // // Check if departmentsByCollege exist in state before fetching
-  //   // if (Object.keys(departmentsByCollege).length === 0) {
-  //   //   dispatch(fetchDepartmentsByCollege());
-  //   // }
-
-  //   // // Check if eventTypes exist in state before fetching
-  //   // if (types.length === 0) {
-  //   //   dispatch(fetchEventTypes());
-  //   // }
-  // }, [dispatch, categories, colleges, departments, departmentsByCollege, types]);
 
   const [collegess, setCollegess] = useState([]);
   const [faculties, setFaculties] = useState<Faculty[]>([]);

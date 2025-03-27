@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { User } from "../providers/models";
 import { RootState } from '../../../store';
-import Cookies from "js-cookie";
 
 interface AuthState {
     user: User;

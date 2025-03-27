@@ -1,9 +1,8 @@
-import React, { useState, useEffect, ReactHTMLElement } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { Label, TextInput, Select, Button } from "flowbite-react";
+import { TextInput, Select, Button } from "flowbite-react";
 import { CiSearch } from "react-icons/ci";
 import { TextField } from "@mui/material";
-import colors from '../../Components/colors';
 import { styled } from '@mui/material/styles';
 import { Event } from '../../Components/models';
 import http from '../../../../../../../http';

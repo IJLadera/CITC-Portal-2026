@@ -1,7 +1,6 @@
 import { RiHomeLine, RiInboxLine } from "react-icons/ri";
 import { PiSignOutLight, PiBooksThin } from "react-icons/pi";
 import { FaUserPlus, FaUser } from "react-icons/fa";
-import { MdEvent } from "react-icons/md";
 import { FaNotesMedical } from "react-icons/fa6";
 import { Modal, Button, Label, Textarea, FileInput } from "flowbite-react";
 import { useEffect, useState } from "react";
@@ -9,8 +8,6 @@ import { useAppDispatch, useAppSelector } from "../../../hooks";
 import { mutateLoggedIn } from "../../authentication/Login/slice";
 import { useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
-import { fetchUserProfileApi } from "../../../api";
-import { Role } from "../../../pages/Application/pages/unieventify/src/Components/models"
 import { fetchUserRole } from "../pages/unieventify/src/Application/slice";
 import { persistor } from "../../../store";
 import Cookies from "js-cookie";
@@ -20,12 +17,10 @@ export default function SideBar() {
     const [openModal, setOpenModal] = useState(false)
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
-    const [role, setRole] = useState<Role>();
     const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
     // const dispatch = useAppDispatch()
     const highestRankRole = useAppSelector((state) => state.unieventify.userRole)
-    const token = useAppSelector((state) => state.auth.token)
 
 
 

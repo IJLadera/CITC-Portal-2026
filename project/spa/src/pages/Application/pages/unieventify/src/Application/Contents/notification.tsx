@@ -1,6 +1,5 @@
-import { Event, Role, User } from "../../Components/models"; 
-import React, { useEffect, useState } from "react";
-import Cookies from "js-cookie";
+import { Event, User } from "../../Components/models"; 
+import { useEffect, useState } from "react";
 import {
   Container,
   Typography,
@@ -9,7 +8,6 @@ import {
   CircularProgress,
   Alert,
   Box,
-  CardActions,
   IconButton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
@@ -18,7 +16,6 @@ import http from "../../../../../../../http";
 import { useNavigate } from "react-router-dom";
 import { Editor, EditorState, convertFromRaw, ContentState } from "draft-js";
 import { useAppDispatch, useAppSelector } from "../../../../../../../hooks";
-import { fetchCurrentUser, fetchNotifications } from "../slice";
 
 const deanAndChairperson = ['Dean', 'Chairperson']
 

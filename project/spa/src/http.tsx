@@ -1,21 +1,13 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import store from './store';
 // import { useSelector } from 'react-redux';
 // import { RootState } from './store';
 
 
 const http = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api/v1/'
+  baseURL: process.env.NODE_ENV == 'development' ? 'http://127.0.0.1:8000/api/v1/' : 'https://opensourcerer.software/api/v1/'
 });
 
-// http.interceptors.request.use(config => {
-//     const token = useSelector((state:RootState) => state.auth.token)
-//     if (token !== '') {
-//         config.headers.Authorization = `Bearer ${token}`
-//     }
-
-//     return config
-// })
 
 http.interceptors.request.use((config) => {
   const token = store.getState().auth.token;

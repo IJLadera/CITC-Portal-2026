@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { PieChart } from '@mui/x-charts';
 import { Box, Typography, Modal } from '@mui/material';
 

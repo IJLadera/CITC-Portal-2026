@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import http from '../../../../../../../../http';
 import { FileInput, Label, Button } from "flowbite-react";
 import Cookies from "js-cookie";

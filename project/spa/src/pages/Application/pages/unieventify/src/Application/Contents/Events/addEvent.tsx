@@ -1,18 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import EditEvent from "../../../Components/eventComponents/editevent";
-import http from "../../../../../../../../http";
-import Cookies from "js-cookie";
 import { CircularProgress, Box } from "@mui/material";
 import { useAppSelector } from "../../../../../../../../hooks";
-import { fetchCurrentUser } from "../../slice";
-import { AppDispatch, RootState } from "../../../../../../../../store";
-import { useDispatch } from "react-redux";
+import { RootState } from "../../../../../../../../store";
 
 
 const EventForm: React.FC = () => {
   // const [currentUser, setCurrentUser] = useState("");
-  const dispatch = useDispatch<AppDispatch>();
-  const token = useAppSelector(state => state.auth.token);
   const currentUser = useAppSelector((state: RootState) => state.unieventify.user);
 
   // useEffect(() => {

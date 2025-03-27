@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { Navbar } from "flowbite-react";
 import logo from "../images/logo.png";
-import { Navigate, useLocation } from 'react-router-dom';
-import Cookies from "js-cookie";
+import { useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from "../../../../../../hooks";
 import { fetchCurrentUser, fetchUserRole } from "../Application/slice";
 

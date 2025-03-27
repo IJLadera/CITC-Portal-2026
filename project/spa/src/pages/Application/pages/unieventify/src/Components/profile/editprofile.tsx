@@ -1,6 +1,6 @@
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import http from "../../../../../../../http"
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
@@ -8,10 +8,8 @@ import {
   Grid,
   Box,
   Typography,
-  CircularProgress,
   Avatar,
   Alert,
-  Paper,
   Divider,
   Switch,
 } from "@mui/material";

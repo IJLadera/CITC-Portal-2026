@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Editor,
   EditorState,
@@ -12,19 +12,11 @@ import {
   FormatBold,
   FormatItalic,
   FormatUnderlined,
-  StrikethroughS,
   FormatListBulleted,
   FormatListNumbered,
   Code,
-  FormatQuote,
-  Title,
   Undo,
   Redo,
-  Link as LinkIcon,
-  Clear,
-  FormatAlignLeft,
-  FormatAlignCenter,
-  FormatAlignRight,
 } from "@mui/icons-material";
 
 interface DraftEditorProps {

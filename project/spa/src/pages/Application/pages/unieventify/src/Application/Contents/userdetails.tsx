@@ -1,6 +1,6 @@
 import Editprofile from "../../Components/profile/editprofile";
 import Profileloadingskeleton from "../../Components/profile/profileloadingskeleton";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import http from "../../../../../../../http";
 import Cookies from "js-cookie";
 import { useNavigate, useParams } from "react-router-dom";
@@ -11,8 +11,6 @@ import {
   CircularProgress,
   Avatar,
   Divider,
-  Button,
-  IconButton,
   // CloseIcon,
 } from "@mui/material";
 import CustomDeleteButton from "../../Components/customdeletebutton";

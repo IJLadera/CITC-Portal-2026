@@ -14,7 +14,6 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useAppSelector, useAppDispatch } from "../../../../../../../../hooks";
-import { fetchDocuments } from "../../slice";
 
 // Interface to define the structure of the document
 interface Document {
@@ -23,7 +22,6 @@ interface Document {
 }
 
 const ApproveDocumentsPage: React.FC = () => {
-  const dispatch = useAppDispatch();
   const { documentsByYear, loading } = useAppSelector(state => ({
     documentsByYear: state.unieventify.documentsByYear,
     loading: state.unieventify.loading

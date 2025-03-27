@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import http from "../../../../../../../http";
 import colors from "../colors";
 import CardMedia from "@mui/material/CardMedia";
@@ -7,7 +7,6 @@ import {
   Typography,
   Divider,
   Grid,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -16,7 +15,6 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import Cookies from "js-cookie";
 import CustomDeleteButton from "../customdeletebutton";
 import CustomButton from "../button";
 import { toast, ToastContainer } from "react-toastify";
@@ -26,7 +24,6 @@ import {
   Editor,
   EditorState,
   convertFromRaw,
-  convertToRaw,
   ContentState,
 } from "draft-js";
 import { DeleteConfirmModal } from "../DeleteConfirmModal";
@@ -39,9 +36,7 @@ import { useAppSelector } from "../../../../../../../hooks";
 const cancelled = "cancelled";
 const postponed = "postponed";
 const draft = "draft";
-const ongoing = "ongoing";
 const done = "done";
-const upcoming = "upcoming";
 const disapprove = "disapproved";
 
 // event category

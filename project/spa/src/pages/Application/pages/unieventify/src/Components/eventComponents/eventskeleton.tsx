@@ -1,7 +1,5 @@
-import React from "react";
-import { Box, Typography, Paper, Divider, Grid, Button } from "@mui/material";
+import { Box, Typography, Divider, Grid } from "@mui/material";
 import Skeleton from "@mui/material/Skeleton";
-import colors from "../colors";
 
 export default function Eventskeleton() {
   return (

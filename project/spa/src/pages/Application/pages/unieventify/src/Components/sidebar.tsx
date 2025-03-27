@@ -1,8 +1,7 @@
-import { Role, User } from './models'
+import { User } from './models'
 import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
-import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
@@ -19,7 +18,6 @@ import Badge from "@mui/material/Badge";
 import { CircularProgress } from "@mui/material";
 
 import TextSnippetIcon from "@mui/icons-material/TextSnippet";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import DashboardIcon from "@mui/icons-material/Dashboard";

@@ -101,9 +101,9 @@ Different contents are displayed based on the user role:
 
 ## **3. Entities**
 #### Setups
-- In-person
-- Virtual
-- Hybrid
+- in-person
+- virtual
+- hybrid
 
 #### Venues
 - name: AVR, location: {location} 
@@ -118,13 +118,13 @@ Different contents are displayed based on the user role:
 - name: Cafeteria Function Hall, location: {location} 
 
 #### Status
-- Draft
-- Postponed
-- Cancelled
-- Upcoming
-- Done
-- Ongoing
-- Disapproved
+- draft
+- postponed
+- cancelled
+- upcoming
+- done
+- ongoing
+- disapproved
 
 #### Event Categories
 - Student Organization
@@ -145,13 +145,13 @@ Different contents are displayed based on the user role:
 - IT
 
 #### User Roles
-- Unit Org
-- Mother Org
-- Student
-- Faculty
-- Chairperson
-- Dean
-- Admin
+- Unit Org, rank: 3
+- Mother Org, rank: 2
+- Student, rank: 5
+- Faculty, rank: 4
+- Chairperson, rank: 3
+- Dean, rank: 2
+- Admin, rank: 1
 
 #### Event Types
 - Non-School Activities

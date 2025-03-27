@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -7,7 +7,6 @@ import CardMedia from "@mui/material/CardMedia";
 import Typography from "@mui/material/Typography";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import colors from "../../Components/colors";
-import BookmarkIcon from "@mui/icons-material/Bookmark";
 import Divider from "@mui/material/Divider";
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import DateRangeIcon from "@mui/icons-material/DateRange";
@@ -18,7 +17,6 @@ import FooterComponent from "../../Components/Footer";
 import FiberManualRecordTwoToneIcon from "@mui/icons-material/FiberManualRecordTwoTone";
 import { useNavigate } from "react-router-dom";
 import { Editor, EditorState, convertFromRaw, ContentState } from "draft-js";
-import getImageForCategory from "../../Components/defaultImageComponents";
 import logo from "../../images/logo.png";
 import { Carousel } from "flowbite-react"; // You can use MUI or Tailwind equivalent
 import Announcement from "../../Components/announcement";

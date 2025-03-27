@@ -4,7 +4,6 @@ import LMSSlice from './pages/Application/pages/lms/slice';
 import sessionStorage from 'redux-persist/lib/storage/session';
 import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
 import unieventifyReducer from './pages/Application/pages/unieventify/src/Application/slice';
-import UniEventifyApplication from './pages/Application/pages/unieventify/src/Application/application';
 
 // Create a rootReducer with a reset action
 const appReducer = combineReducers({

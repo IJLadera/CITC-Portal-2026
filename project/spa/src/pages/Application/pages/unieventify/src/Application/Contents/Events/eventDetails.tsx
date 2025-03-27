@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import http from "../../../../../../../../http";
-import Cookies from "js-cookie";
 import EventDetails from "../../../Components/eventComponents/eventDetails";
 import Eventskeleton from "../../../Components/eventComponents/eventskeleton";
 import { useAppSelector } from "../../../../../../../../hooks";

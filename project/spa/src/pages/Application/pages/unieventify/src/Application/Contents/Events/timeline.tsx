@@ -1,23 +1,16 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { Box, CircularProgress, Paper, TextField, Typography } from "@mui/material";
 import { DataGrid, GridRowParams } from '@mui/x-data-grid';
 import colors from "../../../Components/colors";
 import { useNavigate } from "react-router-dom";
-import { useAppSelector, useAppDispatch } from "../../../../../../../../hooks";
-import { fetchTimelineEvents } from "../../slice";
+import { useAppSelector } from "../../../../../../../../hooks";
 
 export default function EventTimeline() {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   
   // Get timeline data and loading state from Redux store
   const { timeline, timelineLoading } = useAppSelector(state => state.unieventify);
-  
-  // useEffect(() => {
-  //   // Dispatch the action to fetch timeline events
-  //   dispatch(fetchTimelineEvents());
-  // }, [dispatch]);
 
   const filteredEvents = timeline.filter((event) => {
     const eventMonth = new Date(event.startDateTime).toLocaleString("en-US", { month: "long" });

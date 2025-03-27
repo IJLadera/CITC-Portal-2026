@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, Role, Status, Event, College, Setup, Venue, Section } from "../../Components/models";
+import { User, Event } from "../../Components/models";
 import http from "../../../../../../../http"
 import {
   Container,
@@ -14,9 +14,6 @@ import {
   DialogTitle,
   MenuItem,
   Select,
-  Card,
-  CardContent,
-  CardActions,
   TableBody,
   TableCell,
   TableContainer,
@@ -30,10 +27,8 @@ import {
 
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
-import Cookies from "js-cookie";
 import { DataGrid, GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { useNavigate } from "react-router-dom";
-import colors from "../../Components/colors";
 import CustomButton from "../../Components/button";
 import CustomDeleteButton from "../../Components/customdeletebutton";
 import { DeleteConfirmModal } from "../../Components/DeleteConfirmModal";
@@ -41,15 +36,13 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DateTime } from "luxon";
 import { useAppDispatch, useAppSelector } from "../../../../../../../hooks";
-import { fetchApprovalEvents, fetchCollegeses, fetchDepartments, fetchEventCategories, fetchEventTypes, fetchSchoolYears, fetchSections, fetchSetRemarks, fetchSetup, fetchStatus, fetchUserRole, fetchUserRoles, fetchUsers, fetchVenues } from "../slice";
-import { RootState } from "../../../../../../../store";
+import { fetchApprovalEvents, fetchCollegeses, fetchDepartments, fetchEventCategories, fetchEventTypes, fetchSchoolYears, fetchSections, fetchSetRemarks, fetchSetup, fetchStatus, fetchUserRoles, fetchVenues } from "../slice";
+
 
 const dean = "Dean";
-const chairperson = "Chairperson";
 const motherOrg = "Mother Org";
 const unitOrg = "Unit Org";
 const faculty = "Faculty";
-const cancelled = "cancelled";
 
 
 interface Entity {
@@ -105,12 +98,7 @@ const Dashboard: React.FC = () => {
   const [inactiveUsers, setInactiveUsers] = useState<boolean>(false);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
 
-  const [selectedRole, setSelectedRole] = useState<string>("");
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [selectedCollege, setSelectedCollege] = useState<string>("");
-  const [selectedEventType, setSelectedEventType] = useState<string>("");
-  const [selectedSchoolYear, setSelectedSchoolYear] = useState<string>("");
+
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [admin, setAdmin] = useState(false);

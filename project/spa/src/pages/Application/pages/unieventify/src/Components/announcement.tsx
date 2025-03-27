@@ -1,7 +1,6 @@
 import { Banner } from "flowbite-react";
 import { MdAnnouncement } from "react-icons/md";
 import { Editor, EditorState, convertFromRaw, ContentState } from "draft-js";
-import { useState } from "react";
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface AnnouncementProps {

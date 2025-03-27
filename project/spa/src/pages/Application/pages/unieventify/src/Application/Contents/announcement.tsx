@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import http from "../../../../../../../http";
 import {
   Container,
@@ -11,9 +11,8 @@ import {
   CircularProgress
 } from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
-import Cookies from "js-cookie";
-import { Editor, EditorState, convertFromRaw, ContentState } from "draft-js";
-import { useNavigate, useParams } from 'react-router-dom';
+import { Editor, EditorState, convertFromRaw } from "draft-js";
+import { useNavigate } from 'react-router-dom';
 
 import { User, Event } from "../../Components/models";
 import { useAppSelector } from "../../../../../../../hooks";

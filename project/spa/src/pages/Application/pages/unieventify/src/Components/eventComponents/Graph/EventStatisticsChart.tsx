@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { LineChart, lineElementClasses } from "@mui/x-charts/LineChart";
 import Cookies from "js-cookie";
 import http from "../../../../../../../../http";

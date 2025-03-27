@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import http from "../../../../../../../../http";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
-import Cookies from "js-cookie";
 import {
   Box,
   Dialog,
@@ -28,10 +27,9 @@ import rrulePlugin from "@fullcalendar/rrule";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { DeleteConfirmModal } from "../../../Components/DeleteConfirmModal";
-import colors from "../../../Components/colors";
-import { Event, EventCategory, Department } from "../../../Components/models";
+import { EventCategory, Department } from "../../../Components/models";
 import { useAppDispatch, useAppSelector } from "../../../../../../../../hooks";
-import { fetchEventCategories, fetchParticipatedEvents } from "../../slice";
+import { fetchParticipatedEvents } from "../../slice";
 import { RootState } from "../../../../../../../../store";
 
 const palette = {
@@ -120,7 +118,6 @@ export default function UserEvents() {
 
   const dispatch = useAppDispatch();
   const participatedEventsData = useAppSelector((state) => state.unieventify.participatedEvents);
-  const listEventsData = useAppSelector((state) => state.unieventify.listEvents);
   // const [events, setEvents] = useState([]);
 
   const [listEvents, setListEvents] = useState<UserEvents[]>([]);
@@ -137,24 +134,9 @@ export default function UserEvents() {
   const [created, setCreated] = useState(false);
 
   useEffect(() => {
-    // if (categories.length === 0) {
-    //   dispatch(fetchEventCategories());
-    // }
-    // dispatch(fetchParticipatedEvents());
-    // fetchCategories();
-    // fetchEvents();
     fetchUserEvents();
   }, []);
 
-
-  // const fetchCategories = async () => {
-  //   try {
-  //     const response = await http.get("unieventify/eventcategories/");
-  //     setCategories(response.data);
-  //   } catch (error) {
-  //     console.error("Error fetching categories:", error);
-  //   }
-  // };
 
   const formControlStyles = {
     mb: 2,

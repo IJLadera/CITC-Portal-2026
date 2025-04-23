@@ -1,6 +1,7 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import AuthSlice from './pages/authentication/Login/slice';
 import LMSSlice from './pages/Application/pages/lms/slice';
+import PostSlice from './pages/Application/pages/posts/slice'
 import sessionStorage from 'redux-persist/lib/storage/session';
 import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
 import unieventifyReducer from './pages/Application/pages/unieventify/src/Application/slice';
@@ -10,6 +11,7 @@ const appReducer = combineReducers({
     auth: AuthSlice,
     lms: LMSSlice,
     unieventify: unieventifyReducer,
+    post: PostSlice,
 });
 
 // Reset root reducer when logout action is dispatched
@@ -25,7 +27,7 @@ const rootReducer = (state: any, action:any) => {
 const persistConfig = {
     key: 'root',
     storage: sessionStorage,
-    whitelist: ['auth', 'unieventify'], // persist only auth and unieventify slices
+    whitelist: ['auth', 'unieventify', 'post', 'lms'], // persist only auth and unieventify slices
 };
 
 // Create persisted reducer

@@ -68,7 +68,7 @@ export default function Changepassword() {
             password,
             password2
         }
-        http.put(`change_password/${profile.id}/`, passwords, {
+        http.put(`auth/change_password/`, passwords, {
             headers: {
                 Authorization: `Token ${token}`,
             }
@@ -87,7 +87,7 @@ export default function Changepassword() {
                 setPassword2('')
                 setIsDisabled(false);
                 setLoading(false);
-                navigate('/auth/app/profile')
+                navigate('/profile')
             }).catch(error => {
                 toast.error("Please check the password if its correct", {
                     position: "top-center",

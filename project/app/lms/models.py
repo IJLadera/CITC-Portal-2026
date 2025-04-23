@@ -1,13 +1,25 @@
 from django.db import models
+from django.utils import timezone
+import os, bleach, uuid
+from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError as DRFValidationError
+from datetime import datetime
 # from app.users.models import User
+
+def get_document_upload_path(instance, filename):
+    # Get current date
+    now = datetime.now()
+    # Define the path with prefix and current date
+    date_path = now.strftime('%Y/%m/%d')
+    return os.path.join('post', date_path, filename)
 
 # Create your models here.
 class College(models.Model):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=10)
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return "{}".format(self.name)
 
 
 class Department(models.Model):
@@ -15,8 +27,8 @@ class Department(models.Model):
     code = models.CharField(max_length=10)
     college = models.ForeignKey(College, on_delete=models.PROTECT, related_name="departments")
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return "{}".format(self.name)
     
 
 class SchoolYear(models.Model):
@@ -24,23 +36,23 @@ class SchoolYear(models.Model):
     startYear = models.IntegerField(null=True)
     endYear = models.IntegerField(null=True)
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return "{}".format(self.name)
 
 
 class YearLevel(models.Model):
     level = models.CharField(max_length=10)
 
-    def __str__(self):
+    def __str__(self) -> str:
         super().__str__()
-        return self.level
+        return "{}".format(self.level)
 
 class Section(models.Model):
     tblYearLevel = models.ForeignKey(YearLevel, on_delete=models.CASCADE, null=True, blank=True)
     section = models.CharField(max_length=10)
 
-    def __str__(self):
-        return self.section
+    def __str__(self) -> str:
+        return "{}".format(self.section)
 
 
 class Subject(models.Model):
@@ -49,9 +61,9 @@ class Subject(models.Model):
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     year_level = models.ForeignKey(YearLevel, on_delete=models.SET_NULL, null=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         super().__str__()
-        return self.name
+        return "{}".format(self.name)
 
 
 class Class(models.Model):
@@ -72,7 +84,7 @@ class Status(models.Model):
     name = models.CharField(max_length=15)
 
     def __str__(self) -> str:
-        return self.name
+        return "{}".format(self.name)
 
 
 class Attendance(models.Model):
@@ -81,3 +93,54 @@ class Attendance(models.Model):
     status = models.ForeignKey(Status, on_delete=models.CASCADE, null=True)
     is_present = models.BooleanField(default=False)
     date = models.DateField()
+
+class Post(models.Model):
+    uuid = models.UUIDField(unique=True, primary_key=True, default=uuid.uuid4, editable=False)
+    created_by = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='created_by')
+    description = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+    image = models.ImageField(upload_to=get_document_upload_path, null=True, blank=True)
+    
+    def __str__(self):
+        try:
+            return f'{self.uuid}'
+        except Exception as e:
+            return f'Invalid Data ({self.pk}): {e}'
+
+    def save_event_description(self, description):
+        # List of allowed tags based on Slate.js functionality up to text alignment
+        allowed_tags = [
+            'p', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'a', 'blockquote', 'code', 
+            'h1', 'h2', 'h3', 'h4', 'br', 'div', 'img'
+        ]
+
+        # List of allowed attributes
+        allowed_attributes = {
+            'a': ['href', 'title'],  # Allow links with href and title attributes
+            'div': ['style'],        # Allow div with style for text alignment
+            'img': ['src', 'alt', 'title', 'width', 'height']  # Allow attributes for images
+        }
+
+        # Whitelist specific styles allowed for the 'div' tag
+        allowed_styles = ['text-align']
+        
+        # Clean the description, only allowing the specified tags, attributes, and styles
+        sanitized_description = bleach.clean(
+            description, 
+            tags=allowed_tags, 
+            attributes=allowed_attributes, 
+            styles=allowed_styles,
+            strip=True  # Remove disallowed tags
+        )
+
+        # Save the sanitized description to the event
+        self.eventDescription = sanitized_description
+
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+            # self.override_event()
+        except ValidationError as e:
+            # Convert Django ValidationError to DRF ValidationError for JSON response
+            raise DRFValidationError(e.message_dict)
+

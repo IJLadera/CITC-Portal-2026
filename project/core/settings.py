@@ -45,8 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'cloudinary_storage',
-    'cloudinary',
+    #'cloudinary_storage',
+    #'cloudinary',
     'corsheaders',
     'djoser',
     'django_celery_beat',
@@ -101,8 +101,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env('NAME', default=''),
-        'USER' : env('USER', default=''),
+        'NAME': env('NAME', default=""),
+        'USER' : env('USER', default=""),
         'PASSWORD' : env('PASSWORD', default=''),
         'HOST' : env('HOST', default=''),
         'PORT' : env('PORT', default='')
@@ -160,8 +160,9 @@ STATICFILES_DIRS = [
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-MEDIA_URL = '/files/'  # or any prefix you choose
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '/files/'# or any prefix you choose
+MEDIA_ROOT = BASE_DIR / 'files'
+#DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -213,11 +214,11 @@ CORS_ALLOW_HEADERS = [
     'Access-Control-Allow-Origin'
 ]
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': env('CLOUD_NAME', default=''),
-    'API_KEY': env('API_KEY', default=''),
-    'API_SECRET': env('API_SECRET', default='')
-}
+#CLOUDINARY_STORAGE = {
+#    'CLOUD_NAME': env('CLOUD_NAME', default=''),
+#    'API_KEY': env('API_KEY', default=''),
+#    'API_SECRET': env('API_SECRET', default='')
+#}
 
 # Celery settings in settings.py
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Use Redis as the broker

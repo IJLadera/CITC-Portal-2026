@@ -1,5 +1,7 @@
 from django.urls import path
 from .views import (
+    PostListCreateAPIView,
+    PostRetrieveUpdateDestroyAPIView,
     YearLevelListAPIView,
     SchoolYearListAPIView,
     SectionListAPIView,
@@ -28,4 +30,7 @@ urlpatterns = [
     path('attendance-list/<int:id>/', AttendanceClassListAPIView.as_view(), name='attendance-class-list'),
     path('student-list/', StudentClassListAPIView.as_view(), name='student-class-list'),
     path('export/class/', ExportPunctualityAPIView.as_view(), name='export-punctuality'),
+
+    path('post/', PostListCreateAPIView.as_view(), name='post-list'),
+    path('post/<uuid:uuid>/', PostRetrieveUpdateDestroyAPIView.as_view(), name='post-list'),
 ]

@@ -64,7 +64,6 @@ export default function Publicevents() {
     const [publicEvents, setPublicEvents] = useState<Event[]>([]);
     const [eventCategory, setEventCategory] = useState<eventCategory[]>([]);
     const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
-    const navigate = useNavigate();
 
     useEffect(() => {
         // Fetch events

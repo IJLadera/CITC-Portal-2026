@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Modal, Button, Label, FileInput } from "flowbite-react";
 import DraftEditor from '../unieventify/src/Components/eventComponents/draft components/DraftEditor'; // Import the DraftEditor component
 import http from '../../../../http'; // Assuming you're using axios for API calls
-import { useAppSelector } from '../../../../hooks';
+import { useAppSelector, useAppDispatch } from '../../../../hooks';
+import { appendPost } from './slice'
 
 interface CreatePostProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose }) => {
   // const [endDateTime, setEndDateTime] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const token = useAppSelector(state => state.auth.token);
+  const dispatch = useAppDispatch()
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -49,7 +51,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose }) => {
 
       // Handle successful post
       console.log('Post created:', response.data);
-      
+      dispatch(appendPost(response.data))
       // Reset form and close modal
       resetForm();
       onClose();

@@ -1,7 +1,9 @@
-import { User } from "../../../authentication/Login/model";
+import { UserPost } from "../../../authentication/Login/model";
 
 export type Post = {
-    message: string,
-    author: User,
-    post_imgae: string,
+    uuid: string;
+    description: string;
+    created_by: UserPost;
+    image: string;
+    timestamp: string;
 }

@@ -1,7 +1,6 @@
 from io import BytesIO
 from docx import Document
 
-from django.shortcuts import render
 from django.http import StreamingHttpResponse
 from django.conf import settings
 
@@ -155,7 +154,7 @@ class ExportPunctualityAPIView(APIView):
 
         return response
     
-class PostListAPIView(ListCreateAPIView):
+class PostListCreateAPIView(ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializers
     permission_classes = []
@@ -164,7 +163,7 @@ class PostListAPIView(ListCreateAPIView):
         # Automatically set the created_by to the current user when creating a post
         serializer.save(created_by=self.request.user)    
 
-class PostListDetailAPIView(RetrieveUpdateDestroyAPIView):
+class PostRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializers
     permission_classes = [IsOwnerOrReadOnly]

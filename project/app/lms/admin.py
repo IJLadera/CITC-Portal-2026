@@ -8,7 +8,8 @@ from .models import (
     Subject,
     Class,
     Status,
-    Attendance
+    Attendance,
+    Post
 )
 
 # Register your models here.
@@ -21,3 +22,4 @@ admin.site.register(Subject)
 admin.site.register(Class)
 admin.site.register(Status)
 admin.site.register(Attendance)
+admin.site.register(Post)

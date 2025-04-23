@@ -11,15 +11,15 @@ def get_document_upload_path(instance, filename):
     now = datetime.now()
     # Define the path with prefix and current date
     date_path = now.strftime('%Y/%m/%d')
-    return os.path.join('eventFiles', date_path, filename)
+    return os.path.join('post', date_path, filename)
 
 # Create your models here.
 class College(models.Model):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=10)
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return "{}".format(self.name)
 
 
 class Department(models.Model):
@@ -27,8 +27,8 @@ class Department(models.Model):
     code = models.CharField(max_length=10)
     college = models.ForeignKey(College, on_delete=models.PROTECT, related_name="departments")
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return "{}".format(self.name)
     
 
 class SchoolYear(models.Model):
@@ -36,23 +36,23 @@ class SchoolYear(models.Model):
     startYear = models.IntegerField(null=True)
     endYear = models.IntegerField(null=True)
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return "{}".format(self.name)
 
 
 class YearLevel(models.Model):
     level = models.CharField(max_length=10)
 
-    def __str__(self):
+    def __str__(self) -> str:
         super().__str__()
-        return self.level
+        return "{}".format(self.level)
 
 class Section(models.Model):
     tblYearLevel = models.ForeignKey(YearLevel, on_delete=models.CASCADE, null=True, blank=True)
     section = models.CharField(max_length=10)
 
-    def __str__(self):
-        return self.section
+    def __str__(self) -> str:
+        return "{}".format(self.section)
 
 
 class Subject(models.Model):
@@ -61,9 +61,9 @@ class Subject(models.Model):
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     year_level = models.ForeignKey(YearLevel, on_delete=models.SET_NULL, null=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         super().__str__()
-        return self.name
+        return "{}".format(self.name)
 
 
 class Class(models.Model):
@@ -84,7 +84,7 @@ class Status(models.Model):
     name = models.CharField(max_length=15)
 
     def __str__(self) -> str:
-        return self.name
+        return "{}".format(self.name)
 
 
 class Attendance(models.Model):
@@ -99,11 +99,11 @@ class Post(models.Model):
     created_by = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='created_by')
     description = models.TextField()
     timestamp = models.DateTimeField(default=timezone.now)
-    image = models.FileField(upload_to=get_document_upload_path, null=True, blank=True)
+    image = models.ImageField(upload_to=get_document_upload_path, null=True, blank=True)
     
     def __str__(self):
         try:
-            return f'{self.eventName}'
+            return f'{self.uuid}'
         except Exception as e:
             return f'Invalid Data ({self.pk}): {e}'
 

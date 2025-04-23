@@ -4,6 +4,9 @@ import axios from "axios";
 import Friends from "../../components/Friends";
 import { fetchEvents } from "../unieventify/src/Application/slice";
 import { useNavigate } from "react-router-dom";
+import { getPosts } from './api';
+import { storePost } from './slice';
+
 import {
   Editor,
   EditorState,
@@ -20,7 +23,8 @@ export default function Post() {
     const token = useAppSelector((state) => state.auth.token);
 
     // State to store LMS posts
-    const [posts, setPosts] = useState<any[]>([]);
+    const posts = useAppSelector((state) => state?.post.posts)
+    //const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -28,26 +32,16 @@ export default function Post() {
     useEffect(() => {
         // Dispatch events fetch
         dispatch(fetchEvents());
+        if (posts.length === 0) {
+            const fetchPost = getPosts();
+            fetchPost.then(response => {
+                //setPosts(response.data);
+                dispatch(storePost(response.data))
+                setLoading(false)
+            })
+        }
 
-        // Fetch LMS posts
-        const fetchLMSPosts = async () => {
-            try {
-                const response = await axios.get('http://127.0.0.1:8000/api/v1/lms/post', {
-                    headers: {
-                        'Authorization': `Token ${token}`
-                    }
-                });
-                setPosts(response.data);
-                setLoading(false);
-            } catch (err) {
-                setError('Failed to fetch posts');
-                setLoading(false);
-                console.error('Error fetching LMS posts:', err);
-            }
-        };
-
-        fetchLMSPosts();
-    }, [dispatch, token]);
+    }, []);
     
     // Function to parse description to EditorState
     const parseDescription = (description: string): EditorState => {
@@ -84,13 +78,14 @@ export default function Post() {
                     timestamp: new Date(event.timestamp).getTime()
                 }))
             : [];
-
+        
         // Prepare posts
-        const formattedPosts = posts.map(post => ({
+
+        const formattedPosts = Array.isArray(posts) ? posts.map(post => ({
             ...post,
             type: 'post',
             timestamp: new Date(post.timestamp).getTime()
-        }));
+        })) : []
 
         // Combine and sort by timestamp (most recent first)
         return [...majorEvents, ...formattedPosts]
@@ -98,7 +93,7 @@ export default function Post() {
     }, [events, posts]);
 
     // Loading and error states
-    if (loading) {
+    if (posts.length === 0) {
         return (
             <div className="text-white text-center p-5">
                 Loading events and posts...
@@ -169,16 +164,25 @@ export default function Post() {
                         ) : (
                             <div 
                                 key={`post-${item.uuid}`} 
-                                className="bg-gray-700 rounded-2xl shadow-lg overflow-hidden mb-4"
+                                className="bg-gray-800 rounded-2xl shadow-lg overflow-hidden mb-4"
                             >
                                 <div className="p-6 text-white">
+                                    {
+                                            item.image && (
+                                                <img
+                                                    src={item.image}
+                                                    alt="Post"
+                                                    className="w-full mt-4 rounded"
+                                                />
+                                            )
+                                    }
                                     <div className="flex items-center mb-4">
                                         <div>
                                             <h4 className="text-lg font-semibold">
                                                 {item.created_by.first_name} {item.created_by.last_name}
                                             </h4>
                                             <p className="text-sm opacity-70">
-                                                {new Date(item.timestamp).toLocaleString()}
+                                                { new Date(item.timestamp).toLocaleString() }
                                             </p>
                                         </div>
                                     </div>
@@ -190,13 +194,6 @@ export default function Post() {
                                                 onChange={() => {}} // Required prop for controlled component
                                             />
                                         </div>
-                                    )}
-                                    {item.image && (
-                                        <img 
-                                            src={item.image} 
-                                            alt="Post" 
-                                            className="w-full h-48 object-cover mt-4 rounded"
-                                        />
                                     )}
                                 </div>
                             </div>

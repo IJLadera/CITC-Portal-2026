@@ -25,6 +25,7 @@ import EventIcon from "@mui/icons-material/Event";
 import Avatar from "@mui/material/Avatar";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import colors from "./colors";
 
 import { Accordion } from "flowbite-react";
@@ -113,7 +114,7 @@ function SideBar(props: SideBarProps) {
     dispatch(fetchDepartmentsByCollege())
     dispatch(fetchDocuments())
 
-  }, [])
+  }, [dispatch, token])
 
   useEffect(() => {
     http
@@ -346,6 +347,14 @@ function SideBar(props: SideBarProps) {
         ) : (
           <Box></Box>
         )}
+        <ListItem disablePadding>
+          <ListItemButton onClick={(event) => { onClickToNavigate(event, "/") }} style={getItemStyle("reports")}>
+            <ListItemIcon>
+              <ArrowBackIcon sx={{color: "#FAB417", fontSize: 30}} />
+            </ListItemIcon>
+            <ListItemText>Back</ListItemText>
+          </ListItemButton>
+        </ListItem>
       </List>
     </div>
   );
@@ -397,7 +406,7 @@ function SideBar(props: SideBarProps) {
 
     fetchProfile();
     fetchUnreadCount();
-  }, []);
+  }, [token]);
 
   if (!(profile))
     return (

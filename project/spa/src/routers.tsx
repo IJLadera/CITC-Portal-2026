@@ -25,7 +25,7 @@ import Reports from "./pages/Application/pages/unieventify/src/Application/Conte
 import AddUser from "./pages/Application/pages/unieventify/src/Application/Contents/adduser";
 import UserUploadCSV from "./pages/Application/pages/unieventify/src/Application/Contents/uploadusercsv";
 import EventDetails from "./pages/Application/pages/unieventify/src/Application/PublicViewContent/eventDetails";
-import Forgotpassword from "./pages/Application/pages/unieventify/src/Authentication/forgotpassword";
+//import Forgotpassword from "./pages/Application/pages/unieventify/src/Authentication/forgotpassword";
 import Changepassword from "./pages/Application/pages/unieventify/src/Application/Contents/changepassword";
 
 

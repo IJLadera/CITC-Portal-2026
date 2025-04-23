@@ -1,16 +1,11 @@
-from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db.models.signals import pre_save
-from django.dispatch import receiver
 from rest_framework.exceptions import ValidationError as DRFValidationError
 # import PyPDF2
-from django.core.mail import send_mail
 from datetime import datetime
-from cloudinary_storage.storage import RawMediaCloudinaryStorage
 import os
 import bleach
 from auditlog.registry import auditlog

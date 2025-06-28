@@ -15,6 +15,7 @@ export type Department = {
 export type SchoolYear = {
     id: number;
     name: string;
+    semester:string;
 }
 
 export type ClassType = {
@@ -41,3 +42,15 @@ export type SubjectType = {
     id: number;
     name: string;
 }
+
+export type RoomType = {
+    id: number;
+    name: string;
+    subject: string;
+    teacher: string;
+    year_level: number;
+    section: string;
+}
+
+
+

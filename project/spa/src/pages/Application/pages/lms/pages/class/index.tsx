@@ -5,8 +5,10 @@ import { getDepartments, getSchoolYear, getSections, getSubjects, getYearLevel }
 import { useAppSelector } from "../../../../../../hooks";
 import { useDispatch } from "react-redux";
 import { storeDeparments, storeSchoolYear, storeSections, storeSubjects, storeYearLevel } from "../../slice";
-import { ClassType } from "../../models";
+import { ClassType, SchoolYear, RoomType } from "../../models";
 import { onFileInput } from "./resources";
+import Room from '../../components/Room';
+import { GetAllSchoolYear, GetAllClasses } from './api';
 
 export default function Class () {
 
@@ -17,6 +19,10 @@ export default function Class () {
     const yearLevel = useAppSelector(state => state.lms.year_level)
     const sections = useAppSelector(state => state.lms.sections)
     const subjects = useAppSelector(state => state.lms.subjects)
+    
+    const [aysem, setaysem] = useState('')
+    const [listSY, setSY] = useState<Array<SchoolYear>>([])
+    const [rooms, setRoom] = useState<Array<RoomType>>([])
 
     const dispatch = useDispatch()
     const [data, setData] = useState<ClassType>({
@@ -38,6 +44,19 @@ export default function Class () {
                 console.log(error)
             })
         }
+
+        GetAllSchoolYear().then(response => {
+            setSY(response.data);
+            dispatch(storeSchoolYear(response.data))
+        }).catch(error => {
+                console.log('something went wrong!')
+            })
+
+        GetAllClasses().then(response => {
+            setRoom(response.data)
+        }).catch(error => {
+                console.log('samok!')
+            })
         
     }, [])
 
@@ -86,9 +105,25 @@ export default function Class () {
         })
     }
 
+    const onChangeSelect = (event:React.ChangeEvent<HTMLSelectElement>) => {
+        setaysem(event.target.value);
+        // should have some request here on what school year and semester.
+    }
+
     return (
         <div className="max-h-screen">
+            <div className="max-w-md py-5">
+                <Select name="schoolYear" onChange={onChangeSelect}>
+                    <option value="0">Select School Year</option>
+                    {
+                        schoolYear.map(obj => (obj.name != undefined) ? <option key={`schoolyear-${obj.id}`} value={obj.id}>{`${obj.semester} - ${obj.name}`}</option>: '')
+                    }
+                </Select>
+            </div>
             <div className="grid grid-cols-4 gap-4">
+                {
+                    rooms.map(obj => <Room key={obj.id} room={`${obj.id}`} subject={obj.subject} instructor={obj.teacher} yearLevel={`${obj.year_level}`} section={obj.section} />)
+                }
                 <AddClass onClick={() => setShow(true)} />
             </div>
             <Modal show={show} onClose={onCloseModal}>

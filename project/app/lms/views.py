@@ -91,7 +91,8 @@ class ClassListAPIView(ListCreateAPIView):
     permission_classes = [TeachersPermission, IsAuthenticated]
 
     def filter_queryset(self, queryset):
-        return queryset.filter(teacher=self.request.user.id) if not self.request.user.is_student else queryset.filter(students=self.request.user.id)
+        ay_sem = SchoolYear.objects.all().first()
+        return queryset.filter(teacher=self.request.user.uuid, school_year=ay_sem.id) if not self.request.user.is_student else queryset.filter(students=self.request.user.uuid)
 
 
 class ClassUpdateAPIView(UpdateAPIView):
@@ -117,7 +118,7 @@ class AttendanceClassListAPIView(ListAPIView):
     pagination_class = LargeNumberOfData
 
     def filter_queryset(self, queryset):
-        return queryset.filter(classroom=self.kwargs['id'])
+        return queryset.filter(classroom=self.kwargs['uuid'])
 
 
 class StudentClassListAPIView(ListAPIView):
@@ -126,7 +127,7 @@ class StudentClassListAPIView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def filter_queryset(self, queryset):
-        return queryset.filter(students=self.request.user.id)
+        return queryset.filter(students=self.request.user.uuid)
 
 
 class ExportPunctualityAPIView(APIView):

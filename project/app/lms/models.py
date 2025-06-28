@@ -32,12 +32,20 @@ class Department(models.Model):
     
 
 class SchoolYear(models.Model):
+    
+    SEMESTER_CHOICES = [
+        ('1st Semester', '1st Semester'),
+        ('2nd Semester', '2nd Semester'),
+        ('Midyear', 'Midyear')
+    ]
+
     name = models.CharField(max_length=50)
     startYear = models.IntegerField(null=True)
     endYear = models.IntegerField(null=True)
+    semester = models.CharField(max_length=12, choices=SEMESTER_CHOICES, default='1st Semester')
 
     def __str__(self) -> str:
-        return "{}".format(self.name)
+        return "{} - {}".format(self.semester, self.name)
 
 
 class YearLevel(models.Model):

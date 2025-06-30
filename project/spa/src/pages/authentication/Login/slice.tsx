@@ -14,7 +14,14 @@ const initialState: AuthState = {
         last_name: '',
         middle_name: '',
         email: '',
-        uuid: ''
+        uuid: '',
+        suffix: '',
+        avatar: '',
+        is_student: false,
+        is_employee: false,
+        is_staff: false,
+        is_active: false,
+        is_superuser: false,
     },
     token: '',
     loggedIn: false

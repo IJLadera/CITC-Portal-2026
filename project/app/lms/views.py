@@ -3,10 +3,7 @@ from docx import Document
 
 from django.http import StreamingHttpResponse
 from django.conf import settings
-
 from django.shortcuts import get_object_or_404
-
-
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
@@ -16,7 +13,6 @@ from rest_framework.generics import (
 )
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-
 from app.users.permissions import IsOwnerOrReadOnly
 
 from core.permissions import TeachersPermission

@@ -42,6 +42,8 @@ class SchoolYear(models.Model):
     name = models.CharField(max_length=50)
     startYear = models.IntegerField(null=True)
     endYear = models.IntegerField(null=True)
+    start = models.DateField(null=True)
+    end = models.DateField(null=True)
     semester = models.CharField(max_length=12, choices=SEMESTER_CHOICES, default='1st Semester')
 
     def __str__(self) -> str:

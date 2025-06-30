@@ -14,6 +14,7 @@ export default function Class () {
 
     const [show, setShow] = useState(false)
     const token = useAppSelector(state => state.auth.token)
+    const user = useAppSelector(state => state.auth.user)
     const departments = useAppSelector(state => state.lms.deparments)
     const schoolYear = useAppSelector(state => state.lms.schoolyears)
     const yearLevel = useAppSelector(state => state.lms.year_level)
@@ -37,20 +38,24 @@ export default function Class () {
     
 
     useEffect(() => {
-        if (departments.length === 0) {
-            getDepartments(token).then(response => {
-                dispatch(storeDeparments(response.data))
+    
+        if (!user.is_student) {
+
+            if (departments.length === 0) {
+                getDepartments(token).then(response => {
+                    dispatch(storeDeparments(response.data))
+                }).catch(error => {
+                    console.log(error)
+                })
+            }
+
+            GetAllSchoolYear().then(response => {
+                setSY(response.data);
+                dispatch(storeSchoolYear(response.data))
             }).catch(error => {
-                console.log(error)
+                    console.log('something went wrong!')
             })
         }
-
-        GetAllSchoolYear().then(response => {
-            setSY(response.data);
-            dispatch(storeSchoolYear(response.data))
-        }).catch(error => {
-                console.log('something went wrong!')
-            })
 
         GetAllClasses().then(response => {
             setRoom(response.data)
@@ -110,21 +115,30 @@ export default function Class () {
         // should have some request here on what school year and semester.
     }
 
+    const onFileInputChange = (event:React.ChangeEvent<HTMLInputElement>) => {
+        const classData = onFileInput(event);
+        console.log(classData);
+    }
+
     return (
         <div className="max-h-screen">
             <div className="max-w-md py-5">
-                <Select name="schoolYear" onChange={onChangeSelect}>
-                    <option value="0">Select School Year</option>
-                    {
-                        schoolYear.map(obj => (obj.name != undefined) ? <option key={`schoolyear-${obj.id}`} value={obj.id}>{`${obj.semester} - ${obj.name}`}</option>: '')
-                    }
-                </Select>
+                { user.is_student ? '' :
+                    <Select name="schoolYear" onChange={onChangeSelect}>
+                        <option value="0">Select School Year</option>
+                        {
+                            schoolYear.map(obj => (obj.name != undefined) ? <option key={`schoolyear-${obj.id}`} value={obj.id}>{`${obj.semester} - ${obj.name}`}</option>: '')
+                        }
+                    </Select>
+                }
             </div>
             <div className="grid grid-cols-4 gap-4">
                 {
                     rooms.map(obj => <Room key={obj.id} room={`${obj.id}`} subject={obj.subject} instructor={obj.teacher} yearLevel={`${obj.year_level}`} section={obj.section} />)
                 }
-                <AddClass onClick={() => setShow(true)} />
+                {
+                    (!user.is_student) ? <AddClass onClick={() => setShow(true)} /> : ''
+                }
             </div>
             <Modal show={show} onClose={onCloseModal}>
                 <Modal.Header>
@@ -180,7 +194,7 @@ export default function Class () {
                     </div>
                     <div className="flex flex-col w-full mt-5">
                         <Label>Upload Students:</Label>
-                        <FileInput disabled={data.subject === null} accept=".csv" helperText="Please upload file with .csv" onChange={onFileInput} />
+                        <FileInput disabled={data.subject === null} accept=".csv" helperText="Please upload file with .csv" onChange={onFileInputChange} />
                     </div>
                 </Modal.Body>
                 <Modal.Footer>

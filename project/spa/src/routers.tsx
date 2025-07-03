@@ -27,7 +27,7 @@ import UserUploadCSV from "./pages/Application/pages/unieventify/src/Application
 import EventDetails from "./pages/Application/pages/unieventify/src/Application/PublicViewContent/eventDetails";
 //import Forgotpassword from "./pages/Application/pages/unieventify/src/Authentication/forgotpassword";
 import Changepassword from "./pages/Application/pages/unieventify/src/Application/Contents/changepassword";
-
+import Classroom from './pages/Application/pages/lms/pages/class/classroom';
 
 const router = createBrowserRouter([
     {
@@ -44,7 +44,11 @@ const router = createBrowserRouter([
                 children: [
                     {
                         path: "",
-                        element: <Class />
+                        element: <Class />,
+                    },
+                    {
+                        path: "class/:room/",
+                        element: <Classroom />
                     }
                 ]
             },

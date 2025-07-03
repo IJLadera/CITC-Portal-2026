@@ -11,8 +11,17 @@ interface RoomProps {
 
 
 export default function Room({room, subject, instructor, yearLevel, section}:RoomProps) {
+  
+  const navigate = useNavigate()
+
+  const onClickRoom = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    navigate(`class/${room}`)
+  }
+
+
   return (
-    <Card href="#" className="w-full h-auto">
+    <Card href="#" onClick={onClickRoom} className="w-full h-auto">
       <h5 className="font-bold">{ subject }</h5>
       <p className="text-xs mt-3">
         Instructor: <b>{instructor}</b>

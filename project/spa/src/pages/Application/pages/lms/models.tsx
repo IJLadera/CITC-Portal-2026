@@ -25,7 +25,19 @@ export type ClassType = {
     subject: number | null;
     teacher: string | null;
     school_year: number | null;
-    students: [];
+    students: any[];
+}
+
+export type ClassroomType = {
+    id: number;
+    students: StudentAttendance[];
+    is_active: boolean;
+    department: string;
+    school_year: string;
+    year_level: string;
+    subject: string;
+    section: string;
+    teacher: string;
 }
 
 export type YearLevelType = {
@@ -53,4 +65,8 @@ export type RoomType = {
 }
 
 
-
+export type StudentAttendance = {
+    id_number: string;
+    first_name: string;
+    last_name: string;
+}

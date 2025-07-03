@@ -131,7 +131,7 @@ class ClassSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['department'] = instance.department.name
-        data['school_year'] = instance.school_year.sy
+        data['school_year'] = instance.school_year.name
         data['section'] = instance.section.section
         data['year_level'] = instance.year_level.level
         data['subject'] = instance.subject.name

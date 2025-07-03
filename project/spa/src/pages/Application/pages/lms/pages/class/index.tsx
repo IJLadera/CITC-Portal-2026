@@ -4,11 +4,11 @@ import { ChangeEvent, useEffect, useState } from "react";
 import { getDepartments, getSchoolYear, getSections, getSubjects, getYearLevel } from "../../api";
 import { useAppSelector } from "../../../../../../hooks";
 import { useDispatch } from "react-redux";
-import { storeDeparments, storeSchoolYear, storeSections, storeSubjects, storeYearLevel } from "../../slice";
+import { storeDeparments, storeSchoolYear, storeSections, storeSubjects, storeYearLevel, storeClassRooms } from "../../slice";
 import { ClassType, SchoolYear, RoomType } from "../../models";
 import { onFileInput } from "./resources";
 import Room from '../../components/Room';
-import { GetAllSchoolYear, GetAllClasses } from './api';
+import { GetAllSchoolYear, GetAllClasses, createClass } from './api';
 
 export default function Class () {
 
@@ -21,6 +21,7 @@ export default function Class () {
     const sections = useAppSelector(state => state.lms.sections)
     const subjects = useAppSelector(state => state.lms.subjects)
     
+    const [saveLoading, setSaveLoading] = useState(false);
     const [aysem, setaysem] = useState('')
     const [listSY, setSY] = useState<Array<SchoolYear>>([])
     const [rooms, setRoom] = useState<Array<RoomType>>([])
@@ -32,7 +33,7 @@ export default function Class () {
         school_year: null,
         section: null,
         subject: null,
-        teacher: null,
+        teacher: user.uuid,
         students: []
     })
     
@@ -59,6 +60,7 @@ export default function Class () {
 
         GetAllClasses().then(response => {
             setRoom(response.data)
+            dispatch(storeClassRooms(response.data))
         }).catch(error => {
                 console.log('samok!')
             })
@@ -105,7 +107,7 @@ export default function Class () {
             school_year: null,
             section: null,
             subject: null,
-            teacher: null,
+            teacher: user.uuid,
             students: []
         })
     }
@@ -115,9 +117,51 @@ export default function Class () {
         // should have some request here on what school year and semester.
     }
 
-    const onFileInputChange = (event:React.ChangeEvent<HTMLInputElement>) => {
-        const classData = onFileInput(event);
-        console.log(classData);
+    const onFileInputChange = async (event:React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            const classData = await onFileInput(event);
+            setData({
+                ...data,
+                students: classData.students
+            })
+        } catch (error) {
+            console.log(error)
+        }
+        
+    }
+
+    const onClickSave = () => {
+        if (data.school_year !== null && 
+        data.school_year !== 0 && 
+        data.section !== null && 
+        data.section !== 0 &&
+        data.subject !== null &&
+        data.subject !== 0 &&
+        data.year_level !== null &&
+        data.year_level !== 0 &&
+        data.subject !== null &&
+        data.subject !== 0 &&
+        data.students.length !== 0 &&
+        data.teacher
+        ) {
+            setSaveLoading(true)
+            createClass(data).then(response => {
+                if (response.status === 200) {
+                    console.log(response.data)
+                    setSaveLoading(false)
+                } else {
+                    setSaveLoading(false)
+                }
+            }).catch(error => {
+                    console.log(error)
+                    setSaveLoading(false)
+                })
+
+            onCloseModal();
+
+        }
+
+
     }
 
     return (
@@ -198,7 +242,7 @@ export default function Class () {
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button>Save</Button>
+                    <Button isProcessing={saveLoading} onClick={onClickSave}>Save</Button>
                 </Modal.Footer>
             </Modal>
         </div>

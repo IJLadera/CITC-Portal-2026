@@ -5,7 +5,7 @@ import { MdOutlineClose } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 import { useAppSelector } from '../../../../../../../hooks'
 import {  StudentAttendance } from '../../../models'
-import { attendanceListClass } from '../api';
+import { attendanceListClass, updateAttendance, createAttendance } from '../api';
 
 
 const datePickerCustom = {
@@ -26,18 +26,19 @@ type HeadersType = {
 }
 
 type ClassAttendanceType = {
-  uuid: number;
+  id: string;
   date: string;
   student: string;
-  is_absent: boolean;
-  classroom: number;
+  is_present: boolean;
+  classroom?: string;
 }
 
 
 type AttendanceType = {
+  id: string;
   student: string;
-  classroom: number;
-  is_absent: boolean;
+  classroom?: string;
+  is_present: boolean;
   date: string;
 }
 
@@ -59,7 +60,7 @@ const Attendance: React.FC<AttendanceProps> = ({students}) => {
   useEffect(() => {
     attendanceListClass(room).then(response => {
       if (response.status === 200) {
-        const data:ClassAttendanceType[] = response.data.results;
+        const data:AttendanceType[] = response.data.results;
 
         let temp_headers:HeadersType[] = []
         data.map(obj => {
@@ -84,6 +85,7 @@ const Attendance: React.FC<AttendanceProps> = ({students}) => {
           return 0
         })
         setHeaders(temp_headers)
+        setAttendance(data)
       } else {
         console.log('samoka!')
       }  
@@ -108,7 +110,7 @@ const Attendance: React.FC<AttendanceProps> = ({students}) => {
 
   const getValueOfStudentsTardy = (id_number:string, date:string) => {
     try {
-      return attendance?.find(obj => obj?.student === id_number && obj?.date === date)?.is_absent 
+      return attendance?.find(obj => obj?.student === id_number && obj?.date === date)?.is_present 
     } catch {
       return false
     }
@@ -123,20 +125,49 @@ const Attendance: React.FC<AttendanceProps> = ({students}) => {
         const temp_att = attendance;
         const data = temp_att[temp_att.findIndex(obj => obj.student === temp.student && obj.date === temp.date)] = {
           ...temp_att[temp_att.findIndex(obj => obj.student === temp.student && obj.date === temp.date)],
-          is_absent: !temp.is_absent
+          is_present: !temp.is_present
         }
+        
+        updateAttendance(data).then(response => {
+          if (response.status === 200) {
+            setAttendance([
+              ...temp_att
+            ])
+          }
+        })
+
       } else {
         const data = {
+          id: '',
           student: id_number,
           classroom: room,
-          is_absent: true,
+          is_present: true,
           date: date
         }
 
         if (attendance.length === 1 && attendance[0].student === '') {
-          console.log('create attendance here!')
+          createAttendance(data).then(response => {
+            if (response.status === 201) {
+              data.id = response.data.id
+              setAttendance([
+                data,
+              ])
+            }
+          }).catch(error => {
+              console.log(error)
+            })
         } else {
-          console.log('create again another attendancee!');
+          createAttendance(data).then(response => {
+            data.id = response.data.id
+            if (response.status === 201) {
+              setAttendance([
+                ...attendance,
+                data
+              ])
+            }
+          }).catch(error => {
+              console.log('samok!')
+            })
         }
       }
     } catch {

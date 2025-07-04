@@ -65,15 +65,15 @@ class AttendanceSerializer(serializers.ModelSerializer):
     student = serializers.CharField(write_only=True)
     
     class Meta:
-        fields = ['uuid','date', 'student', 'is_absent', 'classroom']
+        fields = ['id','date', 'student', 'is_present', 'classroom']
         model = Attendance
     
     def to_representation(self, instance):
         data = {}
-        data['uuid'] = instance.uuid
+        data['id'] = instance.id
         data['date'] = instance.date
         data['student'] = instance.student.id_number
-        data['is_absent'] = instance.is_absent
+        data['is_present'] = instance.is_present
         data['classroom'] = instance.classroom.id
         return data
 

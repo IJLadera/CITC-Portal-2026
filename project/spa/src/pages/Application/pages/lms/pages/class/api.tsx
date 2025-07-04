@@ -58,9 +58,9 @@ export const getTopicList = (subject:string) => {
 }
 
 export const getTopic = (slug:string) => {
-  return http.get(`class/topic/${slug}/`)
+  return http.get(`lms/topic/${slug}/`)
 }
 
-export const addStudentToClass = (id:number, data:any) => {
-  return http.patch(`class/${id}/`, data)
+export const addStudentToClass = (id:any, data:any) => {
+  return http.patch(`lms/${id}/`, data)
 }

@@ -7,6 +7,7 @@ import { useAppSelector } from '../../../../../../../hooks'
 import {  StudentAttendance } from '../../../models'
 import { attendanceListClass, updateAttendance, createAttendance } from '../api';
 
+import AddStudent from '../classroom/AddStudent';
 
 const datePickerCustom = {
   datepicker: {
@@ -181,7 +182,8 @@ const Attendance: React.FC<AttendanceProps> = ({students}) => {
       <div className="flex flex-col gap-4">
       {
         (!user.is_student) ? <div className="flex flex-row gap-4">
-            <Button onClick={() => setShowDateModal(true)} >Add Attendance Date</Button>
+            <Button className="mb-5" onClick={() => setShowDateModal(true)} >Add Attendance Date</Button>
+            <AddStudent />
             <Modal size={'sm'} show={showDateModal} onClose={() => setShowDateModal(false)}>
               <Modal.Header>Set Attendance for Class</Modal.Header>
               <Modal.Body>

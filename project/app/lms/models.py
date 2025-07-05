@@ -58,7 +58,7 @@ class YearLevel(models.Model):
         return "{}".format(self.level)
 
 class Section(models.Model):
-    tblYearLevel = models.ForeignKey(YearLevel, on_delete=models.CASCADE, null=True, blank=True)
+    tblYearLevel = models.ForeignKey(YearLevel, on_delete=models.PROTECT, null=True, blank=True)
     section = models.CharField(max_length=10)
 
     def __str__(self) -> str:
@@ -77,12 +77,12 @@ class Subject(models.Model):
 
 
 class Class(models.Model):
-    department = models.ForeignKey(Department, on_delete=models.CASCADE, null=True)
-    school_year = models.ForeignKey(SchoolYear, on_delete=models.CASCADE)
-    year_level = models.ForeignKey(YearLevel, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    section = models.ForeignKey(Section, on_delete=models.CASCADE)
-    teacher = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='teacher')
+    department = models.ForeignKey(Department, on_delete=models.PROTECT, null=True)
+    school_year = models.ForeignKey(SchoolYear, on_delete=models.PROTECT)
+    year_level = models.ForeignKey(YearLevel, on_delete=models.PROTECT)
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT)
+    section = models.ForeignKey(Section, on_delete=models.PROTECT)
+    teacher = models.ForeignKey('users.User', on_delete=models.PROTECT, related_name='teacher')
     students = models.ManyToManyField('users.User', related_name='student')
     is_active = models.BooleanField(default=True)
 
@@ -98,15 +98,15 @@ class Status(models.Model):
 
 
 class Attendance(models.Model):
-    student = models.ForeignKey('users.User', on_delete=models.CASCADE)
-    classroom = models.ForeignKey(Class, on_delete=models.CASCADE, null=True)
-    status = models.ForeignKey(Status, on_delete=models.CASCADE, null=True)
+    student = models.ForeignKey('users.User', on_delete=models.PROTECT)
+    classroom = models.ForeignKey(Class, on_delete=models.PROTECT, null=True)
+    status = models.ForeignKey(Status, on_delete=models.PROTECT, null=True)
     is_present = models.BooleanField(default=False)
     date = models.DateField()
 
 class Post(models.Model):
     uuid = models.UUIDField(unique=True, primary_key=True, default=uuid.uuid4, editable=False)
-    created_by = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='created_by')
+    created_by = models.ForeignKey('users.User', on_delete=models.PROTECT, related_name='created_by')
     description = models.TextField()
     timestamp = models.DateTimeField(default=timezone.now)
     image = models.ImageField(upload_to=get_document_upload_path, null=True, blank=True)
@@ -154,3 +154,21 @@ class Post(models.Model):
             # Convert Django ValidationError to DRF ValidationError for JSON response
             raise DRFValidationError(e.message_dict)
 
+class Module(models.Model):
+    name = models.CharField(max_length=255)
+    
+    def __str__(self) -> str:
+        return '{}'.format(self.name)
+
+class Lesson(models.Model):
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    authors = models.ManyToManyField("users.User", related_name='authors')
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT)
+    module = models.ForeignKey(Module, on_delete=models.PROTECT)
+    archive = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self) -> str:
+        return '{}'.format(self.title)

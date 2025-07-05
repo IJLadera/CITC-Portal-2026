@@ -13,7 +13,8 @@ from .views import (
     AttendanceClassListAPIView,
     StudentClassListAPIView,
     ExportPunctualityAPIView,
-    ClassUpdateAPIView
+    ClassUpdateAPIView,
+    LessonListAPIView,
 )
 
 
@@ -33,4 +34,7 @@ urlpatterns = [
 
     path('post/', PostListCreateAPIView.as_view(), name='post-list'),
     path('post/<uuid:uuid>/', PostRetrieveUpdateDestroyAPIView.as_view(), name='post-list'),
+    
+    path('lesson/<int:subject>/', LessonListAPIView.as_view(), name='subject-lesson-list'),
+
 ]

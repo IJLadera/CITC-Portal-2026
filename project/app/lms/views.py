@@ -27,7 +27,8 @@ from .models import (
     Subject,
     Class,
     Status,
-    Attendance
+    Attendance,
+    Lesson
 )
 
 from .serializers import (
@@ -42,6 +43,7 @@ from .serializers import (
     AttendanceSerializer,
     ClassSerializer,
     StudentClassSerializers,
+    LessonSerializers
 )
 # Create your views here.
 class SchoolYearListAPIView(ListAPIView):
@@ -169,3 +171,11 @@ class PostRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
         uuid = self.kwargs.get("uuid")
         return get_object_or_404(Post, uuid=uuid)          
 
+
+class LessonListAPIView(ListAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializers
+    permission_classes = [IsOwnerOrReadOnly]
+
+    def filter_queryset(self, queryset):
+        return queryset.filter(subject=self.kwargs.get('subject'))

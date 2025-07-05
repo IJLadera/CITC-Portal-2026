@@ -11,7 +11,9 @@ from .models import (
     Subject,
     Class,
     Status,
-    Attendance
+    Attendance,
+    Module,
+    Lesson
 )
 from app.users.serializers import StudentSerializers
 
@@ -159,3 +161,14 @@ class PostSerializers(serializers.ModelSerializer):
         fields = '__all__'
         model = Post
 
+class ModuleSerializers(serializers.ModelSerializer):
+    class Meta:
+        fields = ['name']
+        model = Module
+
+
+class LessonSerializers(serializers.ModelSerializer):
+    
+    class Meta:
+        fields = '__all__'
+        model = Lesson

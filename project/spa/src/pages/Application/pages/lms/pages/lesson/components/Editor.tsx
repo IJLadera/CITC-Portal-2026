@@ -68,7 +68,7 @@ const extensions = [
     upload: (files:File) => {
       return new Promise((resolve) => {
         uploadFile(files).then((response:any) => {
-          resolve(response.data?.file) 
+          resolve(response.data?.file)
         }).catch((error:any) => {
           resolve(URL.createObjectURL(files))
         })
@@ -79,17 +79,21 @@ const extensions = [
 
 const DEFAULT = ''
 
-const Editor = () => {
-  const [content, setContent] = useState(DEFAULT);
+interface editorProps {
+  value: string;
+  onChangeValue: (value: string) => void;
+}
 
+
+const Editor: React.FC<editorProps> = ({ value, onChangeValue }) => {
   const onChangeContent = (value:any) => {
-    setContent(value);
+    onChangeValue(value);
   }
 
   return (
     <RichTextEditor 
       output='html'
-      content={content}
+      content={value}
       onChangeContent={onChangeContent}
       extensions={extensions}
     />

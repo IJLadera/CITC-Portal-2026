@@ -173,7 +173,7 @@ class ExportPunctualityAPIView(APIView):
 class PostListCreateAPIView(ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializers
-    permission_classes = []
+    permission_classes = [IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
         # Automatically set the created_by to the current user when creating a post
@@ -206,13 +206,9 @@ class ModuleListAPIView(ListAPIView):
     permission_classes = [IsOwnerOrReadOnly]
 
 
-class UploadFileAPIView(APIView):
-    def post(self, request, *args, **kwargs):
-        serializer = UploadFileSerializer(data=request.data)
-        if (serializer.is_valid):
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+class UploadFileAPIView(CreateAPIView):
+    queryset = UploadedFile.objects.all()
+    serializer_class = UploadFileSerializer
+    permission_classes = [IsOwnerOrReadOnly]
 
 

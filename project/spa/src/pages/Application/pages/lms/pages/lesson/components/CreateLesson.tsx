@@ -9,6 +9,7 @@ export default function CreateLesson() {
   const [modal, setModal] = useState<boolean>();
   const [subjects, setSubjects] = useState<Array<SubjectType>>([]);
   const [modules, setModules] = useState<Array<ModuleType>>([]);
+  const [content, setContent] = useState('');
 
   useEffect(() => {
     getAllSubjects().then(response => {
@@ -45,7 +46,7 @@ export default function CreateLesson() {
             </Select>
           </div>
           <div className="pt-5">
-            <Editor />
+            <Editor value={content} onChangeValue={(value:any) => setContent(value)} />
           </div> 
         </Modal.Body>
         <Modal.Footer>

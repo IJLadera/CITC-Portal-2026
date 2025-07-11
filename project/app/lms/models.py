@@ -13,6 +13,13 @@ def get_document_upload_path(instance, filename):
     date_path = now.strftime('%Y/%m/%d')
     return os.path.join('post', date_path, filename)
 
+class UploadedFile(models.Model):
+    file = models.FileField(upload_to="uploads/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self) -> str:
+        return '{}'.format(self.file)
+
 # Create your models here.
 class College(models.Model):
     name = models.CharField(max_length=255)

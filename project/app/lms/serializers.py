@@ -13,7 +13,8 @@ from .models import (
     Status,
     Attendance,
     Module,
-    Lesson
+    Lesson,
+    UploadedFile
 )
 from app.users.serializers import StudentSerializers
 
@@ -161,9 +162,15 @@ class PostSerializers(serializers.ModelSerializer):
         fields = '__all__'
         model = Post
 
+class UploadFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = '__all__'
+        model = UploadedFile
+
+
 class ModuleSerializers(serializers.ModelSerializer):
     class Meta:
-        fields = ['name']
+        fields = ['id','name']
         model = Module
 
 

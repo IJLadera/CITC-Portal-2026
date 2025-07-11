@@ -7,6 +7,7 @@ import Attendance from './Attendance';
 import { useParams } from 'react-router-dom';
 import { useAppSelector } from '../../../../../../../hooks';
 import { ClassroomType } from '../../../models'
+import Lesson from '../../lesson';
 
 export default function Classroom() {
   
@@ -30,7 +31,7 @@ export default function Classroom() {
             <Attendance students={detail && detail.students} /> 
           </Tabs.Item>
           <Tabs.Item title="Lessons" icon={FaBook}>
-
+            <Lesson />
           </Tabs.Item>
           <Tabs.Item title="Activities" icon={RxActivityLog}>
 

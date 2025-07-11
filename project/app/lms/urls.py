@@ -15,6 +15,9 @@ from .views import (
     ExportPunctualityAPIView,
     ClassUpdateAPIView,
     LessonListAPIView,
+    LessonCreateAPIView,
+    ModuleListAPIView,
+    csrf_token,
 )
 
 
@@ -36,5 +39,8 @@ urlpatterns = [
     path('post/<uuid:uuid>/', PostRetrieveUpdateDestroyAPIView.as_view(), name='post-list'),
     
     path('lesson/<int:subject>/', LessonListAPIView.as_view(), name='subject-lesson-list'),
+    path('lesson/', LessonCreateAPIView.as_view(), name='lesson-create'),
 
+    path('module/', ModuleListAPIView.as_view(), name="module-list"),
+    path('get_csrf/', csrf_token),
 ]

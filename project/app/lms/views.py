@@ -11,7 +11,8 @@ from rest_framework.generics import (
     UpdateAPIView,
     RetrieveUpdateDestroyAPIView
 )
-from rest_framework.views import APIView
+from rest_framework.views import APIView, Response
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from app.users.permissions import IsOwnerOrReadOnly
 
@@ -28,7 +29,9 @@ from .models import (
     Class,
     Status,
     Attendance,
-    Lesson
+    Lesson,
+    Module,
+    UploadedFile,
 )
 
 from .serializers import (
@@ -43,8 +46,22 @@ from .serializers import (
     AttendanceSerializer,
     ClassSerializer,
     StudentClassSerializers,
-    LessonSerializers
+    LessonSerializers,
+    ModuleSerializers,
+    UploadFileSerializer
 )
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@ensure_csrf_cookie
+@api_view(['GET'])
+def csrf_token(request):
+    token = get_token(request)
+    return Response({'csrfToken' : token})
+
+
 # Create your views here.
 class SchoolYearListAPIView(ListAPIView):
     queryset = SchoolYear.objects.all()
@@ -179,3 +196,23 @@ class LessonListAPIView(ListAPIView):
 
     def filter_queryset(self, queryset):
         return queryset.filter(subject=self.kwargs.get('subject'))
+
+class LessonCreateAPIView(CreateAPIView):
+    serializer_class = LessonSerializers
+
+class ModuleListAPIView(ListAPIView):
+    queryset = Module.objects.all()
+    serializer_class = ModuleSerializers
+    permission_classes = [IsOwnerOrReadOnly]
+
+
+class UploadFileAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = UploadFileSerializer(data=request.data)
+        if (serializer.is_valid):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+

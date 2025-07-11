@@ -46,6 +46,7 @@
     "react-router-dom": "^6.23.1",
     "react-scripts": "5.0.1",
     "react-toastify": "^11.0.5",
+    "reactjs-tiptap-editor": "^0.3.11",
     "redux-persist": "^6.0.0",
     "sort-by": "^1.2.0",
     "typescript": "^5.0.2",

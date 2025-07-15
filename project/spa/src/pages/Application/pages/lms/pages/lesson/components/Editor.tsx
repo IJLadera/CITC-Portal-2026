@@ -94,6 +94,7 @@ const Editor: React.FC<editorProps> = ({ value, onChangeValue }) => {
     <RichTextEditor 
       output='html'
       content={value}
+      dark={false}
       onChangeContent={onChangeContent}
       extensions={extensions}
     />

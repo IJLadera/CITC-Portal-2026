@@ -22,10 +22,10 @@ export default function Lesson() {
 
     return (
         <div>
-            <CreateLesson />
+            <CreateLesson isEdit={false} id={null} lesson={null}/>
             <div className="grid grid-cols-4 gap-4 my-5">
                 { 
-                    lessons.map((obj) => <LessonCard title={obj.title} content={obj.content} id={obj.id} key={obj.id} excerpt={obj.excerpt} />)
+                    lessons.map((obj) => <LessonCard title={obj.title} content={obj.content} id={obj.id} key={obj.id} excerpt={obj.excerpt} subject={obj.subject} module={obj.module} />)
                 }
             </div> 
         </div>

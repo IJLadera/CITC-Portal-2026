@@ -1,7 +1,11 @@
 import { Button, FloatingLabel, Modal, Select } from 'flowbite-react';
 import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+
 import { SubjectType, ModuleType } from '../../../models';
 import { getAllSubjects, getAllModules, createLesson, updateLesson } from '../api';
+import { useAppSelector } from '../../../../../../../hooks'
+import { storeModules, storeSubjects } from '../../../slice'
 
 import Editor from './Editor'
 
@@ -16,11 +20,17 @@ interface CreateLessonProps {
 const CreateLesson:React.FC<CreateLessonProps> = ({
   isEdit = false,
   id="0",
-  lesson=null }) => {
+  lesson={
+    title: '',
+    content: '',
+    subject: 0,
+    module: 0
+  }}) => {
   
+  const dispatch = useDispatch();
+  const { modules, subjects } = useAppSelector(state => state.lms)
+
   const [modal, setModal] = useState<boolean>();
-  const [subjects, setSubjects] = useState<Array<SubjectType>>([]);
-  const [modules, setModules] = useState<Array<ModuleType>>([]);
   const [saveProcess, setSaveProcess] = useState<boolean>(false);
   const [data, setData] = useState<LessonType>({
     title: '',
@@ -78,13 +88,21 @@ const CreateLesson:React.FC<CreateLessonProps> = ({
   }
 
   useEffect(() => {
-    getAllSubjects().then(response => {
-      setSubjects(response.data);
-    })
+    if (subjects.length === 0) {
+      getAllSubjects().then(response => {
+        dispatch(storeSubjects(response.data))
+      })
+    }
     
-    getAllModules().then(response => {
-      setModules(response.data)
-    })
+    if (modules.length === 0) {
+      getAllModules().then(response => {
+        dispatch(storeModules(response.data))
+      })
+    }
+
+    if (lesson !== null) {
+      setData(lesson)
+    }
   }, [])
   
 
@@ -93,7 +111,7 @@ const CreateLesson:React.FC<CreateLessonProps> = ({
       <Button onClick={() => setModal(true)}>{ (!isEdit) ? 'Add Lesson' : 'Edit' }</Button>
       <Modal show={modal} size="7xl" onClose={() => setModal(false)}>
         <Modal.Header>
-          Add Lesson
+          { (!isEdit) ? 'Add Lesson' : 'Update Lesson' }
         </Modal.Header>
         <Modal.Body>
           <FloatingLabel label="Title" variant="outlined" onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateData('title', event.target.value)} />

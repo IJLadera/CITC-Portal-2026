@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { attendance, Department, SchoolYear, SectionType, SubjectType, YearLevelType, ClassroomType } from "./models";
-import { RootState } from "../../../../store";
+import { attendance, Department, SchoolYear, SectionType, SubjectType, YearLevelType, ClassroomType, ModuleType } from "./models";
+import { RootState } from "@store";
 
 
 interface LMSSlice {
@@ -10,7 +10,8 @@ interface LMSSlice {
     year_level: YearLevelType[],
     sections: SectionType[],
     subjects: SubjectType[],
-    classRooms: ClassroomType[]
+    classRooms: ClassroomType[],
+    modules: ModuleType[],
 }
 
 const initialState: LMSSlice = {
@@ -20,7 +21,8 @@ const initialState: LMSSlice = {
     year_level: [],
     sections: [],
     subjects: [],
-    classRooms: []
+    classRooms: [],
+    modules: []
 }
 
 export const LMSSlice = createSlice({
@@ -47,6 +49,9 @@ export const LMSSlice = createSlice({
         },
         storeClassRooms: (state, action:PayloadAction<Array<ClassroomType>>) => {
             state.classRooms = action.payload;
+        },
+        storeModules: (state, action:PayloadAction<Array<ModuleType>>) => {
+            state.modules = action.payload;
         }
     }
 })
@@ -58,7 +63,8 @@ export const {
     storeYearLevel,
     storeSections,
     storeSubjects,
-    storeClassRooms
+    storeClassRooms,
+    storeModules
 } = LMSSlice.actions
 
 export const selectLMS = (state: RootState) => state.lms

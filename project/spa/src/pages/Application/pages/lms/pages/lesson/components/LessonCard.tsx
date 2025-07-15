@@ -8,10 +8,12 @@ interface LessonCardInt {
   title: string;
   content: string;
   excerpt: string;
-  id: string;
+  id: any;
+  module: number;
+  subject: number;
 }
 
-const LessonCard:React.FC<LessonCardInt> = ({title, content, excerpt, id}) => {
+const LessonCard:React.FC<LessonCardInt> = ({title, content, excerpt, id, module, subject}) => {
   
   const [show,setShow] = useState<boolean>(false)
   
@@ -34,7 +36,12 @@ const LessonCard:React.FC<LessonCardInt> = ({title, content, excerpt, id}) => {
         <Modal.Footer>
         </Modal.Footer>
       </Modal>
-      <CreateLesson id={id} isEdit={true} />
+      <CreateLesson id={id} isEdit={true} lesson={{
+        title: title,
+        content: content,
+        module: module,
+        subject: subject
+      }} />
     </Card>
   )
 }

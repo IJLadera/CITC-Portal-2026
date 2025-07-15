@@ -179,3 +179,7 @@ class Lesson(models.Model):
     
     def __str__(self) -> str:
         return '{}'.format(self.title)
+
+    @property
+    def excerpt(self) -> str:
+        return '{}'.format(self.content[:100] + '...' if len(self.content) > 100 else self.content)

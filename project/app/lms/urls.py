@@ -19,6 +19,7 @@ from .views import (
     ModuleListAPIView,
     csrf_token,
     UploadFileAPIView,
+    LessonRetrieveUpdateDestroyAPIView
 )
 
 
@@ -41,7 +42,7 @@ urlpatterns = [
     
     path('lesson/<int:subject>/', LessonListAPIView.as_view(), name='subject-lesson-list'),
     path('lesson/', LessonCreateAPIView.as_view(), name='lesson-create'),
-
+    path('lesson-update/<int:pk>/', LessonRetrieveUpdateDestroyAPIView.as_view(), name='retrieve-update-destroy-lesson'),
     path('module/', ModuleListAPIView.as_view(), name="module-list"),
     path('upload/', UploadFileAPIView.as_view(), name='upload-file-from-editor'),
     path('get_csrf/', csrf_token),

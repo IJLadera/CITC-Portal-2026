@@ -1,9 +1,33 @@
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+
 import CreateLesson from './components/CreateLesson';
+import LessonCard from './components/LessonCard';
+
+import { getLessons } from './api';
+import { LessonCardType } from './models';
 
 export default function Lesson() {
+    
+    const { room } = useParams();
+    const [lessons, setLessons] = useState<Array<LessonCardType>>([])
+
+    useEffect(() => {
+       getLessons(room).then(response => {
+            setLessons(response.data);
+        }).catch(error => {
+                console.log(error)
+            })
+    }, [])
+
     return (
         <div>
             <CreateLesson />
+            <div className="grid grid-cols-4 gap-4 my-5">
+                { 
+                    lessons.map((obj) => <LessonCard title={obj.title} content={obj.content} id={obj.id} key={obj.id} excerpt={obj.excerpt} />)
+                }
+            </div> 
         </div>
     )
 }

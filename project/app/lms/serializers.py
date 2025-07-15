@@ -175,7 +175,16 @@ class ModuleSerializers(serializers.ModelSerializer):
 
 
 class LessonSerializers(serializers.ModelSerializer):
-    
+
     class Meta:
-        fields = '__all__'
+        fields = ['id','title', 'content', 'module', 'subject', 'excerpt']
         model = Lesson
+
+
+    def create(self, validated_data): 
+        user = User.objects.get(uuid=self.context['request'].user.uuid)
+        
+        lesson = Lesson.objects.create(**validated_data)
+        lesson.authors.add(user)
+
+        return lesson

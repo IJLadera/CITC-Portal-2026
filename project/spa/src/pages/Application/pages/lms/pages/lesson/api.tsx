@@ -1,4 +1,5 @@
 import http from '../../../../../../http';
+import { LessonType } from './models';
 
 const getAllModules = () => {
   return http.get('lms/module/')
@@ -20,8 +21,23 @@ const uploadFile = (file: File) => {
   })
 }
 
+const createLesson = (data:LessonType) => {
+  return http.post('lms/lesson/', data)
+}
+
+const getLessons = (id:any) => {
+  return http.get(`lms/lesson/${id}/`)
+}
+
+const updateLesson = (id:any) => {
+  return http.put(`lms/lesson-update/${id}/`)
+}
+
 export {
   getAllModules,
   getAllSubjects,
   uploadFile,
+  createLesson,
+  getLessons,
+  updateLesson
 }

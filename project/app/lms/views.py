@@ -15,6 +15,7 @@ from rest_framework.views import APIView, Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from app.users.permissions import IsOwnerOrReadOnly
+from core.permissions import BayanihanPermission
 
 from core.permissions import TeachersPermission
 from core.paginations import LargeNumberOfData
@@ -103,7 +104,7 @@ class SubjectListAPIView(ListAPIView):
 class ClassListAPIView(ListCreateAPIView):
     queryset = Class.objects.all()
     serializer_class = ClassSerializer
-    permission_classes = [TeachersPermission, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def filter_queryset(self, queryset):
         ay_sem = SchoolYear.objects.all().first()
@@ -199,6 +200,13 @@ class LessonListAPIView(ListAPIView):
 
 class LessonCreateAPIView(CreateAPIView):
     serializer_class = LessonSerializers
+    permission_classes = [BayanihanPermission]
+
+
+class LessonRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
+    serializer_class = LessonSerializers
+    queryset = Lesson.objects.all()
+    permission_classes = [IsOwnerOrReadOnly]
 
 class ModuleListAPIView(ListAPIView):
     queryset = Module.objects.all()

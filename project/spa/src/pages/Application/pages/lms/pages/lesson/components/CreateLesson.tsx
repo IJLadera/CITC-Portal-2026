@@ -114,15 +114,15 @@ const CreateLesson:React.FC<CreateLessonProps> = ({
           { (!isEdit) ? 'Add Lesson' : 'Update Lesson' }
         </Modal.Header>
         <Modal.Body>
-          <FloatingLabel label="Title" variant="outlined" onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateData('title', event.target.value)} />
+          <FloatingLabel label="Title" variant="outlined" value={data.title} onChange={(event: React.ChangeEvent<HTMLInputElement>) => onUpdateData('title', event.target.value)} />
           <div className="flex flex-row gap-5">
-            <Select name="module" onChange={onChangeSelect}>
+            <Select name="module" value={data.module} onChange={onChangeSelect}>
               <option value="">Select Module Number</option>
               {
                 modules.map(obj => <option value={obj.id}>{obj.name}</option>)
               }
             </Select>
-            <Select name="subject" onChange={onChangeSelect}>
+            <Select name="subject" value={data.subject} onChange={onChangeSelect}>
               <option value="">Select Subject</option>
               {
                 subjects.map(obj => <option value={obj.id}>{obj.name}</option>)

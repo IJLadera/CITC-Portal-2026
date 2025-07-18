@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Button, Modal } from 'flowbite-react';
 import { useState } from 'react';
 import CreateLesson from './CreateLesson'
-
+import { useAppSelector } from '../../../../../../../hooks';
 
 interface LessonCardInt {
   title: string;
@@ -15,6 +15,7 @@ interface LessonCardInt {
 
 const LessonCard:React.FC<LessonCardInt> = ({title, content, excerpt, id, module, subject}) => {
   
+  const user = useAppSelector(state => state.auth.user)
   const [show,setShow] = useState<boolean>(false)
   
   return (
@@ -36,12 +37,14 @@ const LessonCard:React.FC<LessonCardInt> = ({title, content, excerpt, id, module
         <Modal.Footer>
         </Modal.Footer>
       </Modal>
-      <CreateLesson id={id} isEdit={true} lesson={{
-        title: title,
-        content: content,
-        module: module,
-        subject: subject
-      }} />
+      {
+        (user?.is_bayanihan_leader) ? <CreateLesson id={id} isEdit={true} lesson={{
+          title: title,
+          content: content,
+          module: module,
+          subject: subject
+        }} /> : null
+      }
     </Card>
   )
 }

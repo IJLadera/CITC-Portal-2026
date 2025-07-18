@@ -196,6 +196,7 @@ class LessonListAPIView(ListAPIView):
     permission_classes = [IsOwnerOrReadOnly]
 
     def filter_queryset(self, queryset):
+         
         return queryset.filter(subject=self.kwargs.get('subject'))
 
 class LessonCreateAPIView(CreateAPIView):
@@ -218,5 +219,4 @@ class UploadFileAPIView(CreateAPIView):
     queryset = UploadedFile.objects.all()
     serializer_class = UploadFileSerializer
     permission_classes = [IsOwnerOrReadOnly]
-
 

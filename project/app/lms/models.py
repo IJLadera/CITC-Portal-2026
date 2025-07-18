@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.fields import related
 from django.utils import timezone
 import os, bleach, uuid
 from django.core.exceptions import ValidationError
@@ -92,7 +93,7 @@ class Class(models.Model):
     teacher = models.ForeignKey('users.User', on_delete=models.PROTECT, related_name='teacher')
     students = models.ManyToManyField('users.User', related_name='student')
     is_active = models.BooleanField(default=True)
-
+    lessons = models.ManyToManyField('lms.Lesson', through='ClassLessons')
 
     def __str__(self) -> str:
         return '{}-{} ({})'.format(self.year_level, self.section, self.subject)
@@ -183,3 +184,15 @@ class Lesson(models.Model):
     @property
     def excerpt(self) -> str:
         return '{}'.format(self.content[:100] + '...' if len(self.content) > 100 else self.content)
+
+
+class ClassLessons(models.Model):
+    lesson = models.ForeignKey(Lesson, on_delete=models.PROTECT)
+    classroom = models.ForeignKey(Class, on_delete=models.PROTECT)
+    student = models.ForeignKey('users.User', null=True, on_delete=models.PROTECT)
+    activate = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    create_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return '{}-{}-{}'.format(self.lesson, self.classroom, self.student)

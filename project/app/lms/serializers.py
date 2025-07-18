@@ -103,6 +103,7 @@ class ClassSerializer(serializers.ModelSerializer):
         students = validated_data.pop('students')
         # create class
         clas = Class.objects.create(**validated_data)
+        # get all the lesson according to the subject.
         for student in students:
             std = ''
             try:
@@ -113,6 +114,7 @@ class ClassSerializer(serializers.ModelSerializer):
                     is_student=True
                 )
             clas.students.add(std)
+            # add all students to the lessons as well here.
         return clas
     
     def update(self, instance, validated_data):
@@ -129,6 +131,7 @@ class ClassSerializer(serializers.ModelSerializer):
                     is_student=True
                 )
             instance.students.add(std)
+            # also add student here
         return instance
     
     def to_representation(self, instance):

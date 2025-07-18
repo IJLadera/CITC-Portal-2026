@@ -13,6 +13,7 @@ export interface User {
     is_staff: boolean;
     is_active: boolean;
     is_superuser: boolean;
+    is_bayanihan_leader: boolean;
 }
 
 export interface AuthContextType {

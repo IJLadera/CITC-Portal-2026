@@ -6,11 +6,13 @@ import LessonCard from './components/LessonCard';
 
 import { getLessons } from './api';
 import { LessonCardType } from './models';
+import { useAppSelector } from '../../../../../../hooks'
 
 export default function Lesson() {
     
     const { room } = useParams();
     const [lessons, setLessons] = useState<Array<LessonCardType>>([])
+    const user = useAppSelector(state => state.auth.user)
 
     useEffect(() => {
        getLessons(room).then(response => {
@@ -22,7 +24,9 @@ export default function Lesson() {
 
     return (
         <div>
-            <CreateLesson isEdit={false} id={null} lesson={null}/>
+            {
+                (!user.is_student) ? <CreateLesson isEdit={false} id={null} lesson={null}/> : null
+            }
             <div className="grid grid-cols-4 gap-4 my-5">
                 { 
                     lessons.map((obj) => <LessonCard title={obj.title} content={obj.content} id={obj.id} key={obj.id} excerpt={obj.excerpt} subject={obj.subject} module={obj.module} />)

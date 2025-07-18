@@ -8,7 +8,14 @@
     ],
     "paths" : {
       "@" : ["./src/"],
-      "@/*" : ["./src/*"]
+      "@/*" : ["./src/*"],
+      "@application/*" : ["./src/pages/Application/*"],
+      "@lms/*" : ["./src/pages/Application/pages/lms/*"],
+      "@class/*" : ["./src/pages/Application/pages/lms/pages/class/*"],
+      "@lesson/*" : ["./src/pages/Application/pages/lms/pages/lesson/*"],
+      "@http" : ["./src/http"],
+      "@store" : ["./src/store"],
+      "@hooks" : ["./src/hooks"],
     },
     "allowJs": true,
     "skipLibCheck": true,

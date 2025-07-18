@@ -106,7 +106,8 @@ class CustomUserSerializer(UserSerializer):
             'date_joined',
             'department',
             'section',
-            'organization'
+            'organization',
+            'is_bayanihan_leader',
 
         )
         read_only_fields = (settings.LOGIN_FIELD,'first_name', 'last_name', 'id_number', 'avatar', 'is_student', 'is_employee', 'is_develop', 'is_active', 'is_staff', 'is_superuser', 'roles', 'date_joined', 'department', 'section', 'organization')

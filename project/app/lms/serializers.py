@@ -11,7 +11,10 @@ from .models import (
     Subject,
     Class,
     Status,
-    Attendance
+    Attendance,
+    Module,
+    Lesson,
+    UploadedFile
 )
 from app.users.serializers import StudentSerializers
 
@@ -65,7 +68,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
     student = serializers.CharField(write_only=True)
     
     class Meta:
-        fields = ['id','date', 'student', 'is_absent', 'classroom']
+        fields = ['id','date', 'student', 'is_present', 'classroom']
         model = Attendance
     
     def to_representation(self, instance):
@@ -73,7 +76,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
         data['id'] = instance.id
         data['date'] = instance.date
         data['student'] = instance.student.id_number
-        data['is_absent'] = instance.is_absent
+        data['is_present'] = instance.is_present
         data['classroom'] = instance.classroom.id
         return data
 
@@ -100,6 +103,7 @@ class ClassSerializer(serializers.ModelSerializer):
         students = validated_data.pop('students')
         # create class
         clas = Class.objects.create(**validated_data)
+        # get all the lesson according to the subject.
         for student in students:
             std = ''
             try:
@@ -110,6 +114,7 @@ class ClassSerializer(serializers.ModelSerializer):
                     is_student=True
                 )
             clas.students.add(std)
+            # add all students to the lessons as well here.
         return clas
     
     def update(self, instance, validated_data):
@@ -126,12 +131,13 @@ class ClassSerializer(serializers.ModelSerializer):
                     is_student=True
                 )
             instance.students.add(std)
+            # also add student here
         return instance
     
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['department'] = instance.department.name
-        data['school_year'] = instance.school_year.sy
+        data['school_year'] = instance.school_year.name
         data['section'] = instance.section.section
         data['year_level'] = instance.year_level.level
         data['subject'] = instance.subject.name
@@ -159,3 +165,29 @@ class PostSerializers(serializers.ModelSerializer):
         fields = '__all__'
         model = Post
 
+class UploadFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = '__all__'
+        model = UploadedFile
+
+
+class ModuleSerializers(serializers.ModelSerializer):
+    class Meta:
+        fields = ['id','name']
+        model = Module
+
+
+class LessonSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ['id','title', 'content', 'module', 'subject', 'excerpt']
+        model = Lesson
+
+
+    def create(self, validated_data): 
+        user = User.objects.get(uuid=self.context['request'].user.uuid)
+        
+        lesson = Lesson.objects.create(**validated_data)
+        lesson.authors.add(user)
+
+        return lesson

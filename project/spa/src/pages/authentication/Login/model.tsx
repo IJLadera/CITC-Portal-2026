@@ -8,6 +8,16 @@ export type User = {
     last_name: string,
     avatar: string,
     uuid: string,
+    middle_name: string,
+    email: string;
+    suffix: string;
+    is_student: boolean;
+    is_employee: boolean;
+    is_develop: boolean;
+    is_active: boolean;
+    is_staff: boolean;
+    is_superuser: boolean;
+    is_bayanihan_leader: boolean;
 }
 
 export type Department = {

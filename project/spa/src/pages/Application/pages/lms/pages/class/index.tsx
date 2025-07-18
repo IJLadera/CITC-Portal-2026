@@ -4,19 +4,27 @@ import { ChangeEvent, useEffect, useState } from "react";
 import { getDepartments, getSchoolYear, getSections, getSubjects, getYearLevel } from "../../api";
 import { useAppSelector } from "../../../../../../hooks";
 import { useDispatch } from "react-redux";
-import { storeDeparments, storeSchoolYear, storeSections, storeSubjects, storeYearLevel } from "../../slice";
-import { ClassType } from "../../models";
+import { storeDeparments, storeSchoolYear, storeSections, storeSubjects, storeYearLevel, storeClassRooms } from "../../slice";
+import { ClassType, SchoolYear, RoomType } from "../../models";
 import { onFileInput } from "./resources";
+import Room from '../../components/Room';
+import { GetAllSchoolYear, GetAllClasses, createClass } from './api';
 
 export default function Class () {
 
     const [show, setShow] = useState(false)
     const token = useAppSelector(state => state.auth.token)
+    const user = useAppSelector(state => state.auth.user)
     const departments = useAppSelector(state => state.lms.deparments)
     const schoolYear = useAppSelector(state => state.lms.schoolyears)
     const yearLevel = useAppSelector(state => state.lms.year_level)
     const sections = useAppSelector(state => state.lms.sections)
     const subjects = useAppSelector(state => state.lms.subjects)
+    
+    const [saveLoading, setSaveLoading] = useState(false);
+    const [aysem, setaysem] = useState('')
+    const [listSY, setSY] = useState<Array<SchoolYear>>([])
+    const [rooms, setRoom] = useState<Array<RoomType>>([])
 
     const dispatch = useDispatch()
     const [data, setData] = useState<ClassType>({
@@ -25,19 +33,37 @@ export default function Class () {
         school_year: null,
         section: null,
         subject: null,
-        teacher: null,
+        teacher: user.uuid,
         students: []
     })
     
 
     useEffect(() => {
-        if (departments.length === 0) {
-            getDepartments(token).then(response => {
-                dispatch(storeDeparments(response.data))
+    
+        if (!user.is_student) {
+
+            if (departments.length === 0) {
+                getDepartments(token).then(response => {
+                    dispatch(storeDeparments(response.data))
+                }).catch(error => {
+                    console.log(error)
+                })
+            }
+
+            GetAllSchoolYear().then(response => {
+                setSY(response.data);
+                dispatch(storeSchoolYear(response.data))
             }).catch(error => {
-                console.log(error)
+                    console.log('something went wrong!')
             })
         }
+
+        GetAllClasses().then(response => {
+            setRoom(response.data)
+            dispatch(storeClassRooms(response.data))
+        }).catch(error => {
+                console.log('samok!')
+            })
         
     }, [])
 
@@ -81,15 +107,82 @@ export default function Class () {
             school_year: null,
             section: null,
             subject: null,
-            teacher: null,
+            teacher: user.uuid,
             students: []
         })
     }
 
+    const onChangeSelect = (event:React.ChangeEvent<HTMLSelectElement>) => {
+        setaysem(event.target.value);
+        // should have some request here on what school year and semester.
+    }
+
+    const onFileInputChange = async (event:React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            const classData = await onFileInput(event);
+            setData({
+                ...data,
+                students: classData.students
+            })
+        } catch (error) {
+            console.log(error)
+        }
+        
+    }
+
+    const onClickSave = () => {
+        if (data.school_year !== null && 
+        data.school_year !== 0 && 
+        data.section !== null && 
+        data.section !== 0 &&
+        data.subject !== null &&
+        data.subject !== 0 &&
+        data.year_level !== null &&
+        data.year_level !== 0 &&
+        data.subject !== null &&
+        data.subject !== 0 &&
+        data.students.length !== 0 &&
+        data.teacher
+        ) {
+            setSaveLoading(true)
+            createClass(data).then(response => {
+                if (response.status === 200) {
+                    console.log(response.data)
+                    setSaveLoading(false)
+                } else {
+                    setSaveLoading(false)
+                }
+            }).catch(error => {
+                    console.log(error)
+                    setSaveLoading(false)
+                })
+
+            onCloseModal();
+
+        }
+
+
+    }
+
     return (
         <div className="max-h-screen">
+            <div className="max-w-md py-5">
+                { user.is_student ? '' :
+                    <Select name="schoolYear" onChange={onChangeSelect}>
+                        <option value="0">Select School Year</option>
+                        {
+                            schoolYear.map(obj => (obj.name != undefined) ? <option key={`schoolyear-${obj.id}`} value={obj.id}>{`${obj.semester} - ${obj.name}`}</option>: '')
+                        }
+                    </Select>
+                }
+            </div>
             <div className="grid grid-cols-4 gap-4">
-                <AddClass onClick={() => setShow(true)} />
+                {
+                    rooms.map(obj => <Room key={obj.id} room={`${obj.id}`} subject={obj.subject} instructor={obj.teacher} yearLevel={`${obj.year_level}`} section={obj.section} />)
+                }
+                {
+                    (!user.is_student) ? <AddClass onClick={() => setShow(true)} /> : ''
+                }
             </div>
             <Modal show={show} onClose={onCloseModal}>
                 <Modal.Header>
@@ -145,11 +238,11 @@ export default function Class () {
                     </div>
                     <div className="flex flex-col w-full mt-5">
                         <Label>Upload Students:</Label>
-                        <FileInput disabled={data.subject === null} accept=".csv" helperText="Please upload file with .csv" onChange={onFileInput} />
+                        <FileInput disabled={data.subject === null} accept=".csv" helperText="Please upload file with .csv" onChange={onFileInputChange} />
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button>Save</Button>
+                    <Button isProcessing={saveLoading} onClick={onClickSave}>Save</Button>
                 </Modal.Footer>
             </Modal>
         </div>

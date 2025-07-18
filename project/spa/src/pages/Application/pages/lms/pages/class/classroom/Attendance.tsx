@@ -196,8 +196,10 @@ const Attendance: React.FC<AttendanceProps> = ({students}) => {
       <div className="max-w-full overflow-auto" style={{maxHeight: "32rem"}}>
         <Table hoverable className="shadow-none drop-shadow-none">
           <Table.Head className="sticky top-0">
-            <Table.HeadCell>ID Number</Table.HeadCell>
-            <Table.HeadCell>Full Name</Table.HeadCell>
+            {
+              (!user.is_student) ? <><Table.HeadCell>ID Number</Table.HeadCell>
+              <Table.HeadCell>Full Name</Table.HeadCell></> : null
+            }
             {
               headers.map((obj, index) => <Table.HeadCell key={index}><span className="flex flex-row place-content-center items-center gap-2">{obj.date}<MdOutlineClose className="h-full" /></span></Table.HeadCell>)
             }
@@ -205,8 +207,10 @@ const Attendance: React.FC<AttendanceProps> = ({students}) => {
           <Table.Body>
             {
               students && students.map((obj, index) => <Table.Row key={index}>
-                <Table.Cell>{obj.id_number}</Table.Cell>
-                <Table.Cell>{obj.last_name}, {obj.first_name}</Table.Cell>  
+                {
+                  (!user.is_student) ? <><Table.Cell>{obj.id_number}</Table.Cell>
+                  <Table.Cell>{obj.last_name}, {obj.first_name}</Table.Cell></> : null
+                }
                 {
                   headers.map((ob,ind) => <Table.Cell key={`${index}`}><span className="flex flex-row place-content-center">{
                     (!user.is_student) ? <Checkbox disabled={(dateNow !== ob.date) ? true : false} checked={getValueOfStudentsTardy(obj.id_number, ob.date)} onChange={() => {onTickCheckBox(obj.id_number, ob.date)}} /> : 

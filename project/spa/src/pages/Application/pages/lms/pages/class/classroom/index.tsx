@@ -13,6 +13,7 @@ export default function Classroom() {
   
   const { room } = useParams();
   const { classRooms } = useAppSelector(state => state.lms)
+  const user = useAppSelector(state => state.auth.user)
   const [detail, setDetails] = useState<ClassroomType>();
 
   useEffect(() => {
@@ -28,7 +29,9 @@ export default function Classroom() {
       <div className="mt-5">
         <Tabs>
           <Tabs.Item active title="Attendance" icon={HiUserCircle}>
-            <Attendance students={detail && detail.students} /> 
+            {
+              (!user.is_student) ? <Attendance students={detail && detail.students} /> : <Attendance students={detail && detail.students.filter(obj => obj.id_number == user.id_number)} />
+            }
           </Tabs.Item>
           <Tabs.Item title="Lessons" icon={FaBook}>
             <Lesson />

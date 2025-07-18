@@ -130,7 +130,7 @@ class AttendanceUpdateAPIView(UpdateAPIView):
 class AttendanceClassListAPIView(ListAPIView):
     queryset = Attendance.objects.all()
     serializer_class = AttendanceSerializer
-    permission_classes = [TeachersPermission, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     pagination_class = LargeNumberOfData
 
     def filter_queryset(self, queryset):

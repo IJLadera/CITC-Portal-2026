@@ -4,7 +4,7 @@ import store from './store';
 // import { RootState } from './store';
 
 const http = axios.create({
-  baseURL: process.env.NODE_ENV == 'development' ? 'http://127.0.0.1:8000/api/v1/' : 'https://opensourcerer.software/api/v1/'
+  baseURL: process.env.NODE_ENV == 'development' ? 'http://127.0.0.1:8000/api/v1/' : 'https://citc-ustpcdo.com/api/v1/'
 });
 http.defaults.xsrfHeaderName = "X-CSRFTOKEN";
 http.defaults.xsrfCookieName = "csrftoken";

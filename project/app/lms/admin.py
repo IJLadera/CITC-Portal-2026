@@ -9,7 +9,11 @@ from .models import (
     Class,
     Status,
     Attendance,
-    Post
+    Post,
+    Module,
+    Lesson,
+    UploadedFile,
+    ClassLessons,
 )
 
 # Register your models here.
@@ -23,3 +27,7 @@ admin.site.register(Class)
 admin.site.register(Status)
 admin.site.register(Attendance)
 admin.site.register(Post)
+admin.site.register(Module)
+admin.site.register(Lesson)
+admin.site.register(UploadedFile)
+admin.site.register(ClassLessons)

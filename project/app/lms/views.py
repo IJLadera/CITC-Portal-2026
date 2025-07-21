@@ -3,10 +3,7 @@ from docx import Document
 
 from django.http import StreamingHttpResponse
 from django.conf import settings
-
 from django.shortcuts import get_object_or_404
-
-
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
@@ -14,10 +11,11 @@ from rest_framework.generics import (
     UpdateAPIView,
     RetrieveUpdateDestroyAPIView
 )
-from rest_framework.views import APIView
+from rest_framework.views import APIView, Response
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-
 from app.users.permissions import IsOwnerOrReadOnly
+from core.permissions import BayanihanPermission
 
 from core.permissions import TeachersPermission
 from core.paginations import LargeNumberOfData
@@ -31,7 +29,10 @@ from .models import (
     Subject,
     Class,
     Status,
-    Attendance
+    Attendance,
+    Lesson,
+    Module,
+    UploadedFile,
 )
 
 from .serializers import (
@@ -46,7 +47,22 @@ from .serializers import (
     AttendanceSerializer,
     ClassSerializer,
     StudentClassSerializers,
+    LessonSerializers,
+    ModuleSerializers,
+    UploadFileSerializer
 )
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@ensure_csrf_cookie
+@api_view(['GET'])
+def csrf_token(request):
+    token = get_token(request)
+    return Response({'csrfToken' : token})
+
+
 # Create your views here.
 class SchoolYearListAPIView(ListAPIView):
     queryset = SchoolYear.objects.all()
@@ -88,10 +104,11 @@ class SubjectListAPIView(ListAPIView):
 class ClassListAPIView(ListCreateAPIView):
     queryset = Class.objects.all()
     serializer_class = ClassSerializer
-    permission_classes = [TeachersPermission, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def filter_queryset(self, queryset):
-        return queryset.filter(teacher=self.request.user.id) if not self.request.user.is_student else queryset.filter(students=self.request.user.id)
+        ay_sem = SchoolYear.objects.all().first()
+        return queryset.filter(teacher=self.request.user.uuid, school_year=ay_sem.id) if not self.request.user.is_student else queryset.filter(students=self.request.user.uuid)
 
 
 class ClassUpdateAPIView(UpdateAPIView):
@@ -126,7 +143,7 @@ class StudentClassListAPIView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def filter_queryset(self, queryset):
-        return queryset.filter(students=self.request.user.id)
+        return queryset.filter(students=self.request.user.uuid)
 
 
 class ExportPunctualityAPIView(APIView):
@@ -157,7 +174,7 @@ class ExportPunctualityAPIView(APIView):
 class PostListCreateAPIView(ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializers
-    permission_classes = []
+    permission_classes = [IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
         # Automatically set the created_by to the current user when creating a post
@@ -171,4 +188,35 @@ class PostRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     def get_object(self): 
         uuid = self.kwargs.get("uuid")
         return get_object_or_404(Post, uuid=uuid)          
+
+
+class LessonListAPIView(ListAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializers
+    permission_classes = [IsOwnerOrReadOnly]
+
+    def filter_queryset(self, queryset):
+         
+        return queryset.filter(subject=self.kwargs.get('subject'))
+
+class LessonCreateAPIView(CreateAPIView):
+    serializer_class = LessonSerializers
+    permission_classes = [BayanihanPermission]
+
+
+class LessonRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
+    serializer_class = LessonSerializers
+    queryset = Lesson.objects.all()
+    permission_classes = [IsOwnerOrReadOnly]
+
+class ModuleListAPIView(ListAPIView):
+    queryset = Module.objects.all()
+    serializer_class = ModuleSerializers
+    permission_classes = [IsOwnerOrReadOnly]
+
+
+class UploadFileAPIView(CreateAPIView):
+    queryset = UploadedFile.objects.all()
+    serializer_class = UploadFileSerializer
+    permission_classes = [IsOwnerOrReadOnly]
 

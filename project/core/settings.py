@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'djoser',
     'django_celery_beat',
     'auditlog',
+    'django_ckeditor_5',
 
     'app.users',
     'app.lms',
@@ -211,8 +212,11 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
-    'Access-Control-Allow-Origin'
 ]
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
+
+CORS_ALLOW_CREDENTIALS = True
 
 #CLOUDINARY_STORAGE = {
 #    'CLOUD_NAME': env('CLOUD_NAME', default=''),

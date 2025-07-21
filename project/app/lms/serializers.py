@@ -104,6 +104,7 @@ class ClassSerializer(serializers.ModelSerializer):
         # create class
         clas = Class.objects.create(**validated_data)
         # get all the lesson according to the subject.
+        lessons = Lesson.objects.filter(subject__id=validated_data.get('subject', ''))
         for student in students:
             std = ''
             try:
@@ -115,6 +116,9 @@ class ClassSerializer(serializers.ModelSerializer):
                 )
             clas.students.add(std)
             # add all students to the lessons as well here.
+        if (len(lessons) > 0):
+            clas.lessons.add(*lessons)
+
         return clas
     
     def update(self, instance, validated_data):

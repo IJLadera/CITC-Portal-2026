@@ -25,7 +25,7 @@ export default function Lesson() {
     return (
         <div>
             {
-                (!user.is_student) ? <CreateLesson isEdit={false} id={null} lesson={null}/> : null
+                (user.is_bayanihan_leader) ? <CreateLesson isEdit={false} id={null} lesson={null}/> : null
             }
             <div className="grid grid-cols-4 gap-4 my-5">
                 { 

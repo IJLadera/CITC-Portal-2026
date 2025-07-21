@@ -78,6 +78,7 @@ class Subject(models.Model):
     code = models.CharField(max_length=10)
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     year_level = models.ForeignKey(YearLevel, on_delete=models.SET_NULL, null=True)
+    bayanihan_leader = models.ForeignKey('users.User', null=True, on_delete=models.SET_NULL)
 
     def __str__(self) -> str:
         super().__str__()
@@ -189,7 +190,7 @@ class Lesson(models.Model):
 class ClassLessons(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.PROTECT)
     classroom = models.ForeignKey(Class, on_delete=models.PROTECT)
-    student = models.ForeignKey('users.User', null=True, on_delete=models.PROTECT)
+    student = models.ForeignKey('users.User', null=True, blank=True, on_delete=models.SET_NULL)
     activate = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     create_at = models.DateTimeField(auto_now_add=True)

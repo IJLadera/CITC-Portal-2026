@@ -21,7 +21,7 @@ const LessonCard:React.FC<LessonCardInt> = ({title, content, excerpt, id, module
   return (
     <Card className="max-w-sm">
       <h5 className="text-2xl font-bold tracking-tight">{title}</h5>
-      <div className="font-normal" dangerouslySetInnerHTML={{__html: excerpt}}>
+      <div className="font-thin" dangerouslySetInnerHTML={{__html: excerpt}}>
       </div>
       <Button onClick={() => setShow(true)}>
         Read more

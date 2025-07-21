@@ -13,6 +13,7 @@ from .models import (
     Module,
     Lesson,
     UploadedFile,
+    ClassLessons,
 )
 
 # Register your models here.
@@ -29,3 +30,4 @@ admin.site.register(Post)
 admin.site.register(Module)
 admin.site.register(Lesson)
 admin.site.register(UploadedFile)
+admin.site.register(ClassLessons)

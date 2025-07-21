@@ -1,4 +1,4 @@
-import { Button, FloatingLabel, Modal, Select } from 'flowbite-react';
+import { Button, FloatingLabel, Modal, Select, ToggleSwitch } from 'flowbite-react';
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 
@@ -38,6 +38,7 @@ const CreateLesson:React.FC<CreateLessonProps> = ({
     subject: 0,
     module: 0
   });
+  const [toggle, setToggle] = useState<boolean>(false);
 
   const onUpdateData = (keyword: string, value: any) => {
     setData({
@@ -128,6 +129,9 @@ const CreateLesson:React.FC<CreateLessonProps> = ({
                 subjects.map(obj => <option value={obj.id}>{obj.name}</option>)
               }
             </Select>
+            {
+              (isEdit) ? <ToggleSwitch checked={toggle} label="Show" onChange={() => setToggle(!toggle)} /> : null
+            }
           </div>
           <div className="pt-5">
             <Editor value={data.content} onChangeValue={(value:any) => onUpdateData('content', value)} />

@@ -2,6 +2,7 @@ import { Tabs } from 'flowbite-react';
 import { useEffect, useState } from 'react';
 import { RxActivityLog } from 'react-icons/rx';
 import { HiAdjustments, HiUserCircle } from 'react-icons/hi';
+import { LuChartNoAxesCombined } from "react-icons/lu";
 import { FaBook } from 'react-icons/fa6';
 import Attendance from './Attendance';
 import { useParams } from 'react-router-dom';
@@ -37,7 +38,10 @@ export default function Classroom() {
             <Lesson />
           </Tabs.Item>
           <Tabs.Item title="Activities" icon={RxActivityLog}>
-
+            <p>Under Construction</p>
+          </Tabs.Item>
+          <Tabs.Item title={(user.is_student) ? "Evaluate" : "Evaluation"} icon={LuChartNoAxesCombined}>
+            <h1>Evaluation Here!</h1>
           </Tabs.Item>
         </Tabs>
       </div>

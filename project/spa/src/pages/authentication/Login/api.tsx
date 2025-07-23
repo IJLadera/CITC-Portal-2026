@@ -11,4 +11,8 @@ export const getProfile = (token:string) => {
             Authorization : `Token ${token}`
         }
     })
-} 
+}
+
+export const resetPassword = (email:string) => {
+    return http.post('auth/users/reset_password/', {email: email})
+}

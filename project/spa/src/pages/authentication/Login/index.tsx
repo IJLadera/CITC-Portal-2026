@@ -1,11 +1,11 @@
-import { Button, FloatingLabel } from 'flowbite-react';
+import { Button, FloatingLabel, Spinner } from 'flowbite-react';
 import '../../../App.css'
 import { SyntheticEvent, useEffect, useState } from 'react';
 import { LoginModel } from './model';
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import { mutateLoggedIn, storeToken } from './slice';
 import { useNavigate } from 'react-router-dom';
-import { loginAPI } from './api';
+import { loginAPI, resetPassword } from './api';
 import { toast, ToastContainer } from 'react-toastify'; // Importing toast and ToastContainer
 import 'react-toastify/dist/ReactToastify.css'; // Import toast styles
 import Cookies from 'js-cookie';
@@ -14,12 +14,14 @@ import { persistor } from '../../../store';
 function Login() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const [forgotLoading, setForgotLoading] = useState<boolean>(false)
   const [auth, setAuth] = useState<LoginModel>({
     email: '',
     password: ''
   })
   const loggedIn = useAppSelector(state => state.auth.loggedIn)
   const [isDisabled, setIsDisabled] = useState(false);
+  const strictEmailRegex: RegExp = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
   useEffect(() => {
     if (loggedIn) {
@@ -116,6 +118,31 @@ function Login() {
     }
   };
 
+  const onClickForgotPassword = async () => {
+    if (auth.email == '') {
+      toast.error('Email is not set, please set it.');
+    }
+
+    if (strictEmailRegex.test(auth.email)) {
+      // proceed the reset password here
+      try {
+        setForgotLoading(true);
+        const response = await resetPassword(auth.email)
+        if (response?.status === 204) {
+          setForgotLoading(false);
+          toast.success('We have sent you a link to reset your password through your email address.')
+        } else {
+          toast.error('Request did not go through')
+        }
+      } catch(error:any) {
+        const error_message = error?.response.data[0]
+        toast.error(`${error_message}`)
+      }
+    } else {
+      toast.error(`${auth.email} is not a valid email address`)
+    }
+  }
+
 
   return (
     <div className="App-header">
@@ -125,6 +152,9 @@ function Login() {
         <FloatingLabel className='mt-5 text-white' placeholder='Password' label='' variant='outlined' name="password" type='password' onChange={onChangeInput} />
         <Button disabled={isDisabled} className='w-full bg-blue-900 hover:bg-blue-800' type='submit'>Login</Button>
       </form>
+      { (!forgotLoading) ? <a href="#" className="text-sm mt-2" onClick={onClickForgotPassword}>Forgot Password?</a> :
+        <><Spinner size="sm" aria-label="Loading" /><span className="text-sm">Sending you an email shortly...</span></>
+      }
       <ToastContainer style={{ fontSize: "18px" }} />
     </div>
   );

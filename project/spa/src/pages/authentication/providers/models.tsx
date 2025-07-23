@@ -20,6 +20,7 @@ export interface User {
 export interface AuthContextType {
     user: User | null;
     login: (email: string, password: string) => void;
+    forgotPassword: (email:string) => void;
     logout: () => void;
     loggedIn: boolean;
 }

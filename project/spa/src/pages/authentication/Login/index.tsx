@@ -1,4 +1,4 @@
-import { Button, FloatingLabel } from 'flowbite-react';
+import { Button, FloatingLabel, Spinner } from 'flowbite-react';
 import '../../../App.css'
 import { SyntheticEvent, useEffect, useState } from 'react';
 import { LoginModel } from './model';
@@ -14,6 +14,7 @@ import { persistor } from '../../../store';
 function Login() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const [forgotLoading, setForgotLoading] = useState<boolean>(false)
   const [auth, setAuth] = useState<LoginModel>({
     email: '',
     password: ''
@@ -125,9 +126,10 @@ function Login() {
     if (strictEmailRegex.test(auth.email)) {
       // proceed the reset password here
       try {
+        setForgotLoading(true);
         const response = await resetPassword(auth.email)
-
         if (response?.status === 204) {
+          setForgotLoading(false);
           toast.success('We have sent you a link to reset your password through your email address.')
         } else {
           toast.error('Request did not go through')
@@ -150,7 +152,9 @@ function Login() {
         <FloatingLabel className='mt-5 text-white' placeholder='Password' label='' variant='outlined' name="password" type='password' onChange={onChangeInput} />
         <Button disabled={isDisabled} className='w-full bg-blue-900 hover:bg-blue-800' type='submit'>Login</Button>
       </form>
-      <a href="#" className="text-sm mt-2" onClick={onClickForgotPassword}>Forgot Password?</a>
+      { (!forgotLoading) ? <a href="#" className="text-sm mt-2" onClick={onClickForgotPassword}>Forgot Password?</a> :
+        <><Spinner size="sm" aria-label="Loading" /><span className="text-sm">Sending you an email shortly...</span></>
+      }
       <ToastContainer style={{ fontSize: "18px" }} />
     </div>
   );

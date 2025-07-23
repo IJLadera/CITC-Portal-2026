@@ -79,7 +79,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / "spa/build"
+            BASE_DIR / "spa" / "build",
+            BASE_DIR / "templates",
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -177,17 +178,15 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
-    'PASSWORD_RESET_CONFIRM_URL': '/password/reset/confirm/{uid}/{token}',
-    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
-    'ACTIVATION_URL': '#/activate/{uid}/{token}',
-    'SEND_ACTIVATION_EMAIL': False,
-    'PASSWORD_CHANED_EMAIL_CONFIRMATION' : True,
-    'USER_CREATE_PASSWORD_RETYPE' : True,
+    'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}/',
+    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}/',
+    'ACTIVATION_URL': 'activate/{uid}/{token}/',
+    'SEND_ACTIVATION_EMAIL': True,
+    'EMAIL_FRONTEND_DOMAIN' : 'localhost:3000' if DEBUG else 'https://citc-ustpcdo.com',
     'SERIALIZERS': {
         'user_create': 'app.users.serializers.UserCreateSerializer',
         'current_user': 'app.users.serializers.CustomUserSerializer',
     },
-
 }
 
 CORS_ALLOWED_ORIGINS = [

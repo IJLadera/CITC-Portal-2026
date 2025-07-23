@@ -21,10 +21,15 @@ export function AuthProvider({ children }:AuthProviderProps) {
         dispatch(mutateLoggedIn(false))
     }
 
+    const forgotPassword = (email:string) => {
+        
+    }
+
     const value: AuthContextType = {
         user,
         login,
         logout,
+        forgotPassword,
         loggedIn
     }
 

@@ -78,7 +78,7 @@ class Subject(models.Model):
     code = models.CharField(max_length=10)
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     year_level = models.ForeignKey(YearLevel, on_delete=models.SET_NULL, null=True)
-    bayanihan_leader = models.ForeignKey('users.User', null=True, on_delete=models.SET_NULL)
+    bayanihan_leader = models.ForeignKey('users.User', null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self) -> str:
         super().__str__()

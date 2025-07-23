@@ -9,6 +9,8 @@ from .models import Role
 from app.lms.models import Department, Section
 from app.unieventify.models import tblstudentOrg
 from app.unieventify.serializers import tbldepartmentSerializer, tblstudentOrgSerializer
+from djoser.serializers import SendEmailResetSerializer as BaseSendEmailResetSerializer
+from djoser.serializers import PasswordResetConfirmSerializer
 from djoser.conf import settings
 
 User = get_user_model()
@@ -213,3 +215,43 @@ class ChangePasswordSerializer(serializers.Serializer):
         instance.set_password(validated_data['password'])
         instance.save()
         return instance
+
+class SendEmailResetSerializer(BaseSendEmailResetSerializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        try:
+            user = User.objects.get(email=value, is_active=True)
+        except User.DoesNotExist:
+            pass
+        return value
+    
+    def get_user(self, is_active=True):
+        try:
+            user = User.objects.get(
+                email=self.data.get('email', ''),
+                is_active=is_active,
+            )
+            if user.has_usable_password():
+                    return user
+        except User.DoesNotExist:
+            pass
+
+        return None
+
+
+class PasswordResetConfirmSerializer(PasswordResetConfirmSerializer):
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    re_new_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['re_new_password']:
+            raise serializers.ValidationError("Password don't match")
+
+        password = attrs['new_password']
+        if not any(char.isdigit() for char in password):
+            raise serializers.ValidationError("Password must contain at least one")
+        if not any(char.isupper() for char in password):
+            raise serializers.ValidationError("Password must contain at least one uppercase letter")
+
+        return super().validate(attrs)

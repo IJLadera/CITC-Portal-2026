@@ -5,16 +5,18 @@ import { LoginModel } from './model';
 import { useAppDispatch, useAppSelector } from '../../../hooks';
 import { mutateLoggedIn, storeToken } from './slice';
 import { useNavigate } from 'react-router-dom';
-import { loginAPI, resetPassword } from './api';
+import {loginAPI, resetPassword } from './api';
 import { toast, ToastContainer } from 'react-toastify'; // Importing toast and ToastContainer
 import 'react-toastify/dist/ReactToastify.css'; // Import toast styles
 import Cookies from 'js-cookie';
 import { persistor } from '../../../store';
+import { HiEye, HiEyeOff } from 'react-icons/hi';
 
 function Login() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [forgotLoading, setForgotLoading] = useState<boolean>(false)
+  const [showPassword, setShowPassword] = useState<boolean>(false)
   const [auth, setAuth] = useState<LoginModel>({
     email: '',
     password: ''

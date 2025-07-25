@@ -6,14 +6,13 @@ from .models import User
 
 class CreateUserForm(forms.ModelForm):
     password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
-    password2 = forms.CharField(label="Confirm", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Confirm Password", widget=forms.PasswordInput)
 
     class Meta:
         model = User
         fields = ['id_number', 'email', 'first_name', 'last_name', 'department']
 
-    def clean(self):
-        cleaned_data = super().clean()
+    def clean_password(self):
         pw1 = self.cleaned_data.get('password1')
         pw2 = self.cleaned_data.get('password2')
 
@@ -21,13 +20,11 @@ class CreateUserForm(forms.ModelForm):
             if pw1 != pw2:
                 raise forms.ValidationError('Password did not match!')
             validate_password(pw1, self.instance)
-        return cleaned_data
+        return pw2
     
     def save(self, commit=True):
         user = super().save(commit=False)
-        pw1 = self.cleaned_data.get('password1')
-        if pw1:
-            user.set_password(self.cleaned_data.get("password1"))
+        user.set_password(self.cleaned_data.get("password1"))
         if commit:
             user.save()
         return user

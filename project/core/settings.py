@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     'app.users',
     'app.lms',
     'app.unieventify',
-    'app.base_application'
+    'app.base_application',
+#    'app.evaluation',
 ]
 
 AUTH_USER_MODEL = "users.User"

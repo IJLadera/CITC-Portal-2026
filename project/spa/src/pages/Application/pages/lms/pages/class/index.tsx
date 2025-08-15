@@ -149,15 +149,16 @@ export default function Class () {
                 if (response.status === 200) {
                     console.log(response.data)
                     setSaveLoading(false)
+                    onCloseModal();
                 } else {
                     setSaveLoading(false)
+                    onCloseModal();
                 }
             }).catch(error => {
                     console.log(error)
                     setSaveLoading(false)
+                    onCloseModal();
                 })
-
-            onCloseModal();
 
         }
 

@@ -157,6 +157,7 @@ function Login() {
       { (!forgotLoading) ? <a href="#" className="text-sm mt-2" onClick={onClickForgotPassword}>Forgot Password?</a> :
         <><Spinner size="sm" aria-label="Loading" /><span className="text-sm">Sending you an email shortly...</span></>
       }
+      <ToastContainer style={{ fontSize: "18px" }} />
     </div>
   );
 }

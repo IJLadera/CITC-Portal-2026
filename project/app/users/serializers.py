@@ -122,6 +122,7 @@ class CustomUserSerializer(UserSerializer):
 class StudentSerializers(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     email = serializers.CharField(write_only=True)
+    id_number = serializers.CharField()
 
     def validate(self, attrs):
         if attrs.get('password') == '':

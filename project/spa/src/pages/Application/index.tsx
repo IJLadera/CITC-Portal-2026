@@ -5,7 +5,7 @@ import SideBar from "./components/SideBar"
 import { useDispatch } from "react-redux"
 import { getProfile } from "../authentication/Login/api"
 import { storeUser } from "../authentication/Login/slice"
-
+import { ToastContainer } from 'react-toastify';
 
 export default function Application () {
 
@@ -45,6 +45,7 @@ export default function Application () {
                     <SideBar/>
                 </div>
                 <Outlet />
+                <ToastContainer style={{ fontSize: "18px" }} />
             </div>
         </div>
     </div>

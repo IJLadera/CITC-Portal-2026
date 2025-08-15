@@ -104,7 +104,7 @@ class ClassSerializer(serializers.ModelSerializer):
         # create class
         clas = Class.objects.create(**validated_data)
         # get all the lesson according to the subject.
-        lessons = Lesson.objects.filter(subject__id=validated_data.get('subject', ''))
+        lessons = Lesson.objects.filter(subject=validated_data.get('subject', ''))
         for student in students:
             std = ''
             try:

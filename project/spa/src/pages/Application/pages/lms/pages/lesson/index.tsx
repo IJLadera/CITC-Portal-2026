@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { Spinner } from 'flowbite-react';
 import CreateLesson from './components/CreateLesson';
 import LessonCard from './components/LessonCard';
 
@@ -13,13 +14,15 @@ export default function Lesson() {
     const { room } = useParams();
     const [lessons, setLessons] = useState<Array<LessonCardType>>([])
     const user = useAppSelector(state => state.auth.user)
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
-       getLessons(room).then(response => {
+        getLessons(room).then(response => {
             setLessons(response.data);
+            setLoading(false)
         }).catch(error => {
-                console.log(error)
-            })
+            console.log(error)
+        })
     }, [])
 
     return (
@@ -29,7 +32,7 @@ export default function Lesson() {
             }
             <div className="grid grid-cols-4 gap-4 my-5">
                 { 
-                    lessons.map((obj) => <LessonCard title={obj.title} content={obj.content} id={obj.id} key={obj.id} excerpt={obj.excerpt} subject={obj.subject} module={obj.module} />)
+                    (loading) ? <Spinner size="xl" /> : lessons.map((obj) => <LessonCard title={obj.title} content={obj.content} id={obj.id} key={obj.id} excerpt={obj.excerpt} subject={obj.subject} module={obj.module} />)
                 }
             </div> 
         </div>

@@ -92,7 +92,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
 
 class ClassSerializer(serializers.ModelSerializer):
-    students = StudentSerializers(many=True)
+    students = StudentSerializers(many=True, write_only=True)
 
     class Meta:
         fields = '__all__'

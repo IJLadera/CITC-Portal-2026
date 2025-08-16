@@ -4,6 +4,7 @@ from docx import Document
 from django.http import StreamingHttpResponse
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
@@ -19,6 +20,7 @@ from core.permissions import BayanihanPermission
 
 from core.permissions import TeachersPermission
 from core.paginations import LargeNumberOfData
+from app.users.serializers import StudentSerializers
 from .models import (
     College,
     Department,
@@ -55,6 +57,9 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+
+User = get_user_model()
 
 @ensure_csrf_cookie
 @api_view(['GET'])
@@ -219,4 +224,13 @@ class UploadFileAPIView(CreateAPIView):
     queryset = UploadedFile.objects.all()
     serializer_class = UploadFileSerializer
     permission_classes = [IsOwnerOrReadOnly]
+
+class StudentListAPIView(ListAPIView):
+    queryset = Class.objects.all()
+    serializer_class = StudentSerializers
+    permission_classes = [TeachersPermission]
+
+    def filter_queryset(self, queryset):
+        data = queryset.filter(id=self.kwargs.get('pk'))[0]
+        return data.students.all()
 

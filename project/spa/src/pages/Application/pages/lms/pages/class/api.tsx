@@ -64,3 +64,7 @@ export const getTopic = (slug:string) => {
 export const addStudentToClass = (id:any, data:any) => {
   return http.patch(`lms/${id}/`, data)
 }
+
+export const getStudentClass = (pk: any) => {
+  return http.get(`lms/class/students/${pk}/`)
+}

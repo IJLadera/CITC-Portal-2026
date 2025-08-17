@@ -21,6 +21,7 @@ from .views import (
     UploadFileAPIView,
     LessonRetrieveUpdateDestroyAPIView,
     StudentListAPIView,
+    ClassListBySemAPIView,
 )
 
 
@@ -33,6 +34,7 @@ urlpatterns = [
     
     path('', ClassListAPIView.as_view(), name="classes"),
     path('class/students/<int:pk>/', StudentListAPIView.as_view(), name="student-classes"),
+    path('class/students/sem/<int:sem>/', ClassListBySemAPIView.as_view(), name="class-student-by-sem"),
     path('<int:pk>/', ClassUpdateAPIView.as_view(), name='class-update'),
     path('attendance/', AttendanceCreateAPIView.as_view(), name='attendance-create'),
     path('attendance/<int:pk>/', AttendanceUpdateAPIView.as_view(), name='update-attendance'),

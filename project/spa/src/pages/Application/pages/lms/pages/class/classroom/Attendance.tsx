@@ -118,6 +118,7 @@ const Attendance: React.FC<AttendanceProps> = ({students}) => {
   }
 
   const onTickCheckBox = (id_number:string, date:string) => {
+    console.log('onTick!');
     try {
       const temp = attendance?.find(obj => obj?.student === id_number && obj?.date === date)
       

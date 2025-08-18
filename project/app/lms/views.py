@@ -210,8 +210,8 @@ class LessonListAPIView(ListAPIView):
     permission_classes = [IsOwnerOrReadOnly]
 
     def filter_queryset(self, queryset):
-         
-        return queryset.filter(subject=self.kwargs.get('subject'))
+        clas = Class.objects.get(pk=self.kwargs.get('subject'))
+        return clas.lessons.all()
 
 class LessonCreateAPIView(CreateAPIView):
     serializer_class = LessonSerializers

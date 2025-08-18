@@ -114,6 +114,7 @@ export default function Class () {
 
     const onChangeSelect = (event:React.ChangeEvent<HTMLSelectElement>) => {
         setaysem(event.target.value);
+        console.log(event.target.value);
         // should have some request here on what school year and semester.
     }
 

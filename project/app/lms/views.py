@@ -112,10 +112,19 @@ class ClassListAPIView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def filter_queryset(self, queryset):
-        ay_sem = SchoolYear.objects.all().first()
+        ay_sem = SchoolYear.objects.all().last()
         return queryset.filter(teacher=self.request.user.uuid, school_year=ay_sem.id) if not self.request.user.is_student else queryset.filter(students=self.request.user.uuid)
 
 
+class ClassListBySemAPIView(ListAPIView):
+    queryset = Class.objects.all()
+    serializer_class = ClassSerializer
+    permission_classes = [IsAuthenticated]
+
+    def filter_queryset(self, queryset):
+        return queryset.filter(teacher=self.request.user.uuid, school_year__id=self.kwargs.get('sem') if not self.request.user.is_student else queryset.filter(students=self.request.user.uuid, school_year__id=self.kwargs.get('sem')))
+
+        
 class ClassUpdateAPIView(UpdateAPIView):
     queryset = Class.objects.all()
     serializer_class = ClassSerializer

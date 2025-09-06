@@ -31,7 +31,9 @@ const LessonCard:React.FC<LessonCardInt> = ({title, content, excerpt, id, module
           <p>Module</p>
         </Modal.Header>
         <Modal.Body>
-          <div dangerouslySetInnerHTML={{__html: content}}>
+          <div className="[all:revert] [&_h1]:font-normal [&_h1]:[font-size:revert] [&_h2]:font-normal [&_h2]:[font-size:revert] [&_h3]:font-normal [&_h3]:[font-size:revert] [&_h4]:font-normal [&_h4]:[font-size:revert] 
+             [&_h5]:font-normal [&_h5]:[font-size:revert] 
+             [&_h6]:font-normal [&_h6]:[font-size:revert]" dangerouslySetInnerHTML={{__html: content}}>
           </div>
         </Modal.Body>
         <Modal.Footer>

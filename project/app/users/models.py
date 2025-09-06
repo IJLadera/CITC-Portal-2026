@@ -44,11 +44,11 @@ class User(AbstractUser):
     organization = models.ForeignKey('unieventify.tblstudentOrg',on_delete=models.SET_NULL, null=True, blank=True)
 
 
-    USERNAME_FIELD = "email"
+    USERNAME_FIELD = "id_number"
     REQUIRED_FIELDS = [
         'first_name',
         'last_name',
-        'id_number',
+        'email',
         'department'
     ]
 

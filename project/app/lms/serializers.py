@@ -193,5 +193,5 @@ class LessonSerializers(serializers.ModelSerializer):
         
         lesson = Lesson.objects.create(**validated_data)
         lesson.authors.add(user)
-
+        # add lesson to the designated class with subject
         return lesson

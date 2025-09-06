@@ -237,7 +237,7 @@ class UploadFileAPIView(CreateAPIView):
 class StudentListAPIView(ListAPIView):
     queryset = Class.objects.all()
     serializer_class = StudentSerializers
-    permission_classes = [TeachersPermission]
+    permission_classes = [IsAuthenticated]
 
     def filter_queryset(self, queryset):
         data = queryset.filter(id=self.kwargs.get('pk'))[0]

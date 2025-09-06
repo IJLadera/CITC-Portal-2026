@@ -18,7 +18,7 @@ function Login() {
   const [forgotLoading, setForgotLoading] = useState<boolean>(false)
   const [showPassword, setShowPassword] = useState<boolean>(false)
   const [auth, setAuth] = useState<LoginModel>({
-    email: '',
+    id_number: '',
     password: ''
   })
   const loggedIn = useAppSelector(state => state.auth.loggedIn)
@@ -41,7 +41,7 @@ function Login() {
 
   const checkLoginAttempts = (email: any) => {
     const attemptsData = JSON.parse(
-      Cookies.get(`login_attempts_${auth.email}`) || "{}"
+      Cookies.get(`login_attempts_${auth.id_number}`) || "{}"
     );
     const attempts = attemptsData.attempts || 0;
     const lastAttemptTime = attemptsData.lastAttemptTime || 0;
@@ -68,13 +68,13 @@ function Login() {
 
   const incrementLoginAttempts = (email: any) => {
     const attemptsData = JSON.parse(
-      Cookies.get(`login_attempts_${auth.email}`) || "{}"
+      Cookies.get(`login_attempts_${auth.id_number}`) || "{}"
     );
     const attempts = (attemptsData.attempts || 0) + 1;
 
     // Set new attempts and timestamp in cookie
     Cookies.set(
-      `login_attempts_${auth.email}`,
+      `login_attempts_${auth.id_number}`,
       JSON.stringify({
         attempts,
         lastAttemptTime: Date.now(),
@@ -86,7 +86,7 @@ function Login() {
 
   const onSubmitForm = async (event: SyntheticEvent) => {
     event.preventDefault();
-    if (!checkLoginAttempts(auth.email)) return;
+    if (!checkLoginAttempts(auth.id_number)) return;
     setIsDisabled(true);
     try {
       const result = await loginAPI(auth);
@@ -112,24 +112,24 @@ function Login() {
         toast.error('Invalid email or password. Please try again.');
       }
       setIsDisabled(false);
-      Cookies.remove(`login_attempts_${auth.email}`);
+      Cookies.remove(`login_attempts_${auth.id_number}`);
     } catch (error: any) {
       setIsDisabled(false);
-      incrementLoginAttempts(auth.email);
+      incrementLoginAttempts(auth.id_number);
       toast.error('Login failed. Please try again.');
     }
   };
 
   const onClickForgotPassword = async () => {
-    if (auth.email == '') {
+    if (auth.id_number == '') {
       toast.error('Email is not set, please set it.');
     }
 
-    if (strictEmailRegex.test(auth.email)) {
+    if (strictEmailRegex.test(auth.id_number)) {
       // proceed the reset password here
       try {
         setForgotLoading(true);
-        const response = await resetPassword(auth.email)
+        const response = await resetPassword(auth.id_number)
         if (response?.status === 204) {
           setForgotLoading(false);
           toast.success('We have sent you a link to reset your password through your email address.')
@@ -141,7 +141,7 @@ function Login() {
         toast.error(`${error_message}`)
       }
     } else {
-      toast.error(`${auth.email} is not a valid email address`)
+      toast.error(`${auth.id_number} is not a valid email address`)
     }
   }
 
@@ -150,7 +150,7 @@ function Login() {
     <div className="App-header">
       <img src={process.env.NODE_ENV === 'development' ? process.env.PUBLIC_URL + 'inverted-logo.png' : '/static/inverted-logo.png'} className="App-logo" alt="logo" />
       <form className='mt-5' onSubmit={onSubmitForm}>
-        <FloatingLabel className='mt-5 text-white' placeholder='Email' label='' variant='outlined' name="email" type='email' onChange={onChangeInput} />
+        <FloatingLabel className='mt-5 text-white' placeholder='ID Number' label='' variant='outlined' name="id_number" type='text' onChange={onChangeInput} />
         <FloatingLabel className='mt-5 text-white' placeholder='Password' label='' variant='outlined' name="password" type='password' onChange={onChangeInput} />
         <Button disabled={isDisabled} className='w-full bg-blue-900 hover:bg-blue-800' type='submit'>Login</Button>
       </form>

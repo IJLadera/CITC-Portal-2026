@@ -32,6 +32,7 @@ import EventDetails from "./pages/Application/pages/unieventify/src/Application/
 import Changepassword from "./pages/Application/pages/unieventify/src/Application/Contents/changepassword";
 import Classroom from './pages/Application/pages/lms/pages/class/classroom';
 import ForgotPassword from './pages/authentication/Forgot';
+import UserManagement from "./pages/Application/pages/user-management";
 
 const router = createBrowserRouter([
     {
@@ -77,6 +78,10 @@ const router = createBrowserRouter([
             {
                 path: "adduser/",
                 element: <AddUser />,
+            },
+            {
+                path: "user-management/",
+                element: <UserManagement />,
             },
             {
                 path: "public-unieventify/",

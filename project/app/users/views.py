@@ -1,13 +1,73 @@
 from django.shortcuts import render
-from rest_framework.generics import CreateAPIView, UpdateAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, UpdateAPIView, RetrieveAPIView, ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework import permissions, status
+from rest_framework import permissions, status, serializers
 from rest_framework.authtoken.models import Token
-from .models import User
-from .serializers import CreateUserSerializer, UpdateUserSerializer, ChangePasswordSerializer, CustomUserSerializer
+from .models import User, Role
+from .serializers import CreateUserSerializer, UpdateUserSerializer, ChangePasswordSerializer, CustomUserSerializer, AdminUserSerializer
 from .permissions import IsUserOrIsAdminOrReadOnly
 from .syllabease_sync import sync_user_to_syllabease
+
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ['uuid', 'name', 'rank']
+
+
+class RolesListView(ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+
+
+class IsAdminUser(permissions.BasePermission):
+    """
+    Allows access only to admin users (users with Admin or Chairman role)
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        # Check if user has Admin or Chairman role
+        admin_roles = request.user.roles.filter(name__in=['Admin', 'Chairman']).exists()
+        return admin_roles
+
+
+class UsersListView(ListCreateAPIView):
+    """
+    List all users (admin only) or create a new user (admin only)
+    GET: Returns list of all users (admin only)
+    POST: Create a new user (admin only)
+    """
+    permission_classes = [permissions.IsAuthenticated, IsAdminUser]
+    
+    def get_queryset(self):
+        return User.objects.all().order_by('-date_joined')
+    
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return AdminUserSerializer
+        return CustomUserSerializer
+
+
+class UserDetailView(RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update, or delete a specific user (admin only)
+    GET: Retrieve user details
+    PUT: Update user
+    DELETE: Delete user
+    """
+    permission_classes = [permissions.IsAuthenticated, IsAdminUser]
+    queryset = User.objects.all()
+    lookup_field = 'uuid'
+    
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return AdminUserSerializer
+        return CustomUserSerializer
+
 
 class UpdateProfileView(UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsUserOrIsAdminOrReadOnly]

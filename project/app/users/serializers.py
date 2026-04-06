@@ -217,6 +217,60 @@ class ChangePasswordSerializer(serializers.Serializer):
         instance.save()
         return instance
 
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    """Serializer for admin to create and update users with roles"""
+    roles = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), many=True, required=False)
+    password = serializers.CharField(write_only=True, required=False, validators=[validate_password])
+    department = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all(), allow_null=True, required=False)
+    section = serializers.PrimaryKeyRelatedField(queryset=Section.objects.all(), allow_null=True, required=False)
+    organization = serializers.PrimaryKeyRelatedField(queryset=tblstudentOrg.objects.all(), allow_null=True, required=False)
+    
+    class Meta:
+        model = User
+        fields = (
+            'uuid', 'email', 'first_name', 'last_name', 'middle_name', 'suffix',
+            'id_number', 'password', 'is_active', 'is_staff', 'is_student',
+            'is_employee', 'roles', 'department', 'section', 'organization', 'date_joined'
+        )
+        read_only_fields = ('uuid', 'date_joined')
+
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        roles = validated_data.pop('roles', [])
+        
+        user = User.objects.create_user(**validated_data)
+        
+        if password:
+            user.set_password(password)
+            user.save()
+        
+        if roles:
+            user.roles.set(roles)
+        
+        return user
+
+    def update(self, instance, validated_data):
+        # Remove password from validated_data if it exists for updates
+        password = validated_data.pop('password', None)
+        roles = validated_data.pop('roles', None)
+        
+        # Update other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        # Update password if provided
+        if password:
+            instance.set_password(password)
+        
+        instance.save()
+        
+        # Update roles if provided
+        if roles is not None:
+            instance.roles.set(roles)
+        
+        return instance
+
 class SendEmailResetSerializer(BaseSendEmailResetSerializer):
     email = serializers.EmailField()
 

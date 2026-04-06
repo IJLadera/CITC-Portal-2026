@@ -1,0 +1,254 @@
+{
+  "metadata": {
+    "generated_date": "2026-04-06",
+    "description": "Complete seed data reference for CITC Portal",
+    "total_entities": {
+      "roles": 6,
+      "colleges": 5,
+      "departments": 7,
+      "year_levels": 4,
+      "sections": 20,
+      "school_years": 3,
+      "subjects": 8
+    }
+  },
+  "roles": [
+    {
+      "id": 1,
+      "uuid": "fd4ae3f2-13f6-4454-bda6-a5a127844be2",
+      "name": "Admin",
+      "rank": 100,
+      "description": "Full system access, manage users & settings"
+    },
+    {
+      "id": 2,
+      "uuid": "ee3ae6a1-d20f-4d75-987d-946c110ff795",
+      "name": "Chairman",
+      "rank": 90,
+      "description": "Department/College leadership"
+    },
+    {
+      "id": 3,
+      "uuid": "ee6dcd57-8faf-40b2-8bfd-c63cc0997160",
+      "name": "Faculty",
+      "rank": 80,
+      "description": "Instructors, manage classes & students"
+    },
+    {
+      "id": 4,
+      "uuid": "b433a889-7f9a-47ab-8560-a4297be2b437",
+      "name": "Staff",
+      "rank": 60,
+      "description": "Administrative staff"
+    },
+    {
+      "id": 5,
+      "uuid": "6f4788c9-c0b8-47a2-9c80-98c82d057f51",
+      "name": "Student",
+      "rank": 40,
+      "description": "Students enrolled in classes"
+    },
+    {
+      "id": 6,
+      "uuid": "ee13e878-0bb7-4eaa-9634-980fdcd92681",
+      "name": "Guest",
+      "rank": 10,
+      "description": "Limited system access"
+    }
+  ],
+  "colleges": [
+    {
+      "id": 1,
+      "code": "CITC",
+      "name": "College of Information and Communications Technology"
+    },
+    {
+      "id": 2,
+      "code": "CED",
+      "name": "College of Education"
+    },
+    {
+      "id": 3,
+      "code": "CEng",
+      "name": "College of Engineering"
+    },
+    {
+      "id": 4,
+      "code": "CS",
+      "name": "College of Science"
+    },
+    {
+      "id": 5,
+      "code": "CIT",
+      "name": "College of Industrial Technology"
+    }
+  ],
+  "departments": [
+    {
+      "id": 1,
+      "code": "IT",
+      "name": "Information Technology",
+      "college_code": "CITC"
+    },
+    {
+      "id": 2,
+      "code": "CS",
+      "name": "Computer Science",
+      "college_code": "CITC"
+    },
+    {
+      "id": 3,
+      "code": "IS",
+      "name": "Information Systems",
+      "college_code": "CITC"
+    },
+    {
+      "id": 4,
+      "code": "EM",
+      "name": "Engineering Mathematics",
+      "college_code": "CEng"
+    },
+    {
+      "id": 5,
+      "code": "GE",
+      "name": "General Education",
+      "college_code": "CED"
+    },
+    {
+      "id": 6,
+      "code": "AS",
+      "name": "Applied Science",
+      "college_code": "CS"
+    },
+    {
+      "id": 7,
+      "code": "IE",
+      "name": "Industrial Engineering",
+      "college_code": "CIT"
+    }
+  ],
+  "year_levels": [
+    {"id": 1, "level": "1st Year"},
+    {"id": 2, "level": "2nd Year"},
+    {"id": 3, "level": "3rd Year"},
+    {"id": 4, "level": "4th Year"}
+  ],
+  "sections": [
+    {"id": 1, "section": "1st Year-A", "year_level_id": 1},
+    {"id": 2, "section": "1st Year-B", "year_level_id": 1},
+    {"id": 3, "section": "1st Year-C", "year_level_id": 1},
+    {"id": 4, "section": "1st Year-D", "year_level_id": 1},
+    {"id": 5, "section": "1st Year-E", "year_level_id": 1},
+    {"id": 6, "section": "2nd Year-A", "year_level_id": 2},
+    {"id": 7, "section": "2nd Year-B", "year_level_id": 2},
+    {"id": 8, "section": "2nd Year-C", "year_level_id": 2},
+    {"id": 9, "section": "2nd Year-D", "year_level_id": 2},
+    {"id": 10, "section": "2nd Year-E", "year_level_id": 2},
+    {"id": 11, "section": "3rd Year-A", "year_level_id": 3},
+    {"id": 12, "section": "3rd Year-B", "year_level_id": 3},
+    {"id": 13, "section": "3rd Year-C", "year_level_id": 3},
+    {"id": 14, "section": "3rd Year-D", "year_level_id": 3},
+    {"id": 15, "section": "3rd Year-E", "year_level_id": 3},
+    {"id": 16, "section": "4th Year-A", "year_level_id": 4},
+    {"id": 17, "section": "4th Year-B", "year_level_id": 4},
+    {"id": 18, "section": "4th Year-C", "year_level_id": 4},
+    {"id": 19, "section": "4th Year-D", "year_level_id": 4},
+    {"id": 20, "section": "4th Year-E", "year_level_id": 4}
+  ],
+  "school_years": [
+    {
+      "id": 1,
+      "name": "2026-2027",
+      "semester": "1st Semester",
+      "start_year": 2026,
+      "end_year": 2027,
+      "start_date": "2026-08-01",
+      "end_date": "2026-12-31"
+    },
+    {
+      "id": 2,
+      "name": "2026-2027",
+      "semester": "2nd Semester",
+      "start_year": 2026,
+      "end_year": 2027,
+      "start_date": "2027-01-01",
+      "end_date": "2027-05-31"
+    },
+    {
+      "id": 3,
+      "name": "2026-2027",
+      "semester": "Midyear",
+      "start_year": 2026,
+      "end_year": 2027,
+      "start_date": "2027-06-01",
+      "end_date": "2027-07-31"
+    }
+  ],
+  "subjects": [
+    {
+      "id": 1,
+      "code": "CS101",
+      "name": "Introduction to Programming",
+      "department_code": "IT",
+      "year_level": "1st Year"
+    },
+    {
+      "id": 2,
+      "code": "CS102",
+      "name": "Data Structures",
+      "department_code": "IT",
+      "year_level": "2nd Year"
+    },
+    {
+      "id": 3,
+      "code": "CS103",
+      "name": "Web Development",
+      "department_code": "IT",
+      "year_level": "2nd Year"
+    },
+    {
+      "id": 4,
+      "code": "CS104",
+      "name": "Database Management Systems",
+      "department_code": "CS",
+      "year_level": "3rd Year"
+    },
+    {
+      "id": 5,
+      "code": "CS105",
+      "name": "Machine Learning",
+      "department_code": "CS",
+      "year_level": "4th Year"
+    },
+    {
+      "id": 6,
+      "code": "IS101",
+      "name": "Systems Administration",
+      "department_code": "IS",
+      "year_level": "3rd Year"
+    },
+    {
+      "id": 7,
+      "code": "GE101",
+      "name": "English 101",
+      "department_code": "GE",
+      "year_level": "1st Year"
+    },
+    {
+      "id": 8,
+      "code": "EM101",
+      "name": "Mathematics 101",
+      "department_code": "EM",
+      "year_level": "1st Year"
+    }
+  ],
+  "usage_examples": {
+    "create_user_with_role": {
+      "description": "Example: Create user with Admin role in IT department",
+      "code": "python manage.py shell"
+    },
+    "create_class": {
+      "description": "Example: Create class for CS101 with IT department faculty"
+    }
+  }
+}

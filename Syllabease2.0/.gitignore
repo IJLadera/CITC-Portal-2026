@@ -1,0 +1,35 @@
+# Python virtual environment
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.py[cod] 
+
+# Django
+*.log
+media/
+staticfiles/
+backend/media/
+backend/staticfiles/
+
+# Node / React
+frontend/node_modules/
+frontend/build/
+frontend/.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp

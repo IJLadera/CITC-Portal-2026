@@ -5,6 +5,9 @@ import Application from "./pages/Application";
 import Post from "./pages/Application/pages/posts";
 import LMS from "./pages/Application/pages/lms";
 import Class from "./pages/Application/pages/lms/pages/class";
+import SyllabeaseDashboard from "./pages/Application/pages/syllabease/src/Components/Dashboard";
+import Syllabi from "./pages/Application/pages/syllabease/src/Components/Syllabi";
+import SyllabeaseSidebarApp from "./pages/Application/pages/syllabease/src/Application/application";
 import Publicevents from "./pages/Application/pages/unieventify/src/Application/PublicViewContent/publicevents";
 import Header from "./pages/Application/pages/unieventify/src/Components/Header";
 import Error from "./pages/Application/pages/unieventify/src/Application/error";
@@ -50,6 +53,24 @@ const router = createBrowserRouter([
                     {
                         path: "class/:room/",
                         element: <Classroom />
+                    }
+                ]
+            },
+            {
+                path: "syllabease/",
+                element: <SyllabeaseSidebarApp />,
+                children: [
+                    {
+                        path: "",
+                        element: <SyllabeaseDashboard />
+                    },
+                    {
+                        path: "dashboard/",
+                        element: <SyllabeaseDashboard />
+                    },
+                    {
+                        path: "syllabi/",
+                        element: <Syllabi />
                     }
                 ]
             },

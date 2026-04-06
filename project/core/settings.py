@@ -200,7 +200,11 @@ DJOSER = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
     'http://localhost:3000',
+    'http://localhost:5173',  # Syllabease2.0 frontend (Vite default port)
+    'http://localhost:8001',  # Syllabease2.0 backend alternate port
     'http://127.0.0.1:8000',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',  # Syllabease2.0 localhost
 ]
 
 CORS_ALLOWED_METHODS = [
@@ -221,7 +225,10 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost:5173',  # Syllabease2.0 frontend
+]
 
 CORS_ALLOW_CREDENTIALS = True
 

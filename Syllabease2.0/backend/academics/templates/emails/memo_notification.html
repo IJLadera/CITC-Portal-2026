@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Memo Notification</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5; font-family:Segoe UI,Arial, Helvetica, sans-serif; color:#111827;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f4f4f5; padding:40px 10px;">
+    <tr>
+      <td align="center">
+
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color:#ffffff; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.05); overflow:hidden;">
+
+          <tr>
+            <td>
+              <img src="https://i.imgur.com/7pVnxWO.png" alt="SyllabEase Banner" style="width:100%; height:auto; display:block;">
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:32px; text-align:left;">
+              <h3 style="margin:0 0 12px 0; font-size:18px; font-weight:bold; color:#111827;">
+                📢 New Memo Notification
+              </h3>
+
+              <p style="margin:0 0 6px 0; font-size:14px; color:#374151;">
+                <strong>Memorandum No.:</strong> {{ memo.memo_no }}
+              </p>
+              <p style="margin:0 0 6px 0; font-size:14px; color:#374151;">
+                <strong>FOR:</strong> {{ memo.to_field }}
+              </p>
+              <p style="margin:0 0 6px 0; font-size:14px; color:#374151;">
+                <strong>FROM:</strong> {{ memo.from_field }}
+              </p>
+              <p style="margin:0 0 12px 0; font-size:14px; color:#374151;">
+                <strong>DATE:</strong> {{ memo.date|date:"F d, Y" }}
+              </p>
+              <p style="margin:0 0 12px 0; font-size:14px; color:#374151;">
+                <strong>SUBJECT:</strong> {{ memo.subject }}
+              </p>
+
+              <hr style="border:1px solid #e5e7eb; margin:16px 0;">
+
+              {% if memo.rows %}
+                {% for row in memo.rows %}
+                  <p style="margin:4px 0; font-size:13px; color:#4b5563;">
+                    <strong>{{ row.code }}:</strong> {{ row.text }}
+                  </p>
+                {% endfor %}
+              {% endif %}
+
+              <p style="margin:16px 0 0 0; font-size:13px; color:#4b5563;">
+                You can view or download the memo from the system.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px 24px; text-align:center; border-top:1px solid #e5e7eb;">
+              <p style="margin:0; font-size:12px; color:#9ca3af;">
+                This is an automated email. Please do not reply to this message.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background-color:#111827; color:#ffffff; text-align:center; padding:24px;">
+              <p style="margin:0; font-size:14px; font-weight:bold;">SyllabEase</p>
+              <p style="margin:6px 0 0 0; font-size:13px; color:#d1d5db;">Your Learning Management Assistant</p>
+              <p style="margin:6px 0 0 0; font-size:13px; color:#d1d5db;">
+                Email: <a href="mailto:support@syllabease.com" style="color:#d1d5db; text-decoration:none;">support@syllabease.com</a> |
+                Contact No: +63 912 345 6789
+              </p>
+              <p style="margin:6px 0 0 0; font-size:12px; color:#9ca3af;">
+                © {{ year }} SyllabEase. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

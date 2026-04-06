@@ -38,13 +38,15 @@ export default function Application () {
     }, [])
 
     return <div className="bg-[#1A1851] h-screen flex justify-center">
-        <div className="w-[1280px] max-h-screen p-5 overflow-y-hidden">
+        <div className="w-full max-h-screen p-5 overflow-y-hidden">
             <div></div>
-            <div className="grid grid-cols-4">
-                <div>
+            <div className="flex gap-4 h-full">
+                <div className="w-64 flex-shrink-0">
                     <SideBar/>
                 </div>
-                <Outlet />
+                <div className="flex-1 overflow-hidden">
+                    <Outlet />
+                </div>
                 <ToastContainer style={{ fontSize: "18px" }} />
             </div>
         </div>

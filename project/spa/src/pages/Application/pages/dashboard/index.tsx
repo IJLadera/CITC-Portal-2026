@@ -102,6 +102,21 @@ export default function Dashboard() {
         }
     }, [events]);
 
+    // Helper function to parse Draft.js content
+    const parseDraftContent = (content: any) => {
+        if (typeof content === 'string') {
+            try {
+                const parsed = JSON.parse(content);
+                if (parsed.blocks && Array.isArray(parsed.blocks)) {
+                    return parsed.blocks.map((block: any) => block.text).join('\n');
+                }
+            } catch {
+                return content;
+            }
+        }
+        return content || '';
+    };
+
     // Combine and sort events and posts for center area
     const sortedContent = useMemo(() => {
         const majorEvents = events
@@ -118,7 +133,13 @@ export default function Dashboard() {
             ? posts.map((post) => ({
                 ...post,
                 type: 'post',
-                timestamp: new Date(post.timestamp).getTime(),
+                timestamp: new Date(post.timestamp || post.created_at || post.createdAt).getTime(),
+                // Parse Draft.js content if it exists
+                description: post.description ? parseDraftContent(post.description) : post.content || '',
+                // Get author name from user relationship
+                authorName: post.user?.first_name && post.user?.last_name 
+                    ? `${post.user.first_name} ${post.user.last_name}`
+                    : post.author?.name || post.created_by?.first_name ? `${post.created_by.first_name} ${post.created_by.last_name}` : 'Anonymous',
             }))
             : [];
 
@@ -226,32 +247,37 @@ export default function Dashboard() {
                                     }
                                 }}
                             >
-                                <img
-                                    src={item.images || require('../unieventify/src/images/logo.png')}
-                                    alt={item.eventName || 'Post'}
-                                    className="w-full h-56 object-cover"
-                                />
+                                {item.images && (
+                                    <img
+                                        src={item.images}
+                                        alt={item.eventName || item.title || 'Content'}
+                                        className="w-full h-56 object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                        }}
+                                    />
+                                )}
                                 <div className="p-6 text-white">
-                                    <h4 className="text-2xl font-bold mb-2">{item.eventName || 'Post'}</h4>
+                                    <h4 className="text-2xl font-bold mb-2">{item.eventName || item.title || 'Post'}</h4>
                                     <p className="text-sm opacity-80 mb-4 line-clamp-3">
-                                        {item.eventDescription?.replace(/<[^>]+>/g, '') || item.description}
+                                        {item.eventDescription?.replace(/<[^>]+>/g, '') || item.description || 'No description'}
                                     </p>
                                     <div className="flex justify-between items-center text-sm opacity-70 mb-4">
                                         <span className="flex items-center gap-2">
-                                            <span className="text-lg"></span>
-                                            College of Information Technology and Computing
+                                            <span className="text-lg">👤</span>
+                                            {item.authorName || item.department?.[0]?.name || 'Unknown'}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center text-xs opacity-60">
                                         <span>
-                                            {new Date(item.startDateTime || item.timestamp).toLocaleDateString()} at{' '}
-                                            {new Date(item.startDateTime || item.timestamp).toLocaleTimeString([], {
+                                            {new Date(item.startDateTime || item.timestamp || item.created_at || item.createdAt).toLocaleDateString()} at{' '}
+                                            {new Date(item.startDateTime || item.timestamp || item.created_at || item.createdAt).toLocaleTimeString([], {
                                                 hour: '2-digit',
                                                 minute: '2-digit',
                                             })}
                                         </span>
                                         <span>
-                                            {item.venue?.venueName || item.setup?.setupName || 'No venue'}
+                                            {item.venue?.venueName || item.setup?.setupName || (item.type === 'post' ? '' : 'No venue')}
                                         </span>
                                     </div>
                                     <div className="flex gap-3 mt-4">
@@ -269,7 +295,7 @@ export default function Dashboard() {
                                             )}
                                         </button>
                                         <button className="flex items-center gap-1 text-green-500 hover:text-green-400 transition-colors">
-                                            
+                                            💬
                                         </button>
                                     </div>
                                 </div>

@@ -21,7 +21,7 @@ import DifEventDetails from "./pages/Application/pages/unieventify/src/Applicati
 import UserEvents from "./pages/Application/pages/unieventify/src/Application/Contents/Events/userEvents";
 import EventTimeline from "./pages/Application/pages/unieventify/src/Application/Contents/Events/timeline";
 import AnnouncementsPage from "./pages/Application/pages/unieventify/src/Application/Contents/announcement";
-import Dashboard from "./pages/Application/pages/unieventify/src/Application/Contents/dashboard";
+import UniEventifyDashboard from "./pages/Application/pages/unieventify/src/Application/Contents/dashboard";
 import EventForm from "./pages/Application/pages/unieventify/src/Application/Contents/Events/addEvent";
 import ApproveDocumentsPage from "./pages/Application/pages/unieventify/src/Application/Contents/Events/ApproveDocumentsPage";
 import Reports from "./pages/Application/pages/unieventify/src/Application/Contents/reports";
@@ -33,6 +33,8 @@ import Changepassword from "./pages/Application/pages/unieventify/src/Applicatio
 import Classroom from './pages/Application/pages/lms/pages/class/classroom';
 import ForgotPassword from './pages/authentication/Forgot';
 import UserManagement from "./pages/Application/pages/user-management";
+import Dashboard from "./pages/Application/pages/dashboard";
+import AdminApps from "./pages/Application/pages/admin-apps";
 
 const router = createBrowserRouter([
     {
@@ -41,7 +43,19 @@ const router = createBrowserRouter([
         children: [
             {
                 path: "",
+                element: <Dashboard />
+            },
+            {
+                path: "dashboard/",
+                element: <Dashboard />
+            },
+            {
+                path: "posts/",
                 element: <Post />
+            },
+            {
+                path: "admin/apps/",
+                element: <AdminApps />
             },
             {
                 path: "lms/",
@@ -158,7 +172,7 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "dashboard/",
-                        element: <Dashboard />
+                        element: <UniEventifyDashboard />
                     },
                     {
                         path: "addevent/",

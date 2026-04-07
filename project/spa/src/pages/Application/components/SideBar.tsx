@@ -100,7 +100,7 @@ export default function SideBar() {
                 {/* <img src={ process.env.PUBLIC_URL + 'USTP Logo against Dark Background.png' } className="App-logo" alt="logo" /> */}
                 <ul className="space-y-2 font-medium">
                     <li>
-                        <NavLink to="/" className={({ isActive }) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
+                        <NavLink to="/dashboard" className={({ isActive }) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
                             <RiHomeLine className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
                             <span className="ms-3">Home</span>
                         </NavLink>
@@ -143,12 +143,20 @@ export default function SideBar() {
                         </a>
                     </li>
                     {highestRankRole && (highestRankRole.name === "Admin" || highestRankRole.name === "Chairman") && (
-                        <li>
-                            <NavLink to="/user-management" className={({ isActive }) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
-                                <FaUserPlus className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
-                                <span className="flex-1 ms-3 whitespace-nowrap">👥 User Management</span>
-                            </NavLink>
-                        </li>
+                        <>
+                            <li>
+                                <NavLink to="/admin/apps" className={({ isActive }) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
+                                    <FaUserPlus className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
+                                    <span className="flex-1 ms-3 whitespace-nowrap">📱 App Management</span>
+                                </NavLink>
+                            </li>
+                            <li>
+                                <NavLink to="/user-management" className={({ isActive }) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>
+                                    <FaUserPlus className="flex-shrink-0 w-5 h-5 transition duration-75 dark:text-gray-400 group-hover:text-white dark:group-hover:text-white" />
+                                    <span className="flex-1 ms-3 whitespace-nowrap">👥 User Management</span>
+                                </NavLink>
+                            </li>
+                        </>
                     )}
                     <li>
                         <NavLink to="/profile" className={({ isActive }) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>

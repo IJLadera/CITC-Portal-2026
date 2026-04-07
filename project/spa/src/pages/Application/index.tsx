@@ -1,7 +1,8 @@
 import { useEffect } from "react"
 import { useAppSelector } from "../../hooks"
 import { Outlet, useNavigate } from "react-router-dom"
-import SideBar from "./components/SideBar"
+import Header from "./components/Header"
+import FloatingActionButton from "./components/FloatingActionButton"
 import { useDispatch } from "react-redux"
 import { getProfile } from "../authentication/Login/api"
 import { storeUser } from "../authentication/Login/slice"
@@ -37,18 +38,12 @@ export default function Application () {
 
     }, [])
 
-    return <div className="bg-[#1A1851] h-screen flex justify-center">
-        <div className="w-full max-h-screen p-5 overflow-y-hidden">
-            <div></div>
-            <div className="flex gap-4 h-full">
-                <div className="w-64 flex-shrink-0">
-                    <SideBar/>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                    <Outlet />
-                </div>
-                <ToastContainer style={{ fontSize: "18px" }} />
-            </div>
+    return <div className="bg-[#1A1851] h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 overflow-hidden">
+            <Outlet />
         </div>
+        <FloatingActionButton />
+        <ToastContainer style={{ fontSize: "18px" }} />
     </div>
 }

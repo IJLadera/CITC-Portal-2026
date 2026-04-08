@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { getPosts } from '../posts/api';
 import { storePost } from '../posts/slice';
 import axios from 'axios';
-import { FaHeart, FaRegHeart } from 'react-icons/fa';
+import { FaHeart, FaRegHeart, FaComment, FaRegComment } from 'react-icons/fa';
 
 interface Event {
     id: string;
@@ -20,6 +20,7 @@ interface Event {
     majorEvent: boolean;
     timestamp: string;
     type: 'event';
+    image?: string;
 }
 
 interface App {
@@ -134,12 +135,19 @@ export default function Dashboard() {
                 ...post,
                 type: 'post',
                 timestamp: new Date(post.timestamp || post.created_at || post.createdAt).getTime(),
-                // Parse Draft.js content if it exists
                 description: post.description ? parseDraftContent(post.description) : post.content || '',
-                // Get author name from user relationship
+
                 authorName: post.user?.first_name && post.user?.last_name 
                     ? `${post.user.first_name} ${post.user.last_name}`
-                    : post.author?.name || post.created_by?.first_name ? `${post.created_by.first_name} ${post.created_by.last_name}` : 'Anonymous',
+                    : post.author?.name || post.created_by?.first_name 
+                        ? `${post.created_by.first_name} ${post.created_by.last_name}` 
+                        : 'Anonymous',
+
+                // ✅ ADD THIS
+                authorImage: post.user?.profile_picture 
+                    || post.user?.avatar 
+                    || post.created_by?.profile_picture 
+                    || null,
             }))
             : [];
 
@@ -161,15 +169,15 @@ export default function Dashboard() {
     };
 
     if (loading) {
-        return <div className="text-white text-center p-5">Loading dashboard...</div>;
+        return <div className="text-gray-800 text-center p-5">Loading dashboard...</div>;
     }
 
     return (
-        <div className="flex gap-6 h-full overflow-hidden px-8 py-6">
+        <div className="flex gap-6 h-full overflow-hidden px-8 py-6 bg-white">
             {/* Left Sidebar - Events */}
             <div className="w-72 flex-shrink-0 overflow-y-auto pr-4 custom-scrollbar">
                 <div className="mb-8">
-                    <h3 className="text-white font-bold text-lg mb-4">Ongoing</h3>
+                    <h3 className="text-gray-800 font-bold text-lg mb-4">Ongoing</h3>
                     <div className="space-y-3">
                         {ongoingEvents.length > 0 ? (
                             ongoingEvents.map((event) => (
@@ -192,13 +200,13 @@ export default function Dashboard() {
                                 </div>
                             ))
                         ) : (
-                            <div className="text-gray-400 text-sm p-4 bg-gray-800 rounded-lg">No ongoing events</div>
+                            <div className="text-gray-500 text-sm p-4 bg-gray-100 rounded-lg">No ongoing events</div>
                         )}
                     </div>
                 </div>
 
                 <div>
-                    <h3 className="text-white font-bold text-lg mb-4">Upcoming</h3>
+                    <h3 className="text-gray-800 font-bold text-lg mb-4">Upcoming</h3>
                     <div className="space-y-3">
                         {upcomingEvents.length > 0 ? (
                             upcomingEvents.slice(0, 5).map((event) => (
@@ -221,89 +229,121 @@ export default function Dashboard() {
                                 </div>
                             ))
                         ) : (
-                            <div className="text-gray-400 text-sm p-4 bg-gray-800 rounded-lg">No upcoming events</div>
+                            <div className="text-gray-500 text-sm p-4 bg-gray-100 rounded-lg">No upcoming events</div>
                         )}
                     </div>
                 </div>
                 {upcomingEvents.length > 5 && (
-                    <button className="text-blue-400 text-sm mt-4 hover:text-blue-300 w-full">
+                    <button className="text-blue-600 text-sm mt-4 hover:text-blue-500 w-full">
                         View All
                     </button>
                 )}
             </div>
 
             {/* Center - Recent Events and Posts */}
-            <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar">
-                <h2 className="text-3xl font-bold text-yellow-400 mb-8 text-center">Recent Events and Posts</h2>
-                <div className="space-y-6 pb-24">
-                    {sortedContent.length > 0 ? (
-                        sortedContent.map((item) => (
-                            <div
-                                key={`${item.type}-${item.id}`}
-                                className="bg-gray-800 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow cursor-pointer"
-                                onClick={() => {
-                                    if (item.type === 'event') {
-                                        navigate(`/unieventify/app/eventdetails/${item.id}`);
-                                    }
-                                }}
-                            >
-                                {item.images && (
-                                    <img
-                                        src={item.images}
-                                        alt={item.eventName || item.title || 'Content'}
-                                        className="w-full h-56 object-cover"
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                        }}
-                                    />
-                                )}
-                                <div className="p-6 text-white">
-                                    <h4 className="text-2xl font-bold mb-2">{item.eventName || item.title || 'Post'}</h4>
-                                    <p className="text-sm opacity-80 mb-4 line-clamp-3">
-                                        {item.eventDescription?.replace(/<[^>]+>/g, '') || item.description || 'No description'}
-                                    </p>
-                                    <div className="flex justify-between items-center text-sm opacity-70 mb-4">
-                                        <span className="flex items-center gap-2">
-                                            <span className="text-lg">👤</span>
-                                            {item.authorName || item.department?.[0]?.name || 'Unknown'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs opacity-60">
-                                        <span>
-                                            {new Date(item.startDateTime || item.timestamp || item.created_at || item.createdAt).toLocaleDateString()} at{' '}
-                                            {new Date(item.startDateTime || item.timestamp || item.created_at || item.createdAt).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}
-                                        </span>
-                                        <span>
-                                            {item.venue?.venueName || item.setup?.setupName || (item.type === 'post' ? '' : 'No venue')}
-                                        </span>
-                                    </div>
-                                    <div className="flex gap-3 mt-4">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggleLike(`${item.type}-${item.id}`);
+            <div className="flex flex-col h-full">
+                <h2 className="font-bold text-yellow-500 mb-4 text-center shrink-0">
+                    Recent Events and Posts
+                </h2>
+
+                <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar">
+                    <div className="space-y-6 pb-24">
+                        {sortedContent.length > 0 ? (
+                            sortedContent.map((item) => (
+                                <div
+                                    key={`${item.type}-${item.id}`}
+                                    className="bg-white border border-gray-200 rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                                    onClick={() => {
+                                        if (item.type === 'event') {
+                                            navigate(`/unieventify/app/eventdetails/${item.id}`);
+                                        }
+                                    }}
+                                >
+                                    {item.image && (
+                                        <img
+                                            src={item.image}
+                                            alt={item.eventName || item.title || 'Content'}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
                                             }}
-                                            className="flex items-center gap-1 text-red-500 hover:text-red-400 transition-colors"
-                                        >
-                                            {likedContent.has(`${item.type}-${item.id}`) ? (
-                                                <FaHeart size={18} />
-                                            ) : (
-                                                <FaRegHeart size={18} />
-                                            )}
-                                        </button>
-                                        <button className="flex items-center gap-1 text-green-500 hover:text-green-400 transition-colors">
-                                            💬
-                                        </button>
+                                        />
+                                    )}
+                                    <div className="p-6 text-gray-800">
+                                        <h4 className="text-2xl font-bold mb-2 text-gray-900">{item.eventName || item.title || 'Post'}</h4>
+                                        <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                                            {item.eventDescription?.replace(/<[^>]+>/g, '') || item.description || 'No description'}
+                                        </p>
+                                        <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
+                                            <div className="flex items-center gap-2">
+                                                {item.authorImage ? (
+                                                    <img
+                                                        src={item.authorImage}
+                                                        alt="author"
+                                                        className="w-8 h-8 rounded-full object-cover border"
+                                                        onError={(e) => {
+                                                            e.currentTarget.src = '/default-avatar.png'; // fallback image
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
+                                                        {(item.authorName || 'U')[0]}
+                                                    </div>
+                                                )}
+
+                                                <span>
+                                                    {item.authorName || item.department?.[0]?.name || 'Unknown'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs text-gray-400">
+                                            <span>
+                                                {new Date(item.startDateTime || item.timestamp || item.created_at || item.createdAt).toLocaleDateString()} at{' '}
+                                                {new Date(item.startDateTime || item.timestamp || item.created_at || item.createdAt).toLocaleTimeString([], {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                })}
+                                            </span>
+                                            <span>
+                                                {item.venue?.venueName || item.setup?.setupName || (item.type === 'post' ? '' : 'No venue')}
+                                            </span>
+                                        </div>
+                                        <div className="flex gap-3 mt-4">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleLike(`${item.type}-${item.id}`);
+                                                }}
+                                                className="flex items-center gap-1 text-red-500 hover:text-red-400 transition-colors"
+                                            >
+                                                {likedContent.has(`${item.type}-${item.id}`) ? (
+                                                    <FaHeart size={18} />
+                                                ) : (
+                                                    <FaRegHeart size={18} />
+                                                )}
+                                            </button>
+                                            <button onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleLike(`${item.type}-${item.id}`);
+                                                }}
+                                                className="flex items-center gap-1 text-green-500 hover:text-green-400 transition-colors"
+                                            >
+                                                {likedContent.has(`${item.type}-${item.id}`) ? (
+                                                    <FaComment size={18} />
+                                                ) : (
+                                                    <FaRegComment size={18} />
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
+                            ))
+                        ) : (
+                            <div className="text-gray-600 text-center p-10">
+                                No events or posts to display
                             </div>
-                        ))
-                    ) : (
-                        <div className="text-white text-center p-10">No events or posts to display</div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -322,7 +362,7 @@ export default function Dashboard() {
 
                 {/* Apps Section */}
                 <div>
-                    <h3 className="text-white font-bold text-lg mb-4">Apps</h3>
+                    <h3 className="text-gray-800 font-bold text-lg mb-4">Apps</h3>
                     <div className="grid grid-cols-2 gap-4">
                         {apps && apps.length > 0 ? (
                             apps.map((app) => (
@@ -344,7 +384,7 @@ export default function Dashboard() {
                                 </div>
                             ))
                         ) : (
-                            <div className="col-span-2 text-gray-400 text-sm text-center p-4 bg-gray-800 rounded-lg">
+                            <div className="col-span-2 text-gray-500 text-sm text-center p-4 bg-gray-100 rounded-lg">
                                 No apps available
                             </div>
                         )}

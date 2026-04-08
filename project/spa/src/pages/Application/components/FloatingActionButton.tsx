@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FaPlus, FaTimes } from 'react-icons/fa';
-import CreatePost from '../pages/posts/createpost';
+import CreatePost from '../pages/dashboard/createpost';
 
 export default function FloatingActionButton() {
     const [isOpen, setIsOpen] = useState(false);

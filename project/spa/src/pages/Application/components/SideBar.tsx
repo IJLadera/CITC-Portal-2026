@@ -11,7 +11,7 @@ import { NavLink } from "react-router-dom";
 import { fetchUserRole } from "../pages/unieventify/src/Application/slice";
 import { persistor } from "../../../store";
 import Cookies from "js-cookie";
-import CreatePost from "../pages/posts/createpost";
+import CreatePost from "../pages/dashboard/createpost";
 
 export default function SideBar() {
     const [openModal, setOpenModal] = useState(false)

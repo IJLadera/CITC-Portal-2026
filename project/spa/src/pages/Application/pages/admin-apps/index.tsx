@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../../hooks';
 import { fetchUserRole } from '../unieventify/src/Application/slice';
 import axios from 'axios';
-import { Modal, Button, Label, TextInput, Textarea, FileInput } from 'flowbite-react';
+import { Modal, Button, Label, TextInput, Textarea } from 'flowbite-react';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+
+// ✅ FIXED: Centralized API base URL — change once here if it ever changes
+const APPS_API = '/api/v1/apps/';
 
 interface App {
     uuid: string;
@@ -33,7 +36,7 @@ export default function AdminApps() {
     const token = useAppSelector((state) => state.auth.token);
     const user = useAppSelector((state) => state.auth.user);
     const highestRankRole = useAppSelector((state) => state.unieventify.userRole);
-    
+
     const [apps, setApps] = useState<App[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -49,40 +52,32 @@ export default function AdminApps() {
         display_order: 0,
     });
 
-    // Fetch role when the component mounts
     useEffect(() => {
         dispatch(fetchUserRole());
     }, [dispatch]);
 
-    // Check if user is admin
     const isAdmin = () => {
-        if (user && user.is_staff) {
-            return true;
-        }
-        if (highestRankRole && (highestRankRole.name === 'Admin' || highestRankRole.name === 'Chairman')) {
-            return true;
-        }
+        if (user && user.is_staff) return true;
+        if (highestRankRole && (highestRankRole.name === 'Admin' || highestRankRole.name === 'Chairman')) return true;
         return false;
     };
 
-    // Fetch apps
-    useEffect(() => {
-        const fetchApps = async () => {
-            try {
-                const response = await axios.get('/api/apps/', {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setApps(response.data);
-                setLoading(false);
-            } catch (error) {
-                console.error('Failed to fetch apps:', error);
-                setLoading(false);
-            }
-        };
+    // ✅ FIXED: Use Token auth and /api/v1/apps/
+    const authHeaders = { Authorization: `Token ${token}` };
 
-        if (token) {
-            fetchApps();
+    const loadApps = async () => {
+        try {
+            const response = await axios.get(APPS_API, { headers: authHeaders });
+            setApps(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error('Failed to fetch apps:', error);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        if (token) loadApps();
     }, [token]);
 
     const handleOpenModal = (app?: App) => {
@@ -101,15 +96,7 @@ export default function AdminApps() {
         } else {
             setIsEditing(false);
             setEditingAppId(null);
-            setFormData({
-                name: '',
-                description: '',
-                logo_url: '',
-                url: '',
-                is_active: true,
-                is_visible_to_users: true,
-                display_order: 0,
-            });
+            setFormData({ name: '', description: '', logo_url: '', url: '', is_active: true, is_visible_to_users: true, display_order: 0 });
         }
         setShowModal(true);
     };
@@ -120,25 +107,14 @@ export default function AdminApps() {
         setEditingAppId(null);
     };
 
-    const handleInputChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target as HTMLInputElement;
         if (type === 'checkbox') {
-            setFormData((prev) => ({
-                ...prev,
-                [name]: (e.target as HTMLInputElement).checked,
-            }));
+            setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
         } else if (type === 'number') {
-            setFormData((prev) => ({
-                ...prev,
-                [name]: parseInt(value, 10),
-            }));
+            setFormData((prev) => ({ ...prev, [name]: parseInt(value, 10) }));
         } else {
-            setFormData((prev) => ({
-                ...prev,
-                [name]: value,
-            }));
+            setFormData((prev) => ({ ...prev, [name]: value }));
         }
     };
 
@@ -146,26 +122,11 @@ export default function AdminApps() {
         e.preventDefault();
         try {
             if (isEditing && editingAppId) {
-                // Update app
-                await axios.put(`/api/apps/${editingAppId}/`, formData, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                // Refresh apps list
-                const response = await axios.get('/api/apps/', {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setApps(response.data);
+                await axios.put(`${APPS_API}${editingAppId}/`, formData, { headers: authHeaders });
             } else {
-                // Create app
-                await axios.post('/api/apps/', formData, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                // Refresh apps list
-                const response = await axios.get('/api/apps/', {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setApps(response.data);
+                await axios.post(APPS_API, formData, { headers: authHeaders });
             }
+            await loadApps();
             handleCloseModal();
         } catch (error) {
             console.error('Error saving app:', error);
@@ -176,14 +137,8 @@ export default function AdminApps() {
     const handleDeleteApp = async (appId: string) => {
         if (window.confirm('Are you sure you want to delete this app?')) {
             try {
-                await axios.delete(`/api/apps/${appId}/`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                // Refresh apps list
-                const response = await axios.get('/api/apps/', {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setApps(response.data);
+                await axios.delete(`${APPS_API}${appId}/`, { headers: authHeaders });
+                await loadApps();
             } catch (error) {
                 console.error('Error deleting app:', error);
                 alert('Failed to delete app');
@@ -192,11 +147,7 @@ export default function AdminApps() {
     };
 
     if (!isAdmin()) {
-        return (
-            <div className="text-white text-center p-10">
-                You do not have permission to access this page.
-            </div>
-        );
+        return <div className="text-white text-center p-10">You do not have permission to access this page.</div>;
     }
 
     if (loading) {
@@ -215,13 +166,13 @@ export default function AdminApps() {
                 </button>
             </div>
 
-            {/* Apps Table */}
             <div className="overflow-x-auto bg-gray-800 rounded-lg">
                 <table className="w-full text-left text-white">
                     <thead className="bg-gray-900">
                         <tr>
                             <th className="px-6 py-3">App Name</th>
                             <th className="px-6 py-3">URL</th>
+                            <th className="px-6 py-3">Logo</th>
                             <th className="px-6 py-3">Status</th>
                             <th className="px-6 py-3">Visible</th>
                             <th className="px-6 py-3">Order</th>
@@ -229,166 +180,95 @@ export default function AdminApps() {
                         </tr>
                     </thead>
                     <tbody>
-                        {apps.length > 0 ? (
-                            apps.map((app) => (
-                                <tr key={app.uuid} className="border-b border-gray-700 hover:bg-gray-700 transition-colors">
-                                    <td className="px-6 py-4 font-semibold">{app.name}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-300">{app.url}</td>
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                app.is_active
-                                                    ? 'bg-green-500 text-white'
-                                                    : 'bg-red-500 text-white'
-                                            }`}
-                                        >
-                                            {app.is_active ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                app.is_visible_to_users
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'bg-gray-500 text-white'
-                                            }`}
-                                        >
-                                            {app.is_visible_to_users ? 'Yes' : 'No'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">{app.display_order}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleOpenModal(app)}
-                                                className="text-blue-400 hover:text-blue-300 transition-colors"
-                                                title="Edit"
-                                            >
-                                                <FaEdit size={18} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteApp(app.uuid)}
-                                                className="text-red-400 hover:text-red-300 transition-colors"
-                                                title="Delete"
-                                            >
-                                                <FaTrash size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={6} className="px-6 py-4 text-center text-gray-400">
-                                    No apps available
+                        {apps.length > 0 ? apps.map((app) => (
+                            <tr key={app.uuid} className="border-b border-gray-700 hover:bg-gray-700 transition-colors">
+                                <td className="px-6 py-4 font-semibold">{app.name}</td>
+                                <td className="px-6 py-4 text-sm text-gray-300">{app.url}</td>
+                                <td className="px-6 py-4">
+                                    {app.logo_url || app.logo ? (
+                                        <img src={app.logo_url || app.logo} alt={app.name}
+                                            className="w-10 h-10 object-contain rounded"
+                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        />
+                                    ) : (
+                                        <span className="text-gray-500 text-xs">No logo</span>
+                                    )}
                                 </td>
+                                <td className="px-6 py-4">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${app.is_active ? 'bg-green-500' : 'bg-red-500'} text-white`}>
+                                        {app.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${app.is_visible_to_users ? 'bg-blue-500' : 'bg-gray-500'} text-white`}>
+                                        {app.is_visible_to_users ? 'Yes' : 'No'}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">{app.display_order}</td>
+                                <td className="px-6 py-4">
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleOpenModal(app)} className="text-blue-400 hover:text-blue-300" title="Edit">
+                                            <FaEdit size={18} />
+                                        </button>
+                                        <button onClick={() => handleDeleteApp(app.uuid)} className="text-red-400 hover:text-red-300" title="Delete">
+                                            <FaTrash size={18} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-4 text-center text-gray-400">No apps available</td>
                             </tr>
                         )}
                     </tbody>
                 </table>
             </div>
 
-            {/* Modal */}
             <Modal show={showModal} onClose={handleCloseModal} size="md">
-                <Modal.Header>
-                    {isEditing ? 'Edit App' : 'Create New App'}
-                </Modal.Header>
+                <Modal.Header>{isEditing ? 'Edit App' : 'Create New App'}</Modal.Header>
                 <Modal.Body>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <Label htmlFor="name" value="App Name *" />
-                            <TextInput
-                                id="name"
-                                name="name"
-                                type="text"
-                                value={formData.name}
-                                onChange={handleInputChange}
-                                placeholder="Enter app name"
-                                required
-                            />
+                            <TextInput id="name" name="name" type="text" value={formData.name}
+                                onChange={handleInputChange} placeholder="e.g., Syllabease" required />
                         </div>
-
                         <div>
                             <Label htmlFor="description" value="Description" />
-                            <Textarea
-                                id="description"
-                                name="description"
-                                value={formData.description}
-                                onChange={handleInputChange}
-                                placeholder="Enter app description"
-                                rows={3}
-                            />
+                            <Textarea id="description" name="description" value={formData.description}
+                                onChange={handleInputChange} placeholder="Enter app description" rows={3} />
                         </div>
-
                         <div>
                             <Label htmlFor="url" value="URL Path *" />
-                            <TextInput
-                                id="url"
-                                name="url"
-                                type="text"
-                                value={formData.url}
-                                onChange={handleInputChange}
-                                placeholder="e.g., /syllabease/dashboard/"
-                                required
-                            />
+                            <TextInput id="url" name="url" type="text" value={formData.url}
+                                onChange={handleInputChange} placeholder="e.g., /syllabease" required />
                         </div>
-
                         <div>
                             <Label htmlFor="logo_url" value="Logo URL" />
-                            <TextInput
-                                id="logo_url"
-                                name="logo_url"
-                                type="text"
-                                value={formData.logo_url}
-                                onChange={handleInputChange}
-                                placeholder="E.g., https://example.com/logo.png"
-                            />
+                            <TextInput id="logo_url" name="logo_url" type="text" value={formData.logo_url}
+                                onChange={handleInputChange} placeholder="https://example.com/logo.png" />
                         </div>
-
                         <div>
                             <Label htmlFor="display_order" value="Display Order" />
-                            <TextInput
-                                id="display_order"
-                                name="display_order"
-                                type="number"
-                                value={formData.display_order}
-                                onChange={handleInputChange}
-                            />
+                            <TextInput id="display_order" name="display_order" type="number"
+                                value={formData.display_order} onChange={handleInputChange} />
                         </div>
-
                         <div className="flex gap-4">
                             <div className="flex items-center">
-                                <input
-                                    id="is_active"
-                                    name="is_active"
-                                    type="checkbox"
-                                    checked={formData.is_active}
-                                    onChange={handleInputChange}
-                                    className="w-4 h-4"
-                                />
+                                <input id="is_active" name="is_active" type="checkbox"
+                                    checked={formData.is_active} onChange={handleInputChange} className="w-4 h-4" />
                                 <Label htmlFor="is_active" value="Active" className="ml-2" />
                             </div>
-
                             <div className="flex items-center">
-                                <input
-                                    id="is_visible_to_users"
-                                    name="is_visible_to_users"
-                                    type="checkbox"
-                                    checked={formData.is_visible_to_users}
-                                    onChange={handleInputChange}
-                                    className="w-4 h-4"
-                                />
+                                <input id="is_visible_to_users" name="is_visible_to_users" type="checkbox"
+                                    checked={formData.is_visible_to_users} onChange={handleInputChange} className="w-4 h-4" />
                                 <Label htmlFor="is_visible_to_users" value="Visible to Users" className="ml-2" />
                             </div>
                         </div>
-
                         <div className="flex justify-end gap-2 mt-6">
-                            <Button color="gray" onClick={handleCloseModal}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" color="blue">
-                                {isEditing ? 'Update App' : 'Create App'}
-                            </Button>
+                            <Button color="gray" onClick={handleCloseModal}>Cancel</Button>
+                            <Button type="submit" color="blue">{isEditing ? 'Update App' : 'Create App'}</Button>
                         </div>
                     </form>
                 </Modal.Body>

@@ -118,7 +118,7 @@ export default function Post() {
                     <Friends />
                 </div>
                 <div className="max-h-screen overflow-y-scroll px-5 pb-28 pt-5">
-                    <h3 className="text-lg text-white font-semibold mb-4">Recent Events and Posts</h3>    
+                    <h3 className="text-lg text-white font-semibold mb-4">Recent Events and Postsasdas</h3>    
                     {sortedContent.map((item) => (
                         item.type === 'event' ? (
                             <div 

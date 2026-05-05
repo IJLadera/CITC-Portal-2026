@@ -1,5 +1,11 @@
 import { ReactNode } from "react";
 
+export interface Role {
+    uuid?: string;
+    name: string;
+    rank?: number;
+}
+
 export interface User {
     uuid: string;
     email: string;
@@ -15,6 +21,7 @@ export interface User {
     is_superuser: boolean;
     is_bayanihan_leader: boolean;
     id_number: string;
+    roles?: (string | Role)[];
 }
 
 export interface AuthContextType {

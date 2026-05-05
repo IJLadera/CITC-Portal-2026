@@ -6,6 +6,13 @@ import { useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from "../../../../../../hooks";
 import { fetchCurrentUser, fetchUserRole } from "../Application/slice";
 
+// Helper function to extract role name from string or object
+function getRoleName(role: any): string {
+    if (typeof role === 'string') return role;
+    if (typeof role === 'object' && role?.name) return role.name;
+    return String(role);
+}
+
 export default function Header() {
   const [showLogo, setShowLogo] = useState(true);
   const [displayedText, setDisplayedText] = useState("");
@@ -89,7 +96,7 @@ export default function Header() {
                 Home
               </Navbar.Link>
               <Navbar.Link href="/public-unieventify/public-events" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Public Events</Navbar.Link>
-              {highestRankRole && notAlumni.includes(highestRankRole.name || '') && (
+              {highestRankRole && notAlumni.includes(getRoleName(highestRankRole.name) || '') && (
               <Navbar.Link href="/unieventify/app" className='text-lg mb-3 mt-3 hover:border-b-sky-500 hover:border-b-2'>Calendar/Events</Navbar.Link>
             )}
             </Navbar.Collapse>

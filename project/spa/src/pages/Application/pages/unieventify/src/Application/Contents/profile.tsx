@@ -1,7 +1,6 @@
 import Editprofile from "../../Components/profile/editprofile";
 import Profileloadingskeleton from "../../Components/profile/profileloadingskeleton";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useEffect, useState, useCallback } from "react";
 import {
   Grid,
@@ -50,6 +49,26 @@ function timeAgo(dateStr: string | number): string {
   } catch {
     return "";
   }
+}
+
+/**
+ * Safely extract a display string from a value that may be
+ * a plain string OR an object like { uuid, name, rank }.
+ */
+function resolveString(value: any): string {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    // Try common string-like keys in order of preference
+    return (
+      value.name ??
+      value.label ??
+      value.title ??
+      value.display_name ??
+      ""
+    );
+  }
+  return String(value);
 }
 
 // ─── Delete Confirm Modal ─────────────────────────────────────────────────────
@@ -312,6 +331,9 @@ export default function Profile() {
   const userRole = useAppSelector((state) => state.unieventify.userRole);
   const collegeData = useAppSelector((state) => state.unieventify.colleges);
 
+  // ── Safely resolve userRole name (may be a plain string OR {uuid,name,rank}) ──
+  const roleName = resolveString(userRole?.name);
+
   // ── Fetch profile & colleges ───────────────────────────────────────────────
   useEffect(() => {
     dispatch(fetchCurrentUser())
@@ -343,7 +365,6 @@ export default function Profile() {
 
   // ── Fetch posts — filtered to current user ────────────────────────────────
   useEffect(() => {
-    // Wait until profile is loaded from Redux before fetching
     if (!profile) return;
 
     setPostsLoading(true);
@@ -352,13 +373,9 @@ export default function Profile() {
         const data = response.data?.results ?? response.data;
         const all: any[] = Array.isArray(data) ? data : [];
 
-        // Debug: inspect post shape and current user id
         console.log("profile.id:", profile.id);
         console.log("ALL POSTS SAMPLE:", all.slice(0, 2));
 
-        // Filter to only the current user's posts.
-        // Tries every common field name; falls back to showing all if
-        // none of the id fields match (means the field name is unknown).
         const mine = all.filter((post: any) => {
           const postUserId =
             post.user?.id ??
@@ -368,17 +385,12 @@ export default function Profile() {
             post.userId ??
             null;
 
-          // If we can't find any user id on the post at all, include it
-          // (better to show too much than nothing while debugging)
           if (postUserId === null) return true;
-
-          // Compare as strings to avoid number/string mismatch
           return String(postUserId) === String(profile.id);
         });
 
         console.log("FILTERED mine:", mine.length, "of", all.length);
 
-        // Normalise shape
         const normalised = mine.map((post: any) => ({
           ...post,
           authorName:
@@ -539,7 +551,8 @@ export default function Profile() {
                 </Typography>
               </Box>
 
-              {userRole?.name && (
+              {/* ✅ FIX: use resolved roleName string instead of userRole?.name directly */}
+              {roleName && (
                 <Box
                   sx={{
                     display: "inline-flex",
@@ -553,7 +566,7 @@ export default function Profile() {
                     fontWeight: 600,
                   }}
                 >
-                  {userRole.name}
+                  {roleName}
                 </Box>
               )}
 
@@ -666,18 +679,18 @@ export default function Profile() {
                 { label: "Last name", value: profile.last_name },
                 { label: "Middle name", value: profile.middle_name },
                 { label: "ID number", value: profile.idNumber },
-                { label: "College", value: college?.name || "—" },
-                { label: "Department", value: profile.department?.name || "—" },
+                { label: "College", value: resolveString(college?.name) || "—" },
+                { label: "Department", value: resolveString(profile.department?.name) || "—" },
                 ...(profile.section?.tblYearLevel
-                  ? [{ label: "Year level", value: yearLevel?.yearLevel || "—" }]
+                  ? [{ label: "Year level", value: resolveString(yearLevel?.yearLevel) || "—" }]
                   : []),
                 ...(profile.section
-                  ? [{ label: "Section", value: profile.section?.section || "—" }]
+                  ? [{ label: "Section", value: resolveString(profile.section?.section) || "—" }]
                   : []),
                 ...(profile.organization
                   ? [
-                      { label: "Org type", value: profile.organization?.studentOrgType || "—" },
-                      { label: "Organization", value: profile.organization?.studentOrgName || "—" },
+                      { label: "Org type", value: resolveString(profile.organization?.studentOrgType) || "—" },
+                      { label: "Organization", value: resolveString(profile.organization?.studentOrgName) || "—" },
                     ]
                   : []),
               ].map((row, i, arr) => (

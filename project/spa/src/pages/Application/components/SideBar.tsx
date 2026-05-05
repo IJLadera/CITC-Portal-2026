@@ -13,6 +13,13 @@ import { persistor } from "../../../store";
 import Cookies from "js-cookie";
 import CreatePost from "../pages/dashboard/createpost";
 
+// Helper function to extract role name from string or object
+function getRoleName(role: any): string {
+    if (typeof role === 'string') return role;
+    if (typeof role === 'object' && role?.name) return role.name;
+    return String(role);
+}
+
 export default function SideBar() {
     const [openModal, setOpenModal] = useState(false)
     const dispatch = useAppDispatch()
@@ -142,7 +149,7 @@ export default function SideBar() {
                             <span className="flex-1 ms-3 whitespace-nowrap">Add Post</span>
                         </a>
                     </li>
-                    {highestRankRole && (highestRankRole.name === "Admin" || highestRankRole.name === "Chairman") && (
+                    {highestRankRole && (getRoleName(highestRankRole.name) === "Admin" || getRoleName(highestRankRole.name) === "Chairman") && (
                         <>
                             <li>
                                 <NavLink to="/admin/apps" className={({ isActive }) => (isActive) ? "flex items-center p-2 rounded-lg text-white dark:text-white dark:hover:bg-gray-700 group" : "flex items-center p-2 rounded-lg text-gray-500 hover:text-white dark:text-white dark:hover:bg-gray-700 group"}>

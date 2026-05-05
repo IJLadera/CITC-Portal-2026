@@ -23,7 +23,8 @@ const initialState: AuthState = {
         is_active: false,
         is_superuser: false,
         is_bayanihan_leader: false,
-        id_number: ''
+        id_number: '',
+        roles: []
     },
     token: '',
     loggedIn: false

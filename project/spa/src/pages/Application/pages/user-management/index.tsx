@@ -29,7 +29,6 @@ import {
 import { useAppSelector } from "../../../../hooks";
 import http from "../../../../http";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
@@ -133,16 +132,23 @@ export default function UserManagement() {
             let userData = [];
             if (Array.isArray(response.data)) {
                 userData = response.data;
-            } else if (response.data && Array.isArray(response.data.results)) {
+            } else if (response.data?.results) {
                 userData = response.data.results;
-            } else if (response.data && response.data.data) {
+            } else if (response.data?.data) {
                 userData = response.data.data;
             }
+
+            // Normalize roles on every user so no object ever reaches JSX
+            const normalized = userData.map((u: any) => ({
+                ...u,
+                roles: (u.roles || []).map((r: any) =>
+                    typeof r === "object" ? (r.uuid || r.id) : r
+                ),
+            }));
             
-            setAllUsers(userData);
-            paginateUsers(userData, 1);
+            setAllUsers(normalized);
+            paginateUsers(normalized, 1);
         } catch (error: any) {
-            console.error("Failed to load users:", error);
             toast.error("Failed to load users");
         } finally {
             setLoading(false);
@@ -242,8 +248,14 @@ export default function UserManagement() {
     };
 
     // Handle edit user
-    const handleEdit = (user: User) => {
+    const handleEdit = (user: any) => {
         setEditingUser(user);
+        
+        // Normalize roles — may arrive as [{uuid, name, rank}] or [string]
+        const normalizedRoles = (user.roles || []).map((r: any) =>
+            typeof r === "object" ? (r.uuid || r.id) : r
+        );
+
         setFormData({
             email: user.email || "",
             first_name: user.first_name || "",
@@ -257,6 +269,7 @@ export default function UserManagement() {
             is_employee: user.is_employee || false,
             is_active: user.is_active || false,
             department: user.department?.id ? user.department.id.toString() : "",
+            roles: normalizedRoles,
         });
         setOpenDialog(true);
     };

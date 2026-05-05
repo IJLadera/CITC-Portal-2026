@@ -34,8 +34,6 @@ import colors from "../colors";
 import { DateTime } from "luxon";
 import { FileInput, Label, Alert } from "flowbite-react";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import "draft-js/dist/Draft.css";
 import DraftEditor from "./draft components/DraftEditor"; // Adjust the import path as necessary
 import PlaceIcon from "@mui/icons-material/Place";
 import DateRangeIcon from "@mui/icons-material/DateRange";
@@ -220,6 +218,13 @@ const EditEvent = ({
 
   const handleRecurrenceTypeChange = (event: any) => {
     setRecurrenceType(event.target.value);
+  };
+
+  const getRoleName = (role: any): string => {
+    if (!role) return "";
+    if (typeof role === "string") return role;
+    if (typeof role === "object") return role.name ?? "";
+    return "";
   };
 
   const handleRecurrenceDayChange = (event: any) => {
@@ -1166,7 +1171,7 @@ const EditEvent = ({
   };
 
   let documents;
-  if (OrgType.includes(currentUser?.roles?.name?.toLowerCase())) {
+  if (OrgType.includes(getRoleName(currentUser?.roles).toLowerCase())) {
     documents = "SARF";
   } else {
     documents = "Documents";
@@ -1468,9 +1473,7 @@ const EditEvent = ({
                 // If user is rank 1, show all
                 if (currentUser.is_staff) {
                   return true;
-                } else if (
-                  currentUser.role?.name.toLowerCase() === student
-                ) {
+                } else if (getRoleName(currentUser.role).toLowerCase() === student) {
                   return (
                     cat?.eventCategoryName.toLowerCase() === personalCategory
                   );
@@ -1557,7 +1560,7 @@ const EditEvent = ({
               </FormControl>
             </Grid>
           )}
-        {currentUser.role?.name.toLowerCase() !== student && (
+        {getRoleName(currentUser.role).toLowerCase() !== student && (
           <Grid item xs={12}>
             <FormControlLabel
               control={
@@ -2017,7 +2020,7 @@ const EditEvent = ({
             )}
 
             {/* Display Selected Colleges */}
-            {currentUser.role?.name.toLowerCase() !== student && (
+            {getRoleName(currentUser.role).toLowerCase() !== student && (
               <Grid item xs={12}>
                 <Typography variant="h6">Selected Colleges:</Typography>
                 <div>
@@ -2034,7 +2037,7 @@ const EditEvent = ({
             )}
 
             {/* Participant Selection */}
-            {currentUser.role?.name.toLowerCase() !== student && (
+            {getRoleName(currentUser.role).toLowerCase() !== student && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   {/* Search Field */}
@@ -2099,7 +2102,7 @@ const EditEvent = ({
                           }}
                           onClick={() => handleAddParticipant(user.uuid)}
                         >
-                          {`${user.first_name} ${user.last_name} - ${user.role?.name}`}
+                          {`${user.first_name} ${user.last_name} - ${getRoleName(user.role)}`}
                         </Typography>
                       ))
                     ) : (
@@ -2176,7 +2179,7 @@ const EditEvent = ({
                                     <TableCell
                                       sx={{ padding: "4px 8px" }} // Compact cell padding
                                     >
-                                      {user.role?.name}
+                                      {getRoleName(user.role)}
                                     </TableCell>
                                   </TableRow>
                                 ) : null;
@@ -2239,7 +2242,7 @@ const EditEvent = ({
                                       {`${user.first_name} ${user.last_name}`}
                                     </TableCell>
                                     <TableCell sx={{ padding: "4px 8px" }}>
-                                      {user.role?.name}
+                                      {getRoleName(user.role)}
                                     </TableCell>
                                   </TableRow>
                                 ) : null;

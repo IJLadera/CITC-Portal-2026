@@ -8,6 +8,7 @@ from .models import User, Role
 from .serializers import CreateUserSerializer, UpdateUserSerializer, ChangePasswordSerializer, CustomUserSerializer, AdminUserSerializer
 from .permissions import IsUserOrIsAdminOrReadOnly
 from .syllabease_sync import sync_user_to_syllabease
+from .greenwatts_sync import sync_user_to_greenwatts
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -142,6 +143,78 @@ def sync_user_endpoint(request):
         return Response({
             "success": True,
             "message": "User synced successfully",
+            "user": serializer.data
+        })
+    except User.DoesNotExist:
+        return Response(
+            {"error": "User not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def verify_greenwatts_token(request):
+    """
+    Endpoint for GreenWatts IoT to verify CITC tokens
+    Called when a user from CITC Portal tries to access GreenWatts IoT
+    """
+    user = request.user
+    
+    # Sync user to GreenWatts if not already synced
+    try:
+        sync_user_to_greenwatts(user)
+    except Exception as e:
+        # Log but don't fail the verification
+        print(f"Warning: Could not sync user to GreenWatts: {str(e)}")
+    
+    serializer = CustomUserSerializer(user)
+    return Response({
+        "valid": True,
+        "user": serializer.data,
+        "token_type": "Token"  # CITC uses token-based auth, different from GreenWatts session auth
+    })
+
+
+@api_view(['POST'])
+def sync_greenwatts_user_endpoint(request):
+    """
+    Endpoint for syncing user data from CITC Portal to GreenWatts IoT
+    Requires GREENWATTS_SYNC_TOKEN for authentication
+    """
+    # Get the sync token from environment
+    from django.conf import settings
+    import os
+    
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    sync_token = os.environ.get('GREENWATTS_SYNC_TOKEN', '')
+    
+    if not auth_header.startswith('Bearer ') or sync_token not in auth_header:
+        return Response(
+            {"error": "Unauthorized"},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    user_id = request.data.get('user_id')
+    if not user_id:
+        return Response(
+            {"error": "user_id is required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        user = User.objects.get(uuid=user_id)
+        sync_user_to_greenwatts(user)
+        serializer = CustomUserSerializer(user)
+        
+        return Response({
+            "success": True,
+            "message": "User synced successfully to GreenWatts",
             "user": serializer.data
         })
     except User.DoesNotExist:

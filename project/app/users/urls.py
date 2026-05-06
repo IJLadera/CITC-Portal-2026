@@ -4,6 +4,8 @@ from .views import (
     ChangePasswordView, 
     verify_syllabease_token,
     sync_user_endpoint,
+    verify_greenwatts_token,
+    sync_greenwatts_user_endpoint,
     RolesListView,
     UsersListView,
     UserDetailView
@@ -24,5 +26,9 @@ urlpatterns = [
     # Syllabease2.0 integration endpoints
     path('verify-syllabease-token/', verify_syllabease_token, name='verify_syllabease_token'),
     path('sync-user/', sync_user_endpoint, name='sync_user'),
+
+    # GreenWatts IoT integration endpoints
+    path('verify-greenwatts-token/', verify_greenwatts_token, name='verify_greenwatts_token'),
+    path('sync-greenwatts-user/', sync_greenwatts_user_endpoint, name='sync_greenwatts_user'),
 
 ]

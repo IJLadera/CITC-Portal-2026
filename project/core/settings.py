@@ -163,7 +163,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATICFILES_DIRS = [
-    BASE_DIR / "spa" / "build" / "static",
     BASE_DIR / "spa" / "build"
 ]
 

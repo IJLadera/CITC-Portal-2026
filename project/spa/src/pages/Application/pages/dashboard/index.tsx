@@ -7,10 +7,12 @@ import axios from 'axios';
 import { FaHeart, FaRegHeart, FaRegComment, FaTimes, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import unieventifyLogo from '../../../../assets/apps/unieventify.png';
 import syllabeaseLogo from '../../../../assets/apps/syllabease.png';
+import greenwattsLogo from '../../../../assets/apps/greenwatts.svg';
 
 const appLogos: Record<string, string> = {
     Syllabease: syllabeaseLogo,
     UniEventify: unieventifyLogo,
+    GreenWatts: greenwattsLogo,
 };
 
 interface Event {

@@ -1,0 +1,2447 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Setting - GreenWatts</title>
+    <link rel="icon" type="image/png" href="{% static 'browse-logo.png' %}" />
+    <link rel="stylesheet" href="{% static 'adminCss/common.css' %}" />
+    <link rel="stylesheet" href="{% static 'adminCss/adminSetting.css' %}" />
+    <link rel="stylesheet" href="{% static 'adminCss/formValidation.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <script src="{% static 'adminJs/formValidation.js' %}" defer></script>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img
+        src="{% static 'logo2.png' %}"
+        alt="GreenWatts"
+        class="logo-sidebar"
+      />
+      <div class="admin-section">
+        <div class="admin-icon"><i class="fas fa-user-cog"></i></div>
+        <p>ADMIN</p>
+      </div>
+
+      <nav>
+        <a
+          href="{% url 'adminpanel:admin_dashboard' %}"
+          class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
+          ><i class="fas fa-tachometer-alt"></i> Dashboard</a
+        >
+        <a
+          href="{% url 'adminpanel:office_usage' %}"
+          class="{% if request.resolver_match.url_name == 'office_usage' %}active{% endif %}"
+          ><i class="fas fa-building"></i> Office Usage</a
+        >
+        <a
+          href="{% url 'adminpanel:admin_reports' %}"
+          class="{% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}"
+          ><i class="fas fa-chart-bar"></i> Admin Reports</a
+        >
+        <a
+          href="{% url 'adminpanel:admin_costs' %}"
+          class="{% if request.resolver_match.url_name == 'admin_costs' %}active{% endif %}"
+          ><i class="fas fa-peso-sign"></i> Energy Costs</a
+        >
+        <a
+          href="{% url 'adminpanel:carbon_emission' %}"
+          class="{% if request.resolver_match.url_name == 'carbon_emission' %}active{% endif %}"
+          ><i class="fas fa-leaf"></i> Co2 Emission</a
+        >
+        <a
+          href="{% url 'adminpanel:admin_setting' %}"
+          class="{% if request.resolver_match.url_name == 'admin_setting' %}active{% endif %}"
+          ><i class="fas fa-cog"></i> Admin Setting</a
+        >
+        <!-- logout goes to logout view -->
+        <a href="{% url 'users:logout' %}">
+          <i class="fas fa-sign-out-alt"></i> Log Out
+        </a>
+      </nav>
+    </div>
+
+    <script>
+      // Prevent back button navigation after logout
+      window.history.replaceState(null, null, window.location.href);
+      window.onpopstate = function () {
+        window.history.pushState(null, null, window.location.href);
+      };
+    </script>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <button
+          id="sidebarToggle"
+          class="sidebar-toggle"
+          aria-label="Toggle sidebar"
+        >
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1>Admin Setting</h1>
+        <div class="date-time">
+          <i class="fas fa-calendar" style="cursor: pointer"></i>
+          <span id="live-time"></span>
+        </div>
+      </header>
+
+      <p class="note">
+        <span class="red-text">Noted!</span> The data will be captured every
+        12:00am midnight
+      </p>
+
+      <!-- Office and Device Management Section -->
+      <section class="office-section">
+        <div class="section-header">
+          <h2>MANAGEMENT</h2>
+          <div class="header-buttons">
+            <button class="text-btn active" id="office-tab-btn">Offices</button>
+            <button class="text-btn" id="device-tab-btn">Devices</button>
+          </div>
+        </div>
+
+        <!-- Office Management -->
+        <div id="office-management" class="management-content">
+          <div class="office-header">
+            <div class="search-group">
+              <input type="text" id="searchInput" placeholder="Search Office" />
+            </div>
+            <button class="add-btn" id="addOfficeBtn">+ Add Office</button>
+          </div>
+
+        <!-- Modal for Add Office -->
+        <div
+          id="addOfficeModal"
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modalTitle"
+          aria-describedby="modalDesc"
+        >
+          <div class="modal-content">
+            <button
+              id="closeModal"
+              aria-label="Close modal"
+              class="close-button"
+            >
+              &times;
+            </button>
+            <h2 id="modalTitle">Add Office</h2>
+            <p id="modalDesc">
+              Please fill in the details below to add a new office.
+            </p>
+            <form id="addOfficeForm" novalidate>
+              <div class="form-group">
+                <label for="name">Office Name <span style="color: #e74c3c;">*</span></label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  minlength="2"
+                  maxlength="100"
+                  pattern="[a-zA-Z0-9\s\-_]+"
+                  placeholder="Enter office name"
+                  aria-required="true"
+                />
+              </div>
+              <div class="form-group">
+                <label for="location">Location <span style="color: #e74c3c;">*</span></label>
+                <input
+                  type="text"
+                  id="location"
+                  name="location"
+                  required
+                  minlength="5"
+                  maxlength="200"
+                  placeholder="Enter office location"
+                  aria-required="true"
+                />
+              </div>
+              <div class="form-group">
+                <label for="email">Email <span style="color: #e74c3c;">*</span></label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  placeholder="Enter email address"
+                  aria-required="true"
+                />
+              </div>
+              <div class="form-group">
+                <label for="username">Username <span style="color: #e74c3c;">*</span></label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  required
+                  minlength="3"
+                  maxlength="50"
+                  pattern="[a-zA-Z0-9_]+"
+                  placeholder="Enter username"
+                  aria-required="true"
+                />
+              </div>
+              <div class="form-group">
+                <label for="password">Password <span style="color: #e74c3c;">*</span></label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  required
+                  minlength="8"
+                  maxlength="128"
+                  placeholder="Enter password (8+ chars, mixed case, number, special char)"
+                  aria-required="true"
+                />
+              </div>
+              <div class="form-group">
+                <label for="department">Department <span style="color: #e74c3c;">*</span></label>
+                <input
+                  type="text"
+                  id="department"
+                  name="department"
+                  required
+                  minlength="2"
+                  maxlength="100"
+                  pattern="[a-zA-Z\s\-_]+"
+                  placeholder="Enter department name"
+                  aria-required="true"
+                />
+              </div>
+              <button type="submit" class="submit-button">Submit</button>
+            </form>
+            <div id="formMessage" department="alert" aria-live="polite"></div>
+          </div>
+        </div>
+
+          <div class="table-wrapper">
+            <div class="office-table-container">
+              <table class="office-table">
+                <thead>
+                  <tr>
+                    <th>Office</th>
+                    <th>Department</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for office in offices %}
+                  <tr>
+                    <td>{{ office.name }}</td>
+                    <td>CITC</td>
+                    <td>{{ office.location }}</td>
+                    <td>Active</td>
+                    <td>
+                      <button
+                        class="edit-office-btn"
+                        data-office-id="{{ office.office_id }}"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="5">No offices found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Device Management -->
+        <div id="device-management" class="management-content" style="display: none;">
+          <div class="office-header">
+            <div class="search-group">
+              <input type="text" id="deviceSearchInput" placeholder="Search Device" />
+            </div>
+            <button class="add-btn" id="openAddDeviceModal">+ Add Device</button>
+          </div>
+
+          <div class="table-wrapper">
+            <div class="office-table-container">
+              <table class="office-table">
+                <thead>
+                  <tr>
+                    <th>Device ID</th>
+                    <th>Office</th>
+                    <th>Appliance Type</th>
+                    <th>Installed Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for device in devices %}
+                  <tr>
+                    <td>{{ device.device_id }}</td>
+                    <td>{{ device.office.name }}</td>
+                    <td>{{ device.appliance_type }}</td>
+                    <td>{{ device.installed_date }}</td>
+                    <td>{{ device.status }}</td>
+                    <td>
+                      <button
+                        class="edit-office-btn edit-device-btn"
+                        data-device-id="{{ device.device_id }}"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="6">No devices found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Edit Office Modal -->
+      <div
+        id="editOfficeModal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editModalTitle"
+        aria-describedby="editModalDesc"
+      >
+        <div class="modal-content">
+          <button id="closeEditModal" aria-label="Close modal" class="close-button">&times;</button>
+          <h2 id="editModalTitle">Edit Office</h2>
+          <p id="editModalDesc">Please update the details below.</p>
+          <form id="editOfficeForm" novalidate>
+            <input type="hidden" id="editOfficeId" name="id" />
+            <div class="form-group">
+              <label for="editName">Office Name <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="text"
+                id="editName"
+                name="name"
+                required
+                minlength="2"
+                maxlength="100"
+                pattern="[a-zA-Z0-9\s\-_]+"
+                aria-required="true"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editLocation">Location <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="text"
+                id="editLocation"
+                name="location"
+                required
+                minlength="5"
+                maxlength="200"
+                aria-required="true"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editEmail">Email <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="email"
+                id="editEmail"
+                name="email"
+                required
+                aria-required="true"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editUsername">Username <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="text"
+                id="editUsername"
+                name="username"
+                required
+                minlength="3"
+                maxlength="50"
+                pattern="[a-zA-Z0-9_]+"
+                aria-required="true"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editPassword">Password <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="password"
+                id="editPassword"
+                name="password"
+                required
+                minlength="8"
+                maxlength="128"
+                aria-required="true"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editDepartment">Department <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="text"
+                id="editDepartment"
+                name="department"
+                required
+                minlength="2"
+                maxlength="100"
+                pattern="[a-zA-Z\s\-_]+"
+                aria-required="true"
+              />
+            </div>
+            <button type="submit" class="submit-button">Update</button>
+          </form>
+          <div id="editFormMessage" role="alert" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <!-- Device Modals -->
+      <!-- Modal for Add Device -->
+      <div
+        id="addDeviceModal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="deviceModalTitle"
+        aria-describedby="deviceModalDesc"
+      >
+        <div class="modal-content">
+          <button
+            id="closeDeviceModal"
+            aria-label="Close modal"
+            class="close-button"
+          >
+            &times;
+          </button>
+          <h2 id="deviceModalTitle">Add Device</h2>
+          <p id="deviceModalDesc">
+            Please fill in the details below to add a new device.
+          </p>
+          <form id="addDeviceForm" novalidate>
+            <div class="form-group">
+              <label for="installed_date">Installed Date <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="date"
+                id="installed_date"
+                name="installed_date"
+                required
+                max="{{ today|date:'Y-m-d' }}"
+                aria-required="true"
+              />
+            </div>
+            <div class="form-group">
+              <label for="status">Status <span style="color: #e74c3c;">*</span></label>
+              <select
+                id="status"
+                name="status"
+                required
+                aria-required="true"
+              >
+                <option value="">Select status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="office">Office <span style="color: #e74c3c;">*</span></label>
+              <select
+                id="office"
+                name="office"
+                required
+                aria-required="true"
+              >
+                <option value="">Select office</option>
+                {% for office in offices %}
+                <option value="{{ office.office_id }}">
+                  {{ office.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="appliance_type">Appliance Type <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="text"
+                id="appliance_type"
+                name="appliance_type"
+                required
+                minlength="2"
+                maxlength="100"
+                pattern="[a-zA-Z0-9\s\-_]+"
+                placeholder="Enter appliance type"
+                aria-required="true"
+              />
+            </div>
+            <button type="submit" class="submit-button">Submit</button>
+          </form>
+          <div id="deviceFormMessage" role="alert" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <!-- Edit Device Modal -->
+      <div
+        id="editDeviceModal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="modal-content">
+          <button
+            id="closeEditDeviceModal"
+            aria-label="Close modal"
+            class="close-button"
+          >
+            &times;
+          </button>
+          <h2>Edit Device</h2>
+          <p>Please update the device details below.</p>
+          <form id="editDeviceForm" novalidate>
+            <input type="hidden" id="editDeviceId" name="id" />
+            <div class="form-group">
+              <label for="editInstalledDate">Installed Date <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="date"
+                id="editInstalledDate"
+                name="installed_date"
+                required
+                max="{{ today|date:'Y-m-d' }}"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editStatus">Status <span style="color: #e74c3c;">*</span></label>
+              <select id="editStatus" name="status" required>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="editOffice">Office <span style="color: #e74c3c;">*</span></label>
+              <select id="editOffice" name="office" required>
+                {% for office in offices %}
+                <option value="{{ office.office_id }}">
+                  {{ office.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="editApplianceType">Appliance Type <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="text"
+                id="editApplianceType"
+                name="appliance_type"
+                required
+                minlength="2"
+                maxlength="100"
+                pattern="[a-zA-Z0-9\s\-_]+"
+              />
+            </div>
+            <button type="submit" class="submit-button">Update</button>
+          </form>
+          <div
+            id="editDeviceFormMessage"
+            role="alert"
+            aria-live="polite"
+          ></div>
+        </div>
+      </div>
+
+      <!-- WiFi Modals -->
+      <!-- Modal for Add WiFi -->
+      <div
+        id="addWifiModal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wifiModalTitle"
+        aria-describedby="wifiModalDesc"
+      >
+        <div class="modal-content">
+          <button
+            id="closeWifiModal"
+            aria-label="Close modal"
+            class="close-button"
+          >
+            &times;
+          </button>
+          <h2 id="wifiModalTitle">Add WiFi Network</h2>
+          <p id="wifiModalDesc">
+            Please fill in the WiFi network details below.
+          </p>
+          <form id="addWifiForm" novalidate>
+            <div class="form-group">
+              <label for="wifi_ssid">SSID <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="text"
+                id="wifi_ssid"
+                name="ssid"
+                required
+                minlength="1"
+                maxlength="32"
+                placeholder="Enter WiFi network name"
+                aria-required="true"
+              />
+            </div>
+            <div class="form-group">
+              <label for="wifi_password">Password <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="password"
+                id="wifi_password"
+                name="password"
+                required
+                minlength="8"
+                maxlength="63"
+                placeholder="Enter WiFi password (8-63 characters)"
+                aria-required="true"
+              />
+            </div>
+            <div class="form-group">
+              <label for="wifi_priority">Priority <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="number"
+                id="wifi_priority"
+                name="priority"
+                min="1"
+                max="100"
+                value="1"
+                required
+                placeholder="1-100 (1 = highest priority)"
+                aria-required="true"
+              />
+            </div>
+            <div class="form-group">
+              <label for="wifi_status">Status <span style="color: #e74c3c;">*</span></label>
+              <select
+                id="wifi_status"
+                name="is_active"
+                required
+                aria-required="true"
+              >
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+            <button type="submit" class="submit-button">Submit</button>
+          </form>
+          <div id="wifiFormMessage" role="alert" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <!-- Edit WiFi Modal -->
+      <div
+        id="editWifiModal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="modal-content">
+          <button
+            id="closeEditWifiModal"
+            aria-label="Close modal"
+            class="close-button"
+          >
+            &times;
+          </button>
+          <h2>Edit WiFi Network</h2>
+          <p>Please update the WiFi network details below.</p>
+          <form id="editWifiForm" novalidate>
+            <input type="hidden" id="editWifiId" name="id" />
+            <div class="form-group">
+              <label for="editWifiSsid">SSID <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="text"
+                id="editWifiSsid"
+                name="ssid"
+                required
+                minlength="1"
+                maxlength="32"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editWifiPassword">Password <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="password"
+                id="editWifiPassword"
+                name="password"
+                required
+                minlength="8"
+                maxlength="63"
+              />
+            </div>
+            <div class="form-group">
+              <label for="editWifiPriority">Priority <span style="color: #e74c3c;">*</span></label>
+              <input
+                type="number"
+                id="editWifiPriority"
+                name="priority"
+                min="1"
+                max="100"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="editWifiStatus">Status <span style="color: #e74c3c;">*</span></label>
+              <select id="editWifiStatus" name="is_active" required>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+            <button type="submit" class="submit-button">Update</button>
+          </form>
+          <div
+            id="editWifiFormMessage"
+            role="alert"
+            aria-live="polite"
+          ></div>
+        </div>
+      </div>
+
+      <!-- WiFi and Thresholds Section -->
+      <section class="thresholds-device-container">
+        <!-- WiFi Management Section -->
+        <section class="wifi-section">
+          <div class="section-header">
+            <h2>WIFI MANAGEMENT</h2>
+            <div class="header-buttons">
+              <button class="add-btn" id="addWifiBtn">+ Add WiFi</button>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <div class="office-table-container">
+              <table class="office-table">
+                <thead>
+                  <tr>
+                    <th>SSID</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for wifi in wifi_networks %}
+                  <tr>
+                    <td>{{ wifi.ssid }}</td>
+                    <td>{{ wifi.priority }}</td>
+                    <td>{% if wifi.is_active %}Active{% else %}Inactive{% endif %}</td>
+                    <td>
+                      <button
+                        class="edit-office-btn edit-wifi-btn"
+                        data-wifi-id="{{ wifi.wifi_id }}"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4">No WiFi networks found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="thresholds">
+          <div class="section-header">
+            <h2>SET THRESHOLDS</h2>
+            <div class="header-buttons">
+              <button class="text-btn" id="set-threshold-btn">
+                Set Threshold
+              </button>
+              <button class="text-btn" id="set-ratings-btn">Set Ratings</button>
+            </div>
+          </div>
+          <p
+            class="threshold-note"
+            style="
+              color: #bdbdbd;
+              font-size: 0.9em;
+              margin-bottom: 15px;
+              font-style: italic;
+            "
+          >
+            <strong>Note:</strong> These thresholds are for daily values. They
+            will be automatically scaled for weekly (×7), monthly (×30), and
+            yearly (×365) views.
+          </p>
+          <div class="energy-threshold-boxes">
+            <div class="threshold-card">
+              <h3>Energy Consumption Threshold</h3>
+              <p>
+                <span class="efficient">Efficient</span>: less than
+                <input
+                  type="number"
+                  id="energy_efficient_max"
+                  name="energy_efficient_max"
+                  step="0.01"
+                  min="0.01"
+                  max="1000"
+                  readonly
+                  value="{{ threshold.energy_efficient_max|default:10.0 }}"
+                />
+                kWh
+              </p>
+              <p>
+                <span class="moderate">Moderate</span>: between
+                <input
+                  type="number"
+                  id="energy_efficient_max_display"
+                  readonly
+                  value="{{ threshold.energy_efficient_max|default:10.0 }}"
+                />
+                and
+                <input
+                  type="number"
+                  id="energy_moderate_max"
+                  name="energy_moderate_max"
+                  step="0.01"
+                  min="0.01"
+                  max="1000"
+                  readonly
+                  value="{{ threshold.energy_moderate_max|default:20.0 }}"
+                />
+                kWh
+              </p>
+              <p>
+                <span class="high">High</span>: more than
+                <input
+                  type="number"
+                  id="energy_high_max"
+                  name="energy_high_max"
+                  step="0.01"
+                  min="0.01"
+                  max="1000"
+                  readonly
+                  value="{{ threshold.energy_high_max|default:30.0 }}"
+                />
+                kWh
+              </p>
+              <div class="btn-group">
+                <button class="edit-btn" id="edit-energy-btn">Edit</button>
+                <button class="save-btn" id="save-energy-btn">Save</button>
+                <button class="cancel-btn" id="cancel-energy-btn">
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            <div class="threshold-card">
+              <h3>Carbon Emission Threshold</h3>
+              <p>
+                <span class="efficient">Efficient</span>: less than
+                <input
+                  type="number"
+                  id="co2_efficient_max"
+                  name="co2_efficient_max"
+                  step="0.01"
+                  min="0.01"
+                  max="1000"
+                  readonly
+                  value="{{ threshold.co2_efficient_max|default:8.0 }}"
+                />
+                kg
+              </p>
+              <p>
+                <span class="moderate">Moderate</span>: between
+                <input
+                  type="number"
+                  id="co2_efficient_max_display"
+                  readonly
+                  value="{{ threshold.co2_efficient_max|default:8.0 }}"
+                />
+                and
+                <input
+                  type="number"
+                  id="co2_moderate_max"
+                  name="co2_moderate_max"
+                  step="0.01"
+                  min="0.01"
+                  max="1000"
+                  readonly
+                  value="{{ threshold.co2_moderate_max|default:13.0 }}"
+                />
+                kg
+              </p>
+              <p>
+                <span class="high">High</span>: more than
+                <input
+                  type="number"
+                  id="co2_high_max"
+                  name="co2_high_max"
+                  step="0.01"
+                  min="0.01"
+                  max="1000"
+                  readonly
+                  value="{{ threshold.co2_high_max|default:18.0 }}"
+                />
+                kg
+              </p>
+              <div class="btn-group">
+                <button class="edit-btn" id="edit-co2-btn">Edit</button>
+                <button class="save-btn" id="save-co2-btn">Save</button>
+                <button class="cancel-btn" id="cancel-co2-btn">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Ratings Section -->
+        <section class="ratings" id="ratings-section" style="display: none">
+          <div class="section-header">
+            <h2>SET RATINGS</h2>
+            <div class="header-buttons">
+              <button class="text-btn" id="back-to-threshold-btn">
+                Set Threshold
+              </button>
+              <button class="text-btn active" id="ratings-active-btn">
+                Set Ratings
+              </button>
+            </div>
+          </div>
+          <p
+            class="threshold-note"
+            style="
+              color: #bdbdbd;
+              font-size: 0.9em;
+              margin-bottom: 15px;
+              font-style: italic;
+            "
+          >
+            <strong>Note:</strong> These ratings are used for calculating energy
+            costs and CO2 emissions.
+          </p>
+          <div class="threshold-boxes">
+            <div class="threshold-card">
+              <h3>Energy Cost Rating</h3>
+              <p>
+                Cost per kWh:
+                <input
+                  type="number"
+                  id="cost_per_kwh"
+                  name="cost_per_kwh"
+                  step="0.01"
+                  min="0.01"
+                  max="100"
+                  readonly
+                  value="{{ threshold.cost_per_kwh|default:12.0 }}"
+                />
+                PHP
+              </p>
+              <div class="btn-group">
+                <button class="edit-btn" id="edit-cost-btn">Edit</button>
+                <button class="save-btn" id="save-cost-btn">Save</button>
+                <button class="cancel-btn" id="cancel-cost-btn">Cancel</button>
+              </div>
+            </div>
+
+            <div class="threshold-card">
+              <h3>CO2 Emission Rating</h3>
+              <p>
+                CO2 per kWh:
+                <input
+                  type="number"
+                  id="co2_per_kwh"
+                  name="co2_per_kwh"
+                  step="0.001"
+                  min="0.001"
+                  max="10"
+                  readonly
+                  value="{{ threshold.co2_per_kwh|default:0.475 }}"
+                />
+                kg CO2
+              </p>
+              <div class="btn-group">
+                <button class="edit-btn" id="edit-emission-btn">Edit</button>
+                <button class="save-btn" id="save-emission-btn">Save</button>
+                <button class="cancel-btn" id="cancel-emission-btn">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- History Section -->
+      <section class="history-section">
+        <div class="section-header">
+          <h2>HISTORY</h2>
+          <div class="header-buttons">
+            <button class="text-btn active" id="threshold-history-btn">
+              Threshold History
+            </button>
+            <button class="text-btn" id="ratings-history-btn">
+              Ratings History
+            </button>
+          </div>
+        </div>
+
+        <!-- Threshold History -->
+        <div class="table-wrapper" id="threshold-history-wrapper">
+          <div class="threshold-tabs">
+            <span class="threshold-tab-btn active" data-type="energy"
+              >Energy Threshold History</span
+            >
+            <span class="threshold-separator">|</span>
+            <span class="threshold-tab-btn" data-type="co2"
+              >CO2 Threshold History</span
+            >
+          </div>
+
+          <div id="energy-history-table" class="threshold-table-content">
+            <div class="threshold-history-table-container">
+              <table class="threshold-history-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Efficient Max</th>
+                    <th>Moderate Max</th>
+                    <th>High Max</th>
+                    <th>Created At</th>
+                    <th>Ended At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for history in energy_history %}
+                  <tr>
+                    <td>{{ history.threshold_id }}</td>
+                    <td>{{ history.efficient_max }} kWh</td>
+                    <td>{{ history.moderate_max }} kWh</td>
+                    <td>{{ history.high_max }} kWh</td>
+                    <td>{{ history.created_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                      {% if history.ended_at %}{{ history.ended_at|date:"M d, Y H:i" }}{% else %}<span class="active-status">Active</span>{% endif %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="6">No energy threshold history found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="co2-history-table" class="threshold-table-content hidden">
+            <div class="threshold-history-table-container">
+              <table class="threshold-history-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Efficient Max</th>
+                    <th>Moderate Max</th>
+                    <th>High Max</th>
+                    <th>Created At</th>
+                    <th>Ended At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for history in co2_history %}
+                  <tr>
+                    <td>{{ history.threshold_id }}</td>
+                    <td>{{ history.efficient_max }} kg</td>
+                    <td>{{ history.moderate_max }} kg</td>
+                    <td>{{ history.high_max }} kg</td>
+                    <td>{{ history.created_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                      {% if history.ended_at %}{{ history.ended_at|date:"M d, Y H:i" }}{% else %}<span class="active-status">Active</span>{% endif %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="6">No CO2 threshold history found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ratings History -->
+        <div
+          class="table-wrapper"
+          id="ratings-history-wrapper"
+          style="display: none"
+        >
+          <div class="threshold-tabs">
+            <span class="threshold-tab-btn active" data-type="cost"
+              >Cost Rating History</span
+            >
+            <span class="threshold-separator">|</span>
+            <span class="threshold-tab-btn" data-type="emission"
+              >CO2 Rating History</span
+            >
+          </div>
+
+          <div id="cost-history-table" class="threshold-table-content">
+            <div class="threshold-history-table-container">
+              <table class="threshold-history-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Cost per kWh</th>
+                    <th>Created At</th>
+                    <th>Ended At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for history in cost_history %}
+                  <tr>
+                    <td>{{ history.cost_id }}</td>
+                    <td>{{ history.cost_per_kwh }} PHP</td>
+                    <td>{{ history.created_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                      {% if history.ended_at %}{{ history.ended_at|date:"M d, Y H:i" }}{% else %}<span class="active-status">Active</span>{% endif %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4">No cost history found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div
+            id="emission-history-table"
+            class="threshold-table-content hidden"
+          >
+            <div class="threshold-history-table-container">
+              <table class="threshold-history-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>CO2 per kWh</th>
+                    <th>Created At</th>
+                    <th>Ended At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for history in co2_settings_history %}
+                  <tr>
+                    <td>{{ history.co2_id }}</td>
+                    <td>{{ history.co2_emission_factor }} kg CO2</td>
+                    <td>{{ history.created_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                      {% if history.ended_at %}{{ history.ended_at|date:"M d, Y H:i" }}{% else %}<span class="active-status">Active</span>{% endif %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4">No CO2 settings history found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <p class="tip history-tip">
+          <span class="tip-label">Energy Tip:</span> {{ random_energy_tip }}
+        </p>
+      </section>
+    </div>
+
+    <script>
+      // Get modal and elements
+      const modal = document.getElementById("addOfficeModal");
+      const addBtn = document.getElementById("addOfficeBtn");
+      const closeModal = document.getElementById("closeModal");
+      const form = document.getElementById("addOfficeForm");
+      const formMessage = document.getElementById("formMessage");
+
+      // Edit modal elements
+      const editModal = document.getElementById("editOfficeModal");
+      const closeEditModal = document.getElementById("closeEditModal");
+      const editForm = document.getElementById("editOfficeForm");
+      const editFormMessage = document.getElementById("editFormMessage");
+
+      // Device modal elements
+      const addDeviceModal = document.getElementById("addDeviceModal");
+      const openAddDeviceModalBtn =
+        document.getElementById("openAddDeviceModal");
+      const closeDeviceModal = document.getElementById("closeDeviceModal");
+      const addDeviceForm = document.getElementById("addDeviceForm");
+      const deviceFormMessage = document.getElementById("deviceFormMessage");
+
+      // WiFi modal elements
+      const addWifiModal = document.getElementById("addWifiModal");
+      const addWifiBtn = document.getElementById("addWifiBtn");
+      const closeWifiModal = document.getElementById("closeWifiModal");
+      const addWifiForm = document.getElementById("addWifiForm");
+      const wifiFormMessage = document.getElementById("wifiFormMessage");
+
+      // Edit WiFi modal elements
+      const editWifiModal = document.getElementById("editWifiModal");
+      const closeEditWifiModal = document.getElementById("closeEditWifiModal");
+      const editWifiForm = document.getElementById("editWifiForm");
+      const editWifiFormMessage = document.getElementById("editWifiFormMessage");
+
+      // Edit device modal elements
+      const editDeviceModal = document.getElementById("editDeviceModal");
+      const closeEditDeviceModal = document.getElementById(
+        "closeEditDeviceModal"
+      );
+      const editDeviceForm = document.getElementById("editDeviceForm");
+      const editDeviceFormMessage = document.getElementById(
+        "editDeviceFormMessage"
+      );
+
+      // Open office modal on button click
+      addBtn.onclick = function () {
+        modal.style.display = "block";
+        formMessage.innerHTML = "";
+        formMessage.classList.remove("success-message", "error-message");
+        form.reset();
+      };
+
+      // Tab switching functionality
+      document.getElementById('office-tab-btn').addEventListener('click', function() {
+        // Show office management, hide device management
+        document.getElementById('office-management').style.display = 'block';
+        document.getElementById('device-management').style.display = 'none';
+        
+        // Update button states
+        document.getElementById('office-tab-btn').classList.add('active');
+        document.getElementById('device-tab-btn').classList.remove('active');
+      });
+
+      document.getElementById('device-tab-btn').addEventListener('click', function() {
+        // Show device management, hide office management
+        document.getElementById('office-management').style.display = 'none';
+        document.getElementById('device-management').style.display = 'block';
+        
+        // Update button states
+        document.getElementById('device-tab-btn').classList.add('active');
+        document.getElementById('office-tab-btn').classList.remove('active');
+      });
+
+      // Handle search functionality for offices
+      function performOfficeSearch() {
+        const searchTerm = document.getElementById("searchInput").value.toLowerCase().trim();
+        const tableRows = document.querySelectorAll("#office-management .office-table tbody tr");
+
+        tableRows.forEach((row) => {
+          const cells = Array.from(row.cells).slice(0, -1); // exclude action column
+          const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
+          if (rowText.includes(searchTerm)) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+      }
+
+      // Live search on input
+      document.getElementById("searchInput").addEventListener("input", performOfficeSearch);
+
+      // Search on Enter key press
+      document.getElementById("searchInput").addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          performOfficeSearch();
+        }
+      });
+
+      // Handle search functionality for devices
+      function performDeviceSearch() {
+        const searchTerm = document.getElementById("deviceSearchInput").value.toLowerCase().trim();
+        const deviceManagement = document.getElementById("device-management");
+        if (!deviceManagement) return;
+        
+        const tableRows = deviceManagement.querySelectorAll(".office-table tbody tr");
+
+        tableRows.forEach((row) => {
+          if (row.cells.length === 0) return;
+          
+          const cells = Array.from(row.cells).slice(0, -1);
+          const rowText = cells.map(cell => cell.textContent.toLowerCase().trim()).join(' ');
+          
+          if (searchTerm === '' || rowText.includes(searchTerm)) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+      }
+
+      // Live search for devices - ensure it runs after DOM is ready
+      setTimeout(() => {
+        const deviceSearchInput = document.getElementById("deviceSearchInput");
+        if (deviceSearchInput) {
+          deviceSearchInput.addEventListener("input", performDeviceSearch);
+          deviceSearchInput.addEventListener("keypress", function (e) {
+            if (e.key === "Enter") {
+              performDeviceSearch();
+            }
+          });
+        }
+      }, 100);
+
+      // Close office modal on close button click
+      closeModal.onclick = function () {
+        modal.style.display = "none";
+      };
+
+      // Open device modal on button click
+      openAddDeviceModalBtn.onclick = function () {
+        addDeviceModal.style.display = "block";
+        deviceFormMessage.innerHTML = "";
+        deviceFormMessage.classList.remove("success-message", "error-message");
+        addDeviceForm.reset();
+      };
+
+      // Close device modal on close button click
+      closeDeviceModal.onclick = function () {
+        addDeviceModal.style.display = "none";
+      };
+
+      // Close edit device modal on close button click
+      closeEditDeviceModal.onclick = function () {
+        editDeviceModal.style.display = "none";
+      };
+
+      // Open WiFi modal on button click
+      addWifiBtn.onclick = function () {
+        addWifiModal.style.display = "block";
+        wifiFormMessage.innerHTML = "";
+        wifiFormMessage.classList.remove("success-message", "error-message");
+        addWifiForm.reset();
+      };
+
+      // Close WiFi modal on close button click
+      closeWifiModal.onclick = function () {
+        addWifiModal.style.display = "none";
+      };
+
+      // Close edit WiFi modal on close button click
+      closeEditWifiModal.onclick = function () {
+        editWifiModal.style.display = "none";
+      };
+
+      // Close modals if user clicks outside modal content
+      window.onclick = function (event) {
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+        if (event.target == editModal) {
+          editModal.style.display = "none";
+        }
+        if (event.target == addDeviceModal) {
+          addDeviceModal.style.display = "none";
+        }
+        if (event.target == editDeviceModal) {
+          editDeviceModal.style.display = "none";
+        }
+        if (event.target == addWifiModal) {
+          addWifiModal.style.display = "none";
+        }
+        if (event.target == editWifiModal) {
+          editWifiModal.style.display = "none";
+        }
+      };
+
+      // Handle office form submission via AJAX
+      form.onsubmit = async function (e) {
+        e.preventDefault();
+        
+        // Validate form before submission
+        if (window.formValidator && !window.formValidator.validateForm(form)) {
+          return false;
+        }
+        
+        formMessage.innerHTML = "";
+        formMessage.classList.remove("success-message", "error-message");
+
+        const formData = {
+          name: form.name.value,
+          location: form.location.value,
+          email: form.email.value,
+          username: form.username.value,
+          password: form.password.value,
+          department: form.department.value,
+        };
+
+        try {
+          const response = await fetch("{% url 'adminpanel:create_office' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify(formData),
+          });
+          const result = await response.json();
+          if (result.status === "success") {
+            formMessage.classList.add("success-message");
+            formMessage.classList.remove("error-message");
+            formMessage.innerHTML = result.message;
+            setTimeout(() => {
+              modal.style.display = "none";
+              formMessage.innerHTML = "";
+              formMessage.classList.remove("success-message", "error-message");
+              form.reset();
+              // Optionally, refresh the page or update the office list dynamically here
+            }, 1500);
+          } else {
+            formMessage.classList.add("error-message");
+            formMessage.classList.remove("success-message");
+            formMessage.innerHTML = result.message;
+          }
+        } catch (error) {
+          formMessage.classList.add("error-message");
+          formMessage.classList.remove("success-message");
+          formMessage.innerHTML = "An error occurred. Please try again.";
+        }
+      };
+
+      // Close edit modal on close button click
+      closeEditModal.onclick = function () {
+        editModal.style.display = "none";
+      };
+
+      // Handle edit button clicks
+      document.querySelectorAll(".edit-office-btn").forEach((button) => {
+        button.addEventListener("click", async (e) => {
+          e.preventDefault();
+          const officeId = button.getAttribute("data-office-id");
+          if (!officeId) {
+            return;
+          }
+          try {
+            const response = await fetch(
+              `/adminpanel/editOffice/${officeId}/`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": "{{ csrf_token }}",
+                },
+              }
+            );
+            if (!response.ok) {
+              return;
+            }
+            const result = await response.json();
+            if (result.status === "success") {
+              const office = result.office;
+              document.getElementById("editOfficeId").value = office.id;
+              document.getElementById("editName").value = office.name;
+              document.getElementById("editLocation").value = office.location;
+              document.getElementById("editEmail").value = office.email;
+              document.getElementById("editUsername").value = office.username;
+              document.getElementById("editPassword").value = office.password;
+              document.getElementById("editDepartment").value =
+                office.department || "";
+              editFormMessage.innerHTML = "";
+              editFormMessage.classList.remove(
+                "success-message",
+                "error-message"
+              );
+              editModal.style.display = "block";
+            }
+          } catch (error) {
+            return;
+          }
+        });
+      });
+
+      // Handle edit form submission via AJAX
+      document.getElementById('editOfficeForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Edit form submitted');
+        
+        editFormMessage.innerHTML = "";
+        editFormMessage.classList.remove("success-message", "error-message");
+        
+        // Add loading state
+        const submitBtn = document.querySelector('#editOfficeForm button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Updating...';
+        submitBtn.disabled = true;
+
+        const officeId = document.getElementById("editOfficeId").value;
+        const form = document.getElementById('editOfficeForm');
+        const formData = {
+          name: form.name.value,
+          location: form.location.value,
+          email: form.email.value,
+          username: form.username.value,
+          password: form.password.value,
+          department: form.department.value,
+        };
+
+        try {
+          console.log('Sending request to:', `/adminpanel/editOffice/${officeId}/`);
+          console.log('Form data:', formData);
+          const response = await fetch(`/adminpanel/editOffice/${officeId}/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify(formData),
+          });
+          console.log('Response status:', response.status);
+          const result = await response.json();
+          console.log('Response result:', result);
+          if (result.status === "success") {
+            editFormMessage.classList.add("success-message");
+            editFormMessage.classList.remove("error-message");
+            editFormMessage.innerHTML = result.message;
+            setTimeout(() => {
+              editModal.style.display = "none";
+              editFormMessage.innerHTML = "";
+              editFormMessage.classList.remove(
+                "success-message",
+                "error-message"
+              );
+              location.reload(); // Refresh to show updated office
+            }, 1500);
+          } else {
+            editFormMessage.classList.add("error-message");
+            editFormMessage.classList.remove("success-message");
+            editFormMessage.innerHTML = result.message;
+          }
+        } catch (error) {
+          editFormMessage.classList.add("error-message");
+          editFormMessage.classList.remove("success-message");
+          editFormMessage.innerHTML = "An error occurred. Please try again.";
+        } finally {
+          // Reset button state
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+
+      // Handle add device form submission via AJAX
+      addDeviceForm.onsubmit = async function (e) {
+        e.preventDefault();
+        deviceFormMessage.innerHTML = "";
+        deviceFormMessage.classList.remove("success-message", "error-message");
+
+        const formData = {
+          installed_date: addDeviceForm.installed_date.value,
+          status: addDeviceForm.status.value,
+          office_id: addDeviceForm.office.value,
+          appliance_type: addDeviceForm.appliance_type.value,
+        };
+
+        try {
+          const response = await fetch("{% url 'adminpanel:create_device' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify(formData),
+          });
+          const result = await response.json();
+          if (result.status === "success") {
+            deviceFormMessage.classList.add("success-message");
+            deviceFormMessage.classList.remove("error-message");
+            deviceFormMessage.innerHTML = result.message;
+            setTimeout(() => {
+              addDeviceModal.style.display = "none";
+              deviceFormMessage.innerHTML = "";
+              deviceFormMessage.classList.remove(
+                "success-message",
+                "error-message"
+              );
+              addDeviceForm.reset();
+              location.reload(); // Refresh to show new device
+            }, 1500);
+          } else {
+            deviceFormMessage.classList.add("error-message");
+            deviceFormMessage.classList.remove("success-message");
+            deviceFormMessage.innerHTML = result.message;
+          }
+        } catch (error) {
+          deviceFormMessage.classList.add("error-message");
+          deviceFormMessage.classList.remove("success-message");
+          deviceFormMessage.innerHTML = "An error occurred. Please try again.";
+        }
+      };
+
+      // Handle edit device button clicks
+      document.querySelectorAll(".edit-device-btn").forEach((button) => {
+        button.addEventListener("click", async (e) => {
+          e.preventDefault();
+          const deviceId = button.getAttribute("data-device-id");
+          if (!deviceId) {
+            return;
+          }
+          try {
+            const response = await fetch(
+              `/adminpanel/editDevice/${deviceId}/`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": "{{ csrf_token }}",
+                },
+              }
+            );
+            if (!response.ok) {
+              return;
+            }
+            const result = await response.json();
+            if (result.status === "success") {
+              const device = result.device;
+              document.getElementById("editDeviceId").value = device.id;
+              document.getElementById("editInstalledDate").value =
+                device.installed_date;
+              document.getElementById("editStatus").value = device.status;
+              document.getElementById("editOffice").value = device.office_id;
+              document.getElementById("editApplianceType").value =
+                device.appliance_type || "";
+              editDeviceFormMessage.innerHTML = "";
+              editDeviceFormMessage.classList.remove(
+                "success-message",
+                "error-message"
+              );
+              editDeviceModal.style.display = "block";
+            }
+          } catch (error) {
+            return;
+          }
+        });
+      });
+
+      // Handle edit device form submission
+      editDeviceForm.onsubmit = async function (e) {
+        e.preventDefault();
+        editDeviceFormMessage.innerHTML = "";
+        editDeviceFormMessage.classList.remove(
+          "success-message",
+          "error-message"
+        );
+        
+        // Add loading state
+        const submitBtn = editDeviceForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Updating...';
+        submitBtn.disabled = true;
+
+        const deviceId = document.getElementById("editDeviceId").value;
+        const formData = {
+          installed_date: editDeviceForm.installed_date.value,
+          status: editDeviceForm.status.value,
+          office_id: editDeviceForm.office.value,
+          appliance_type: editDeviceForm.appliance_type.value,
+        };
+
+        try {
+          const response = await fetch(`/adminpanel/editDevice/${deviceId}/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify(formData),
+          });
+          const result = await response.json();
+          if (result.status === "success") {
+            editDeviceFormMessage.classList.add("success-message");
+            editDeviceFormMessage.classList.remove("error-message");
+            editDeviceFormMessage.innerHTML = result.message;
+            setTimeout(() => {
+              editDeviceModal.style.display = "none";
+              editDeviceFormMessage.innerHTML = "";
+              editDeviceFormMessage.classList.remove(
+                "success-message",
+                "error-message"
+              );
+              location.reload();
+            }, 1500);
+          } else {
+            editDeviceFormMessage.classList.add("error-message");
+            editDeviceFormMessage.classList.remove("success-message");
+            editDeviceFormMessage.innerHTML = result.message;
+          }
+        } catch (error) {
+          editDeviceFormMessage.classList.add("error-message");
+          editDeviceFormMessage.classList.remove("success-message");
+          editDeviceFormMessage.innerHTML =
+            "An error occurred. Please try again.";
+        } finally {
+          // Reset button state
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+        }
+      };
+
+      // Handle add WiFi form submission
+      addWifiForm.onsubmit = async function (e) {
+        e.preventDefault();
+        wifiFormMessage.innerHTML = "";
+        wifiFormMessage.classList.remove("success-message", "error-message");
+
+        const formData = {
+          ssid: addWifiForm.ssid.value,
+          password: addWifiForm.password.value,
+          priority: addWifiForm.priority.value,
+          is_active: addWifiForm.is_active.value,
+        };
+
+        try {
+          const response = await fetch("{% url 'adminpanel:create_wifi' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify(formData),
+          });
+          const result = await response.json();
+          if (result.status === "success") {
+            wifiFormMessage.classList.add("success-message");
+            wifiFormMessage.classList.remove("error-message");
+            wifiFormMessage.innerHTML = result.message;
+            setTimeout(() => {
+              addWifiModal.style.display = "none";
+              wifiFormMessage.innerHTML = "";
+              wifiFormMessage.classList.remove(
+                "success-message",
+                "error-message"
+              );
+              addWifiForm.reset();
+              location.reload();
+            }, 1500);
+          } else {
+            wifiFormMessage.classList.add("error-message");
+            wifiFormMessage.classList.remove("success-message");
+            wifiFormMessage.innerHTML = result.message;
+          }
+        } catch (error) {
+          wifiFormMessage.classList.add("error-message");
+          wifiFormMessage.classList.remove("success-message");
+          wifiFormMessage.innerHTML = "An error occurred. Please try again.";
+        }
+      };
+
+      // Handle edit WiFi button clicks
+      document.querySelectorAll(".edit-wifi-btn").forEach((button) => {
+        button.addEventListener("click", async (e) => {
+          e.preventDefault();
+          const wifiId = button.getAttribute("data-wifi-id");
+          if (!wifiId) {
+            return;
+          }
+          try {
+            const response = await fetch(
+              `/adminpanel/editWifi/${wifiId}/`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": "{{ csrf_token }}",
+                },
+              }
+            );
+            if (!response.ok) {
+              return;
+            }
+            const result = await response.json();
+            if (result.status === "success") {
+              const wifi = result.wifi;
+              document.getElementById("editWifiId").value = wifi.id;
+              document.getElementById("editWifiSsid").value = wifi.ssid;
+              document.getElementById("editWifiPassword").value = wifi.password;
+              document.getElementById("editWifiPriority").value = wifi.priority;
+              document.getElementById("editWifiStatus").value = wifi.is_active.toString();
+              editWifiFormMessage.innerHTML = "";
+              editWifiFormMessage.classList.remove(
+                "success-message",
+                "error-message"
+              );
+              editWifiModal.style.display = "block";
+            }
+          } catch (error) {
+            return;
+          }
+        });
+      });
+
+      // Handle edit WiFi form submission
+      editWifiForm.onsubmit = async function (e) {
+        e.preventDefault();
+        editWifiFormMessage.innerHTML = "";
+        editWifiFormMessage.classList.remove(
+          "success-message",
+          "error-message"
+        );
+        
+        // Add loading state
+        const submitBtn = editWifiForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Updating...';
+        submitBtn.disabled = true;
+
+        const wifiId = document.getElementById("editWifiId").value;
+        const formData = {
+          ssid: editWifiForm.ssid.value,
+          password: editWifiForm.password.value,
+          priority: editWifiForm.priority.value,
+          is_active: editWifiForm.is_active.value,
+        };
+
+        try {
+          const response = await fetch(`/adminpanel/editWifi/${wifiId}/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify(formData),
+          });
+          const result = await response.json();
+          if (result.status === "success") {
+            editWifiFormMessage.classList.add("success-message");
+            editWifiFormMessage.classList.remove("error-message");
+            editWifiFormMessage.innerHTML = result.message;
+            setTimeout(() => {
+              editWifiModal.style.display = "none";
+              editWifiFormMessage.innerHTML = "";
+              editWifiFormMessage.classList.remove(
+                "success-message",
+                "error-message"
+              );
+              location.reload();
+            }, 1500);
+          } else {
+            editWifiFormMessage.classList.add("error-message");
+            editWifiFormMessage.classList.remove("success-message");
+            editWifiFormMessage.innerHTML = result.message;
+          }
+        } catch (error) {
+          editWifiFormMessage.classList.add("error-message");
+          editWifiFormMessage.classList.remove("success-message");
+          editWifiFormMessage.innerHTML =
+            "An error occurred. Please try again.";
+        } finally {
+          // Reset button state
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+        }
+      };
+    </script>
+    <script>
+      function updateTime() {
+        const now = new Date();
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        };
+        const timeString = now.toLocaleDateString("en-US", options);
+        document.getElementById("live-time").textContent = timeString;
+      }
+      setInterval(updateTime, 1000);
+      updateTime(); // initial call
+
+      // Threshold functionality
+      async function loadThresholds() {
+        try {
+          const response = await fetch(
+            "{% url 'adminpanel:save_thresholds' %}",
+            {
+              method: "GET",
+              headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+              },
+            }
+          );
+          const data = await response.json();
+          if (data.status === "success") {
+            const threshold = data.threshold;
+            document.getElementById("energy_efficient_max").value =
+              threshold.energy_efficient_max;
+            document.getElementById("energy_moderate_max").value =
+              threshold.energy_moderate_max;
+            document.getElementById("energy_high_max").value =
+              threshold.energy_high_max;
+            document.getElementById("energy_efficient_max_display").value =
+              threshold.energy_efficient_max;
+            document.getElementById("co2_efficient_max").value =
+              threshold.co2_efficient_max;
+            document.getElementById("co2_moderate_max").value =
+              threshold.co2_moderate_max;
+            document.getElementById("co2_high_max").value =
+              threshold.co2_high_max;
+            document.getElementById("co2_efficient_max_display").value =
+              threshold.co2_efficient_max;
+            document.getElementById("co2_moderate_max").value =
+              threshold.co2_moderate_max;
+          } else {
+            // If no thresholds set, use defaults
+            document.getElementById("energy_efficient_max").value = 10.0;
+            document.getElementById("energy_moderate_max").value = 20.0;
+            document.getElementById("energy_high_max").value = 30.0;
+            document.getElementById(
+              "energy_efficient_max_display"
+            ).value = 10.0;
+            document.getElementById("co2_efficient_max").value = 8.0;
+            document.getElementById("co2_moderate_max").value = 13.0;
+            document.getElementById("co2_high_max").value = 18.0;
+            document.getElementById("co2_efficient_max_display").value = 8.0;
+          }
+        } catch (error) {
+          console.error("Error loading thresholds:", error);
+          // Fallback to defaults on error
+          document.getElementById("energy_efficient_max").value = 10.0;
+          document.getElementById("energy_moderate_max").value = 20.0;
+          document.getElementById("energy_high_max").value = 30.0;
+          document.getElementById("energy_efficient_max_display").value = 10.0;
+          document.getElementById("energy_moderate_max_display").value = 20.0;
+          document.getElementById("co2_efficient_max").value = 8.0;
+          document.getElementById("co2_moderate_max").value = 13.0;
+          document.getElementById("co2_high_max").value = 18.0;
+          document.getElementById("co2_efficient_max_display").value = 8.0;
+          document.getElementById("co2_moderate_max_display").value = 13.0;
+        }
+      }
+
+      // Edit Energy Threshold
+      document
+        .getElementById("edit-energy-btn")
+        .addEventListener("click", function () {
+          document.getElementById("energy_efficient_max").readOnly = false;
+          document.getElementById("energy_moderate_max").readOnly = false;
+          document.getElementById("energy_high_max").readOnly = false;
+          document.getElementById(
+            "energy_efficient_max_display"
+          ).readOnly = false;
+          document.getElementById("edit-energy-btn").style.display = "none";
+          document.getElementById("save-energy-btn").style.display =
+            "inline-block";
+          document.getElementById("cancel-energy-btn").style.display =
+            "inline-block";
+          
+          // Add auto-fill listeners
+          addThresholdAutoFill('energy');
+        });
+
+      // Save Energy Threshold
+      document
+        .getElementById("save-energy-btn")
+        .addEventListener("click", async function () {
+          const energyEfficientMax = parseFloat(
+            document.getElementById("energy_efficient_max").value
+          );
+          const energyModerateMax = parseFloat(
+            document.getElementById("energy_moderate_max").value
+          );
+          const energyHighMax = parseFloat(
+            document.getElementById("energy_high_max").value
+          );
+          
+          // Use form validator for threshold validation
+          if (window.formValidator) {
+            const validation = window.formValidator.validateThresholdValues(
+              energyEfficientMax, energyModerateMax, energyHighMax, 'energy'
+            );
+            if (!validation.isValid) {
+              alert(validation.errors.join('\n'));
+              return;
+            }
+          } else {
+            // Fallback validation
+            if (energyEfficientMax >= energyModerateMax) {
+              alert("Efficient max must be less than Moderate max.");
+              return;
+            }
+            if (energyModerateMax >= energyHighMax) {
+              alert("Moderate max must be less than High max.");
+              return;
+            }
+          }
+          try {
+            const response = await fetch(
+              "{% url 'adminpanel:save_thresholds' %}",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify({
+                  energy_efficient_max: energyEfficientMax,
+                  energy_moderate_max: energyModerateMax,
+                  energy_high_max: energyHighMax,
+                }),
+              }
+            );
+            const data = await response.json();
+            if (data.status === "success") {
+              alert("Energy thresholds saved successfully!");
+              document.getElementById("energy_efficient_max").readOnly = true;
+              document.getElementById("energy_moderate_max").readOnly = true;
+              document.getElementById("energy_high_max").readOnly = true;
+              document.getElementById(
+                "energy_efficient_max_display"
+              ).readOnly = true;
+              document.getElementById("edit-energy-btn").style.display =
+                "inline-block";
+              document.getElementById("save-energy-btn").style.display = "none";
+              document.getElementById("cancel-energy-btn").style.display =
+                "none";
+              loadThresholds(); // Reload to update display fields
+            } else {
+              alert("Error saving thresholds: " + data.message);
+            }
+          } catch (error) {
+            alert("Error saving thresholds.");
+          }
+        });
+
+      // Cancel Energy Threshold Edit
+      document
+        .getElementById("cancel-energy-btn")
+        .addEventListener("click", function () {
+          document.getElementById("energy_efficient_max").readOnly = true;
+          document.getElementById("energy_moderate_max").readOnly = true;
+          document.getElementById("energy_high_max").readOnly = true;
+          document.getElementById(
+            "energy_efficient_max_display"
+          ).readOnly = true;
+          document.getElementById("edit-energy-btn").style.display =
+            "inline-block";
+          document.getElementById("save-energy-btn").style.display = "none";
+          document.getElementById("cancel-energy-btn").style.display = "none";
+          loadThresholds(); // Reload to revert to original values
+        });
+
+      // Edit CO2 Threshold
+      document
+        .getElementById("edit-co2-btn")
+        .addEventListener("click", function () {
+          document.getElementById("co2_efficient_max").readOnly = false;
+          document.getElementById("co2_moderate_max").readOnly = false;
+          document.getElementById("co2_high_max").readOnly = false;
+          document.getElementById("co2_efficient_max_display").readOnly = false;
+          document.getElementById("edit-co2-btn").style.display = "none";
+          document.getElementById("save-co2-btn").style.display =
+            "inline-block";
+          document.getElementById("cancel-co2-btn").style.display =
+            "inline-block";
+          
+          // Add auto-fill listeners
+          addThresholdAutoFill('co2');
+        });
+
+      // Save CO2 Threshold
+      document
+        .getElementById("save-co2-btn")
+        .addEventListener("click", async function () {
+          const co2EfficientMax = parseFloat(
+            document.getElementById("co2_efficient_max").value
+          );
+          const co2ModerateMax = parseFloat(
+            document.getElementById("co2_moderate_max").value
+          );
+          const co2HighMax = parseFloat(
+            document.getElementById("co2_high_max").value
+          );
+          
+          // Use form validator for threshold validation
+          if (window.formValidator) {
+            const validation = window.formValidator.validateThresholdValues(
+              co2EfficientMax, co2ModerateMax, co2HighMax, 'CO2'
+            );
+            if (!validation.isValid) {
+              alert(validation.errors.join('\n'));
+              return;
+            }
+          } else {
+            // Fallback validation
+            if (co2EfficientMax >= co2ModerateMax) {
+              alert("Efficient max must be less than Moderate max.");
+              return;
+            }
+            if (co2ModerateMax >= co2HighMax) {
+              alert("Moderate max must be less than High max.");
+              return;
+            }
+          }
+          try {
+            const response = await fetch(
+              "{% url 'adminpanel:save_thresholds' %}",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify({
+                  co2_efficient_max: co2EfficientMax,
+                  co2_moderate_max: co2ModerateMax,
+                  co2_high_max: co2HighMax,
+                }),
+              }
+            );
+            const data = await response.json();
+            if (data.status === "success") {
+              alert("CO2 thresholds saved successfully!");
+              document.getElementById("co2_efficient_max").readOnly = true;
+              document.getElementById("co2_moderate_max").readOnly = true;
+              document.getElementById("co2_high_max").readOnly = true;
+              document.getElementById(
+                "co2_efficient_max_display"
+              ).readOnly = true;
+              document.getElementById("edit-co2-btn").style.display =
+                "inline-block";
+              document.getElementById("save-co2-btn").style.display = "none";
+              document.getElementById("cancel-co2-btn").style.display = "none";
+              loadThresholds(); // Reload to update display fields
+            } else {
+              alert("Error saving thresholds: " + data.message);
+            }
+          } catch (error) {
+            alert("Error saving thresholds.");
+          }
+        });
+
+      // Cancel CO2 Threshold Edit
+      document
+        .getElementById("cancel-co2-btn")
+        .addEventListener("click", function () {
+          document.getElementById("co2_efficient_max").readOnly = true;
+          document.getElementById("co2_moderate_max").readOnly = true;
+          document.getElementById("co2_high_max").readOnly = true;
+          document.getElementById("co2_efficient_max_display").readOnly = true;
+          document.getElementById("edit-co2-btn").style.display =
+            "inline-block";
+          document.getElementById("save-co2-btn").style.display = "none";
+          document.getElementById("cancel-co2-btn").style.display = "none";
+          loadThresholds(); // Reload to revert to original values
+        });
+
+      // Load thresholds on page load
+      document.addEventListener("DOMContentLoaded", loadThresholds);
+
+      // Section switching functionality
+      document
+        .getElementById("set-threshold-btn")
+        .addEventListener("click", function () {
+          document.querySelector(".thresholds").style.display = "block";
+          document.getElementById("ratings-section").style.display = "none";
+          // Update button states
+          document.getElementById("set-threshold-btn").classList.add("active");
+          document.getElementById("set-ratings-btn").classList.remove("active");
+        });
+
+      document
+        .getElementById("set-ratings-btn")
+        .addEventListener("click", function () {
+          document.querySelector(".thresholds").style.display = "none";
+          document.getElementById("ratings-section").style.display = "block";
+          // Update button states
+          document.getElementById("set-ratings-btn").classList.add("active");
+          document
+            .getElementById("set-threshold-btn")
+            .classList.remove("active");
+        });
+
+      document
+        .getElementById("back-to-threshold-btn")
+        .addEventListener("click", function () {
+          document.querySelector(".thresholds").style.display = "block";
+          document.getElementById("ratings-section").style.display = "none";
+          // Update button states
+          document.getElementById("set-threshold-btn").classList.add("active");
+          document.getElementById("set-ratings-btn").classList.remove("active");
+        });
+
+      // Cost rating functionality
+      document
+        .getElementById("edit-cost-btn")
+        .addEventListener("click", function () {
+          document.getElementById("cost_per_kwh").readOnly = false;
+          document.getElementById("edit-cost-btn").style.display = "none";
+          document.getElementById("save-cost-btn").style.display =
+            "inline-block";
+          document.getElementById("cancel-cost-btn").style.display =
+            "inline-block";
+        });
+
+      document
+        .getElementById("save-cost-btn")
+        .addEventListener("click", async function () {
+          const costValue = parseFloat(
+            document.getElementById("cost_per_kwh").value
+          );
+          
+          // Validate cost field
+          const costField = document.getElementById("cost_per_kwh");
+          if (window.formValidator && !window.formValidator.validateField(costField)) {
+            return;
+          }
+          
+          if (costValue <= 0) {
+            alert("Cost per kWh must be greater than 0.");
+            return;
+          }
+          try {
+            const response = await fetch(
+              "{% url 'adminpanel:save_cost_settings' %}",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify({
+                  cost_per_kwh: costValue,
+                }),
+              }
+            );
+            const data = await response.json();
+            if (data.status === "success") {
+              alert("Cost settings saved successfully!");
+              document.getElementById("cost_per_kwh").readOnly = true;
+              document.getElementById("edit-cost-btn").style.display =
+                "inline-block";
+              document.getElementById("save-cost-btn").style.display = "none";
+              document.getElementById("cancel-cost-btn").style.display = "none";
+            } else {
+              alert("Error saving cost settings: " + data.message);
+            }
+          } catch (error) {
+            alert("Error saving cost settings.");
+          }
+        });
+
+      document
+        .getElementById("cancel-cost-btn")
+        .addEventListener("click", function () {
+          document.getElementById("cost_per_kwh").value = "{{ threshold.cost_per_kwh|default:12.0 }}"; // Reset to current value
+          document.getElementById("cost_per_kwh").readOnly = true;
+          document.getElementById("edit-cost-btn").style.display =
+            "inline-block";
+          document.getElementById("save-cost-btn").style.display = "none";
+          document.getElementById("cancel-cost-btn").style.display = "none";
+        });
+
+      // CO2 emission rating functionality
+      document
+        .getElementById("edit-emission-btn")
+        .addEventListener("click", function () {
+          document.getElementById("co2_per_kwh").readOnly = false;
+          document.getElementById("edit-emission-btn").style.display = "none";
+          document.getElementById("save-emission-btn").style.display =
+            "inline-block";
+          document.getElementById("cancel-emission-btn").style.display =
+            "inline-block";
+        });
+
+      document
+        .getElementById("save-emission-btn")
+        .addEventListener("click", async function () {
+          const emissionValue = parseFloat(
+            document.getElementById("co2_per_kwh").value
+          );
+          
+          // Validate emission field
+          const emissionField = document.getElementById("co2_per_kwh");
+          if (window.formValidator && !window.formValidator.validateField(emissionField)) {
+            return;
+          }
+          
+          if (emissionValue <= 0) {
+            alert("CO2 per kWh must be greater than 0.");
+            return;
+          }
+          try {
+            const response = await fetch(
+              "{% url 'adminpanel:save_co2_settings' %}",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify({
+                  co2_emission_factor: emissionValue,
+                }),
+              }
+            );
+            const data = await response.json();
+            if (data.status === "success") {
+              alert("CO2 emission settings saved successfully!");
+              document.getElementById("co2_per_kwh").readOnly = true;
+              document.getElementById("edit-emission-btn").style.display =
+                "inline-block";
+              document.getElementById("save-emission-btn").style.display = "none";
+              document.getElementById("cancel-emission-btn").style.display = "none";
+            } else {
+              alert("Error saving CO2 settings: " + data.message);
+            }
+          } catch (error) {
+            alert("Error saving CO2 settings.");
+          }
+        });
+
+      document
+        .getElementById("cancel-emission-btn")
+        .addEventListener("click", function () {
+          document.getElementById("co2_per_kwh").value = "{{ threshold.co2_per_kwh|default:0.475 }}"; // Reset to current value
+          document.getElementById("co2_per_kwh").readOnly = true;
+          document.getElementById("edit-emission-btn").style.display =
+            "inline-block";
+          document.getElementById("save-emission-btn").style.display = "none";
+          document.getElementById("cancel-emission-btn").style.display = "none";
+        });
+
+      // Initialize threshold section as active
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("set-threshold-btn").classList.add("active");
+      });
+
+      // History section switching
+      document
+        .getElementById("threshold-history-btn")
+        .addEventListener("click", function () {
+          document.getElementById("threshold-history-wrapper").style.display =
+            "block";
+          document.getElementById("ratings-history-wrapper").style.display =
+            "none";
+          document
+            .getElementById("threshold-history-btn")
+            .classList.add("active");
+          document
+            .getElementById("ratings-history-btn")
+            .classList.remove("active");
+        });
+
+      document
+        .getElementById("ratings-history-btn")
+        .addEventListener("click", function () {
+          document.getElementById("threshold-history-wrapper").style.display =
+            "none";
+          document.getElementById("ratings-history-wrapper").style.display =
+            "block";
+          document
+            .getElementById("ratings-history-btn")
+            .classList.add("active");
+          document
+            .getElementById("threshold-history-btn")
+            .classList.remove("active");
+        });
+
+      // Threshold history tab switching
+      document
+        .querySelectorAll("#threshold-history-wrapper .threshold-tab-btn")
+        .forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const type = this.getAttribute("data-type");
+            const wrapper = document.getElementById(
+              "threshold-history-wrapper"
+            );
+
+            wrapper
+              .querySelectorAll(".threshold-tab-btn")
+              .forEach((b) => b.classList.remove("active"));
+            this.classList.add("active");
+
+            if (type === "energy") {
+              wrapper
+                .querySelector("#energy-history-table")
+                .classList.remove("hidden");
+              wrapper
+                .querySelector("#co2-history-table")
+                .classList.add("hidden");
+            } else {
+              wrapper
+                .querySelector("#energy-history-table")
+                .classList.add("hidden");
+              wrapper
+                .querySelector("#co2-history-table")
+                .classList.remove("hidden");
+            }
+          });
+        });
+
+      // Ratings history tab switching
+      document
+        .querySelectorAll("#ratings-history-wrapper .threshold-tab-btn")
+        .forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const type = this.getAttribute("data-type");
+            const wrapper = document.getElementById("ratings-history-wrapper");
+
+            wrapper
+              .querySelectorAll(".threshold-tab-btn")
+              .forEach((b) => b.classList.remove("active"));
+            this.classList.add("active");
+
+            if (type === "cost") {
+              wrapper
+                .querySelector("#cost-history-table")
+                .classList.remove("hidden");
+              wrapper
+                .querySelector("#emission-history-table")
+                .classList.add("hidden");
+            } else {
+              wrapper
+                .querySelector("#cost-history-table")
+                .classList.add("hidden");
+              wrapper
+                .querySelector("#emission-history-table")
+                .classList.remove("hidden");
+            }
+          });
+        });
+      // Auto-fill threshold function
+      function addThresholdAutoFill(type) {
+        const efficientField = document.getElementById(`${type}_efficient_max`);
+        const moderateField = document.getElementById(`${type}_moderate_max`);
+        const highField = document.getElementById(`${type}_high_max`);
+        const displayField = document.getElementById(`${type}_efficient_max_display`);
+        
+        // Auto-fill moderate min when efficient max changes
+        efficientField.addEventListener('input', function() {
+          const value = parseFloat(this.value);
+          if (!isNaN(value)) {
+            displayField.value = value;
+          }
+        });
+        
+        // Auto-fill high min when moderate max changes
+        moderateField.addEventListener('input', function() {
+          const value = parseFloat(this.value);
+          if (!isNaN(value)) {
+            highField.value = (value + 1).toFixed(2);
+          }
+        });
+      }
+
+    </script>
+
+    <script src="{% static 'adminJs/sidebarToggle.js' %}"></script>
+
+    
+  </body>
+</html>

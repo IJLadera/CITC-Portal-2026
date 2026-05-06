@@ -1,0 +1,566 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GreenWatts - Office Usage</title>
+    <link rel="icon" type="image/png" href="{% static 'browse-logo.png' %}" />
+    <link rel="stylesheet" href="{% static 'adminCss/common.css' %}" />
+    <link rel="stylesheet" href="{% static 'adminCss/officeUsage.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img src="{% static 'logo2.png' %}" alt="GreenWatts" class="logo-sidebar" />
+      <div class="admin-section">
+        <div class="admin-icon"><i class="fas fa-user-cog"></i></div>
+        <p>ADMIN</p>
+      </div>
+
+      <nav>
+        <a
+          href="{% url 'adminpanel:admin_dashboard' %}"
+          class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
+          ><i class="fas fa-tachometer-alt"></i> Dashboard</a
+        >
+        <a
+          href="{% url 'adminpanel:office_usage' %}"
+          class="{% if request.resolver_match.url_name == 'office_usage' %}active{% endif %}"
+          ><i class="fas fa-building"></i> Office Usage</a
+        >
+        <a
+          href="{% url 'adminpanel:admin_reports' %}"
+          class="{% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}"
+          ><i class="fas fa-chart-bar"></i> Admin Reports</a
+        >
+        <a
+          href="{% url 'adminpanel:admin_costs' %}"
+          class="{% if request.resolver_match.url_name == 'admin_costs' %}active{% endif %}"
+          ><i class="fas fa-peso-sign"></i> Energy Costs</a
+        >
+        <a
+          href="{% url 'adminpanel:carbon_emission' %}"
+          class="{% if request.resolver_match.url_name == 'carbon_emission' %}active{% endif %}"
+          ><i class="fas fa-leaf"></i> Co2 Emission</a
+        >
+        <a
+          href="{% url 'adminpanel:admin_setting' %}"
+          class="{% if request.resolver_match.url_name == 'admin_setting' %}active{% endif %}"
+          ><i class="fas fa-cog"></i> Admin Setting</a
+        >
+        <!-- logout goes to logout view -->
+        <a href="{% url 'users:logout' %}">
+          <i class="fas fa-sign-out-alt"></i> Log Out
+        </a>
+      </nav>
+    </div>
+
+    <script>
+      // Prevent back button navigation after logout
+      window.history.replaceState(null, null, window.location.href);
+      window.onpopstate = function() {
+        window.history.pushState(null, null, window.location.href);
+      };
+    </script>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1>Office Usage</h1>
+        <div class="date-time">
+          <i class="fas fa-calendar" style="cursor: pointer"></i>
+          <span id="live-time"></span>
+        </div>
+      </header>
+      
+      <p class="note">
+        <span class="red-text">Note!</span> The accumulated data will be generated every 12:00am.
+      </p>
+
+      <!-- Filters -->
+      <div class="filters">
+        <select id="day-select">
+          <option value="">{% if selected_day %}{{ selected_day }}{% else %}Day{% endif %}</option>
+          {% for day in day_options %}
+          <option value="{{ day }}" {% if selected_day == day %}selected{% endif %}>{{ day }}</option>
+          {% endfor %}
+        </select>
+        <select id="month-select">
+          <option value="">Month</option>
+          {% for month in month_options %}
+          <option value="{{ month.value }}" {% if selected_month == month.value %}selected{% endif %}>{{ month.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="year-select">
+          <option value="">Year</option>
+          {% for year in year_options %}
+          <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Office Table -->
+      <div class="office-usage">
+        <div class="table-header">
+          <div class="search-group">
+            <input type="text" id="search-input" placeholder="Search Office" />
+            <button type="button" id="search-button">Search</button>
+          </div>
+          <select>
+            <option>Sort by Status</option>
+            <option>Efficient</option>
+            <option>Moderate</option>
+            <option>High</option>
+          </select>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <tr>
+              <th>Office</th>
+              <th>Energy Usage</th>
+              <th>Peak Power</th>
+              <th>Cost Estimate</th>
+              <th>CO₂ Emissions</th>
+              <th>Status</th>
+            </tr>
+            {% for item in table_data %}
+            <tr class="{{ item.status_class }}">
+              <td>{{ item.office }}</td>
+              <td>{{ item.energy }}</td>
+              <td>{{ item.peak_power }}</td>
+              <td>{{ item.cost }}</td>
+              <td>{{ item.co2 }}</td>
+              <td>{{ item.status }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-container">
+        <div class="charts">
+          <div class="chart-box centered-chart-box">
+            <h3 class="centered-heading">
+              Office Share of<br />Total Energy Usage
+            </h3>
+            <canvas id="pieChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <h3>Energy Usage (kWh)</h3>
+            <select id="week-select">
+              <option value="">Select Week</option>
+              {% for week in week_options %}
+              <option value="{{ week.value }}" {% if selected_week == week.value %}selected{% endif %}>{{ week.name }}</option>
+              {% endfor %}
+            </select>
+            <canvas id="lineChart"></canvas>
+          </div>
+        </div>
+        <p class="energy-tip">
+          <span class="green-text">Energy Tip:</span> {{ random_energy_tip }}
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // Pie Chart
+      const ctxPie = document.getElementById("pieChart");
+      const pieLabels = {{ pie_labels|safe }};
+      const pieValues = {{ pie_values|safe }};
+      new Chart(ctxPie, {
+        type: "pie",
+        data: {
+          labels: pieLabels,
+          datasets: [
+            {
+              data: pieValues,
+              backgroundColor: [
+                "#3b82f6",
+                "#f97316",
+                "#8b5cf6",
+                "#22c55e",
+                "#ef4444",
+              ],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          aspectRatio: 1,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                boxWidth: 20,
+                padding: 20,
+              },
+            },
+          },
+        },
+      });
+
+      // Line Chart
+      const ctxLine = document.getElementById("lineChart");
+      const lineLabels = {{ line_labels|safe }};
+      const lineDatasets = {{ line_datasets|safe }};
+      new Chart(ctxLine, {
+        type: "line",
+        data: {
+          labels: lineLabels,
+          datasets: lineDatasets,
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: {
+              top: 20,
+              bottom: 20
+            }
+          },
+          elements: {
+            point: {
+              radius: 4,
+              hoverRadius: 6
+            },
+            line: {
+              borderWidth: 3
+            }
+          },
+          plugins: {
+            legend: {
+              position: window.innerWidth <= 768 ? "bottom" : "right",
+              labels: {
+                boxWidth: 15,
+                padding: window.innerWidth <= 768 ? 15 : 60,
+                font: {
+                  size: window.innerWidth <= 768 ? 11 : 12
+                }
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                callback: function (value, index, ticks) {
+                  const label = this.getLabelForValue(value);
+                  if (label && typeof label === "object") {
+                    return [label.day, "", label.date];
+                  }
+                  return label;
+                },
+                font: {
+                  size: window.innerWidth <= 768 ? 10 : 12,
+                },
+              },
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                font: {
+                  size: window.innerWidth <= 768 ? 10 : 12,
+                }
+              }
+            }
+          },
+        },
+      });
+    </script>
+    <script src="{% static 'adminJs/sidebarToggle.js' %}"></script>
+    <script src="{% static 'adminJs/filterHandler.js' %}"></script>
+    <script>
+      // Search functionality
+      document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        const table = document.querySelector('.table-wrapper table');
+        const rows = table.querySelectorAll('tr');
+
+        function filterTable() {
+          const searchTerm = searchInput.value.toLowerCase().trim();
+          rows.forEach((row, index) => {
+            if (index === 0) return; // Skip header row
+            const officeName = row.cells[0].textContent.toLowerCase();
+            if (officeName.includes(searchTerm)) {
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          });
+        }
+
+        searchButton.addEventListener('click', filterTable);
+        searchInput.addEventListener('keyup', function(event) {
+          if (event.key === 'Enter') {
+            filterTable();
+          }
+        });
+      });
+
+      function updateTime() {
+        const now = new Date();
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        };
+        const timeString = now.toLocaleDateString("en-US", options);
+        document.getElementById("live-time").textContent = timeString;
+      }
+      setInterval(updateTime, 1000);
+      updateTime();
+
+      // Handle filter dropdown changes
+      document.addEventListener('DOMContentLoaded', function() {
+        const daySelect = document.getElementById('day-select');
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+        const weekSelect = document.getElementById('week-select');
+        
+        function updateFilters() {
+          const params = new URLSearchParams();
+          const day = daySelect ? daySelect.value : '';
+          const month = monthSelect ? monthSelect.value : '';
+          const year = yearSelect ? yearSelect.value : '';
+          const week = weekSelect ? weekSelect.value : '';
+
+          if (day) params.append('selected_day', day);
+          if (month) params.append('selected_month', month);
+          if (year) params.append('selected_year', year);
+          if (week) params.append('selected_week', week);
+
+          const queryString = params.toString();
+          window.location.href = queryString ? `?${queryString}` : '?';
+        }
+
+        // Add event listeners only if elements exist
+        if (daySelect) {
+          daySelect.addEventListener('change', function() {
+            const selectedDay = daySelect.value;
+            if (selectedDay) {
+              const [month, day, year] = selectedDay.split('/');
+              const monthValue = parseInt(month).toString();
+              
+              if (monthSelect) {
+                let monthOption = monthSelect.querySelector(`option[value="${monthValue}"]`);
+                if (!monthOption) {
+                  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                    'July', 'August', 'September', 'October', 'November', 'December'];
+                  monthOption = document.createElement('option');
+                  monthOption.value = monthValue;
+                  monthOption.textContent = monthNames[parseInt(monthValue) - 1];
+                  monthSelect.appendChild(monthOption);
+                }
+                monthSelect.value = monthValue;
+              }
+              
+              if (yearSelect) {
+                let yearOption = yearSelect.querySelector(`option[value="${year}"]`);
+                if (!yearOption) {
+                  yearOption = document.createElement('option');
+                  yearOption.value = year;
+                  yearOption.textContent = year;
+                  yearSelect.appendChild(yearOption);
+                }
+                yearSelect.value = year;
+              }
+            } else {
+              if (monthSelect) monthSelect.value = '';
+              if (yearSelect) yearSelect.value = '';
+            }
+            updateFilters();
+          });
+        }
+        
+        if (monthSelect) {
+          monthSelect.addEventListener('change', function() {
+            const selectedMonth = monthSelect.value;
+            const selectedYear = yearSelect ? yearSelect.value : '';
+
+            if (selectedMonth) {
+              updateDayOptions(selectedMonth, selectedYear);
+              updateWeekOptions(selectedMonth, selectedYear);
+            } else {
+              if (daySelect) daySelect.value = '';
+              if (weekSelect) weekSelect.value = '';
+              resetDayOptions();
+              resetWeekOptions();
+            }
+            updateFilters();
+          });
+        }
+        
+        function updateDayOptions(month, year) {
+          fetch(`/adminpanel/get-days/?month=${month}&year=${year || new Date().getFullYear()}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && daySelect) {
+                const currentSelected = daySelect.value;
+                daySelect.innerHTML = '<option value="">Day</option>';
+                data.days.forEach(day => {
+                  const option = document.createElement('option');
+                  option.value = day;
+                  option.textContent = day;
+                  if (day === currentSelected) option.selected = true;
+                  daySelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching days:', error));
+        }
+        
+        function updateWeekOptions(month, year) {
+          const params = new URLSearchParams();
+          if (month) params.append('month', month);
+          if (year) params.append('year', year);
+          
+          fetch(`/adminpanel/get_weeks/?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && weekSelect) {
+                const currentSelected = weekSelect.value;
+                weekSelect.innerHTML = '<option value="">Select Week</option>';
+                data.weeks.forEach(week => {
+                  const option = document.createElement('option');
+                  option.value = week.value;
+                  option.textContent = week.name;
+                  if (week.value === currentSelected) option.selected = true;
+                  weekSelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching weeks:', error));
+        }
+        
+        function resetDayOptions() {
+          if (daySelect) {
+            const currentSelected = '{{ selected_day|escapejs }}';
+            const allDays = {{ day_options|safe }};
+            daySelect.innerHTML = '<option value="">Day</option>';
+            allDays.forEach(day => {
+              const option = document.createElement('option');
+              option.value = day;
+              option.textContent = day;
+              if (day === currentSelected) option.selected = true;
+              daySelect.appendChild(option);
+            });
+          }
+        }
+        
+        function resetWeekOptions() {
+          if (weekSelect) {
+            const currentSelected = '{{ selected_week|escapejs }}';
+            const allWeeks = {{ week_options|safe }};
+            weekSelect.innerHTML = '<option value="">Select Week</option>';
+            allWeeks.forEach(week => {
+              const option = document.createElement('option');
+              option.value = week.value;
+              option.textContent = week.name;
+              if (week.value === currentSelected) option.selected = true;
+              weekSelect.appendChild(option);
+            });
+          }
+        }
+        
+        if (yearSelect) {
+          yearSelect.addEventListener('change', function() {
+            // Clear day and week when year is selected
+            if (daySelect) daySelect.value = '';
+            if (weekSelect) weekSelect.value = '';
+            
+            // Update month options based on selected year
+            const selectedYear = yearSelect.value;
+            if (selectedYear) {
+              updateMonthOptions(selectedYear);
+            } else {
+              resetMonthOptions();
+            }
+            
+            // Update day and week options if month is also selected
+            const selectedMonth = monthSelect ? monthSelect.value : '';
+            if (selectedMonth && selectedYear) {
+              updateDayOptions(selectedMonth, selectedYear);
+              updateWeekOptions(selectedMonth, selectedYear);
+            }
+            
+            updateFilters();
+          });
+        }
+        
+        if (weekSelect) {
+          weekSelect.addEventListener('change', function() {
+            if (this.value) {
+              if (daySelect) daySelect.value = '';
+            }
+            updateFilters();
+          });
+        }
+        
+        function updateMonthOptions(year) {
+          fetch(`/adminpanel/get-months/?year=${year}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && monthSelect) {
+                const currentSelected = monthSelect.value;
+                monthSelect.innerHTML = '<option value="">Month</option>';
+                data.months.forEach(month => {
+                  const option = document.createElement('option');
+                  option.value = month.value;
+                  option.textContent = month.name;
+                  if (month.value === currentSelected) option.selected = true;
+                  monthSelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching months:', error));
+        }
+        
+        function resetMonthOptions() {
+          if (monthSelect) {
+            const currentSelected = '{{ selected_month|escapejs }}';
+            const allMonths = {{ month_options|safe }};
+            monthSelect.innerHTML = '<option value="">Month</option>';
+            allMonths.forEach(month => {
+              const option = document.createElement('option');
+              option.value = month.value;
+              option.textContent = month.name;
+              if (month.value === currentSelected) option.selected = true;
+              monthSelect.appendChild(option);
+            });
+          }
+        }
+        
+        // Check if year is pre-selected on page load and filter months
+        const initialYear = yearSelect ? yearSelect.value : '';
+        if (initialYear) {
+          updateMonthOptions(initialYear);
+        }
+        
+        // Check if month is pre-selected on page load and filter days/weeks
+        const initialMonth = monthSelect ? monthSelect.value : '';
+        if (initialMonth) {
+          updateDayOptions(initialMonth, initialYear);
+          updateWeekOptions(initialMonth, initialYear);
+        }
+      });
+    </script>
+  </body>
+</html>

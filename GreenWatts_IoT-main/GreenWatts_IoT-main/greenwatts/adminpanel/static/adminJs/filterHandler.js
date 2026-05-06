@@ -1,0 +1,178 @@
+// Unified filter handler for admin pages
+(function() {
+  // Prevent multiple initializations
+  if (window.filterHandlerInitialized) return;
+  window.filterHandlerInitialized = true;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const daySelect = document.getElementById('day-select');
+    const monthSelect = document.getElementById('month-select');
+    const yearSelect = document.getElementById('year-select');
+    const weekSelect = document.getElementById('week-select');
+
+    // Skip if elements don't exist
+    if (!daySelect && !monthSelect && !yearSelect) return;
+
+    function updateFilters() {
+      const params = new URLSearchParams();
+      const day = daySelect ? daySelect.value : '';
+      const month = monthSelect ? monthSelect.value : '';
+      const year = yearSelect ? yearSelect.value : '';
+      const week = weekSelect ? weekSelect.value : '';
+
+      if (day) {
+        params.append('selected_day', day);
+      } else if (week) {
+        params.append('selected_week', week);
+      } else if (month && year) {
+        params.append('selected_month', month);
+        params.append('selected_year', year);
+      } else if (year) {
+        params.append('selected_year', year);
+      }
+
+      window.location.href = '?' + params.toString();
+    }
+
+    function updateMonthOptions(year) {
+      if (!monthSelect) return;
+      
+      const currentSelected = monthSelect.value;
+      fetch(`/adminpanel/get-months/?year=${year}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            monthSelect.innerHTML = '<option value="">Month</option>';
+            data.months.forEach(month => {
+              const option = document.createElement('option');
+              option.value = month.value;
+              option.textContent = month.name;
+              if (month.value === currentSelected) option.selected = true;
+              monthSelect.appendChild(option);
+            });
+          }
+        })
+        .catch(error => console.error('Error fetching months:', error));
+    }
+
+    function updateDayOptions(month, year) {
+      if (!daySelect) return;
+      
+      const currentSelected = daySelect.value;
+      const currentYear = year || new Date().getFullYear();
+      fetch(`/adminpanel/get-days/?month=${month}&year=${currentYear}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            daySelect.innerHTML = '<option value="">Day</option>';
+            data.days.forEach(day => {
+              const option = document.createElement('option');
+              option.value = day;
+              option.textContent = day;
+              if (day === currentSelected) option.selected = true;
+              daySelect.appendChild(option);
+            });
+          }
+        })
+        .catch(error => console.error('Error fetching days:', error));
+    }
+
+    function updateWeekOptions(month, year) {
+      if (!weekSelect) return;
+      
+      const currentSelected = weekSelect.value;
+      const params = new URLSearchParams();
+      if (month) params.append('month', month);
+      if (year) params.append('year', year);
+      
+      fetch(`/adminpanel/get_weeks/?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            weekSelect.innerHTML = '<option value="">Select Week</option>';
+            data.weeks.forEach(week => {
+              const option = document.createElement('option');
+              option.value = week.value;
+              option.textContent = week.name;
+              if (week.value === currentSelected) option.selected = true;
+              weekSelect.appendChild(option);
+            });
+          }
+        })
+        .catch(error => console.error('Error fetching weeks:', error));
+    }
+
+    // Day select handler
+    if (daySelect && !daySelect.dataset.handlerAttached) {
+      daySelect.dataset.handlerAttached = 'true';
+      daySelect.addEventListener('change', function() {
+        if (this.value) {
+          const [month, day, year] = this.value.split('/');
+          if (monthSelect) monthSelect.value = parseInt(month).toString();
+          if (yearSelect) yearSelect.value = year;
+          if (weekSelect) weekSelect.value = '';
+        }
+        updateFilters();
+      });
+    }
+
+    // Month select handler
+    if (monthSelect && !monthSelect.dataset.handlerAttached) {
+      monthSelect.dataset.handlerAttached = 'true';
+      monthSelect.addEventListener('change', function() {
+        if (daySelect) daySelect.value = '';
+        if (weekSelect) weekSelect.value = '';
+        
+        if (this.value) {
+          const selectedYear = yearSelect ? yearSelect.value : '';
+          if (selectedYear) {
+            updateDayOptions(this.value, selectedYear);
+            updateWeekOptions(this.value, selectedYear);
+          }
+        }
+        updateFilters();
+      });
+    }
+
+    // Year select handler
+    if (yearSelect && !yearSelect.dataset.handlerAttached) {
+      yearSelect.dataset.handlerAttached = 'true';
+      yearSelect.addEventListener('change', function() {
+        if (daySelect) daySelect.value = '';
+        if (weekSelect) weekSelect.value = '';
+        if (monthSelect) monthSelect.value = ''; // Clear month when year is selected
+        
+        if (this.value) {
+          updateMonthOptions(this.value);
+        }
+        
+        updateFilters();
+      });
+    }
+
+    // Week select handler
+    if (weekSelect && !weekSelect.dataset.handlerAttached) {
+      weekSelect.dataset.handlerAttached = 'true';
+      weekSelect.addEventListener('change', function() {
+        if (this.value) {
+          if (daySelect) daySelect.value = '';
+          // Don't clear month/year when week is selected - week should be filtered by month/year
+        }
+        updateFilters();
+      });
+    }
+
+    // Initialize month options on page load if year is selected
+    const initialYear = yearSelect ? yearSelect.value : '';
+    if (initialYear) {
+      updateMonthOptions(initialYear);
+    }
+    
+    // Initialize day and week options on page load if month is selected
+    const initialMonth = monthSelect ? monthSelect.value : '';
+    if (initialMonth) {
+      if (daySelect) updateDayOptions(initialMonth, initialYear);
+      if (weekSelect) updateWeekOptions(initialMonth, initialYear);
+    }
+  });
+})();

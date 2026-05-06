@@ -1,0 +1,339 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GreenWatts Energy Cost</title>
+    <link rel="icon" type="image/png" href="{% static 'browse-logo.png' %}" />
+    <!-- correct relative path -->
+    <link rel="stylesheet" href="{% static 'adminCss/common.css' %}" />
+    <link rel="stylesheet" href="{% static 'adminCss/adminDashboard.css' %}" />
+    <link rel="stylesheet" href="{% static 'adminCss/adminCosts.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .filters select option {
+        color: white !important;
+        background-color: #2c3e50 !important;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+    <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img src="{% static 'logo2.png' %}" alt="GreenWatts" class="logo-sidebar" />
+      <div class="admin-section">
+        <div class="admin-icon"><i class="fas fa-user-cog"></i></div>
+        <p>ADMIN</p>
+      </div>
+
+      <nav>
+        <a
+          href="{% url 'adminpanel:admin_dashboard' %}"
+          class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
+          ><i class="fas fa-tachometer-alt"></i> Dashboard</a
+        >
+        <a
+          href="{% url 'adminpanel:office_usage' %}"
+          class="{% if request.resolver_match.url_name == 'office_usage' %}active{% endif %}"
+          ><i class="fas fa-building"></i> Office Usage</a
+        >
+        <a
+          href="{% url 'adminpanel:admin_reports' %}"
+          class="{% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}"
+          ><i class="fas fa-chart-bar"></i> Admin Reports</a
+        >
+        <a
+          href="{% url 'adminpanel:admin_costs' %}"
+          class="{% if request.resolver_match.url_name == 'admin_costs' %}active{% endif %}"
+          ><i class="fas fa-peso-sign"></i> Energy Costs</a
+        >
+        <a
+          href="{% url 'adminpanel:carbon_emission' %}"
+          class="{% if request.resolver_match.url_name == 'carbon_emission' %}active{% endif %}"
+          ><i class="fas fa-leaf"></i> Co2 Emission</a
+        >
+        <a
+          href="{% url 'adminpanel:admin_setting' %}"
+          class="{% if request.resolver_match.url_name == 'admin_setting' %}active{% endif %}"
+          ><i class="fas fa-cog"></i> Admin Setting</a
+        >
+        <!-- logout goes to logout view -->
+        <a href="{% url 'users:logout' %}">
+          <i class="fas fa-sign-out-alt"></i> Log Out
+        </a>
+      </nav>
+    </div>
+
+    <script>
+      // Prevent back button navigation after logout
+      window.history.replaceState(null, null, window.location.href);
+      window.onpopstate = function () {
+        window.history.pushState(null, null, window.location.href);
+      };
+    </script>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1>Energy Cost</h1>
+        <div class="date-time">
+          <i class="fas fa-calendar" style="cursor: pointer"></i>
+          <span id="live-time"></span>
+        </div>
+      </header>
+      
+      <p class="note">
+        <span class="red-text">Note!</span> The accumulated data will be generated every 12:00am.
+      </p>
+
+      <!-- Filters -->
+      <div class="filters">
+        <select id="week-select">
+          <option value="">{% if selected_week %}{{ selected_week|date:"M d, Y" }} - Week{% else %}Week{% endif %}</option>
+          {% for week in week_options %}
+          <option value="{{ week.value }}" {% if selected_week == week.value %}selected{% endif %}>{{ week.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="month-select">
+          <option value="">Month</option>
+          {% for month in month_options %}
+          <option value="{{ month.value }}" {% if selected_month == month.value %}selected{% endif %}>{{ month.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="year-select">
+          <option value="">Year</option>
+          {% for year in year_options %}
+          <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Top Cards -->
+      <div class="report-cards">
+        <div class="card {{ energy_efficiency }}">
+          <div class="card-icon">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Total Energy Use</div>
+            <div class="card-value">{{ total_energy|floatformat:1 }} kWh</div>
+          </div>
+        </div>
+        <div class="card {{ energy_efficiency }}">
+          <div class="card-icon">
+            <i class="fas fa-peso-sign"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Total Cost</div>
+            <div class="card-value">₱{{ total_cost|floatformat:2 }}</div>
+          </div>
+        </div>
+        <div class="card {{ energy_efficiency }}">
+          <div class="card-icon">
+            <i class="fas fa-calendar-day"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Average Daily Cost</div>
+            <div class="card-value">₱{{ avg_daily_cost|floatformat:2 }}</div>
+          </div>
+        </div>
+        <div class="card high">
+          <div class="card-icon">
+            <i class="fas fa-building"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Highest Cost Office</div>
+            <div class="card-value">{{ highest_office }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Section -->
+      <div class="bottom-section">
+        <!-- Chart Section -->
+        <div class="change-cost">
+          <div class="chart-header">
+            <div class="chart-info">
+              <div class="info-item">
+                <div class="info-label">{{ previous_label }}</div>
+                <div class="info-value">₱{{ prev_cost|floatformat:2 }}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">{{ so_far_label }}</div>
+                <div class="info-value">₱{{ so_far_cost|floatformat:2 }}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">{{ predicted_label }}</div>
+                <div class="info-value">
+                  ₱{{ predicted_cost|floatformat:2 }}
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">{{ savings_label }}</div>
+                <div class="info-value">₱{{ savings|floatformat:2 }}</div>
+              </div>
+            </div>
+          </div>
+          <canvas id="energyChart"></canvas>
+
+          <!-- Energy Tip -->
+          <div class="energy-tip">
+            <p>
+              <span class="green-text">Energy Tip:</span> {{ random_energy_tip }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Script -->
+    <script>
+      const ctx = document.getElementById("energyChart").getContext("2d");
+      const chartLabels = {{ chart_labels|safe }};
+      const chartData = {{ chart_data|safe }};
+      const costPerKwh = {{ cost_per_kwh }};
+      const maxValue = Math.max(...chartData) + 20;
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: chartLabels,
+          datasets: [
+            {
+              label: "Energy (kWh)",
+              data: chartData,
+              backgroundColor: "#4caf50",
+              borderRadius: 5,
+              barPercentage: 0.6,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: maxValue,
+              ticks: {
+                stepSize: Math.ceil(maxValue / 6),
+                color: "#fff",
+                callback: function (value) {
+                  return value + " kWh";
+                },
+              },
+              grid: {
+                color: "#444",
+                borderColor: "#444",
+              },
+            },
+            x: {
+              grid: {
+                display: false,
+              },
+              ticks: {
+                color: "#fff",
+              },
+            },
+          },
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const energy = context.parsed.y;
+                  const cost = energy * costPerKwh;
+                  return `Cost: ₱${cost.toFixed(2)}`;
+                }
+              }
+            }
+          },
+        },
+      });
+    </script>
+    <script src="{% static 'adminJs/sidebarToggle.js' %}"></script>
+    <script src="{% static 'adminJs/filterHandler.js' %}"></script>
+    <script>
+      function updateTime() {
+        const now = new Date();
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        };
+        const timeString = now.toLocaleDateString("en-US", options);
+        document.getElementById("live-time").textContent = timeString;
+      }
+      setInterval(updateTime, 1000);
+      updateTime(); // initial call
+
+      // Handle filter dropdown changes
+      document.addEventListener('DOMContentLoaded', function() {
+        const weekSelect = document.getElementById('week-select');
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+
+        function updateFilters(activeSelect) {
+          const params = new URLSearchParams();
+          
+          if (activeSelect === 'week' && weekSelect.value) {
+            params.append('selected_week', weekSelect.value);
+          } else if (activeSelect === 'month' && monthSelect.value) {
+            params.append('selected_month', monthSelect.value);
+            if (yearSelect.value) params.append('selected_year', yearSelect.value);
+          } else if (activeSelect === 'year' && yearSelect.value) {
+            params.append('selected_year', yearSelect.value);
+          }
+
+          const queryString = params.toString();
+          window.location.href = queryString ? `?${queryString}` : '?';
+        }
+
+        weekSelect.addEventListener('change', function() {
+          if (this.value) {
+            monthSelect.value = '';
+            yearSelect.value = '';
+          }
+          updateFilters('week');
+        });
+        
+        monthSelect.addEventListener('change', function() {
+          if (this.value) {
+            weekSelect.value = '';
+            // Update week options based on selected month
+            fetch(`/adminpanel/get_weeks/?month=${this.value}&year=${yearSelect.value || ''}`)
+              .then(response => response.json())
+              .then(data => {
+                if (data.status === 'success') {
+                  weekSelect.innerHTML = '<option value="">Week</option>';
+                  data.weeks.forEach(week => {
+                    weekSelect.innerHTML += `<option value="${week.value}">${week.name}</option>`;
+                  });
+                }
+              });
+          }
+          updateFilters('month');
+        });
+        
+        yearSelect.addEventListener('change', function() {
+          if (this.value && !monthSelect.value) {
+            weekSelect.value = '';
+          }
+          updateFilters('year');
+        });
+      });
+    </script>
+  </body>
+</html>

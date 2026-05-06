@@ -1,0 +1,674 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GreenWatts | Office Usage</title>
+    <link rel="icon" type="image/png" href="{% static 'browse-logo.png' %}" />
+
+    <!-- Static CSS -->
+    <link rel="stylesheet" href="{% static 'userCss/common.css' %}" />
+    <link rel="stylesheet" href="{% static 'userCss/userUsage.css' %}" />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .filters select option {
+        color: white !important;
+        background-color: #2c3e50 !important;
+      }
+    </style>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img src="{% static 'logo2.png' %}" alt="GreenWatts" class="logo-sidebar" />
+      <div class="admin-section">
+        <div class="admin-icon"><i class="fas fa-user"></i></div>
+        <p>{{ office.username|upper }}</p>
+      </div>
+
+      <nav>
+        <a href="{% url 'users:dashboard' %}"
+          ><i class="fas fa-tachometer-alt"></i> Dashboard</a
+        >
+
+        <a href="{% url 'users:office_usage' %}" class="active"
+          ><i class="fas fa-building"></i> Office Usage</a
+        >
+        <a href="{% url 'users:user_reports' %}"
+          ><i class="fas fa-chart-bar"></i> Reports</a
+        >
+        <a href="{% url 'users:user_energy_cost' %}"
+          ><i class="fas fa-peso-sign"></i> Energy Cost</a
+        >
+        <a href="{% url 'users:user_emmision' %}"
+          ><i class="fas fa-leaf"></i> CO2 Emission</a
+        >
+        <a href="{% url 'users:logout' %}"
+          ><i class="fas fa-sign-out-alt"></i> Log Out</a
+        >
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <!-- Sidebar toggle button -->
+        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1>Office Usage</h1>
+        <p class="note">
+          <span class="red-text">Note!</span> The accumulated data will be generated every 12:00am.
+        </p>
+        <div class="date-time">
+          <i class="fas fa-calendar"></i>
+          <span id="live-time"></span>
+        </div>
+      </header>
+
+      <!-- Filters -->
+      <div class="filters">
+        <select id="day-select">
+          <option value="">{% if selected_day %}{{ selected_day }}{% else %}Day{% endif %}</option>
+          {% for day in day_options %}
+          <option value="{{ day }}" {% if selected_day == day %}selected{% endif %}>{{ day }}</option>
+          {% endfor %}
+        </select>
+        <select id="month-select">
+          <option value="">Month</option>
+          {% for month in month_options %}
+          <option value="{{ month.value }}" {% if selected_month == month.value %}selected{% endif %}>{{ month.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="year-select">
+          <option value="">Year</option>
+          {% for year in year_options %}
+          <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Main Dashboard Content -->
+      <div class="dashboard-wrapper">
+        <div class="dashboard-container">
+          <!-- Top Row - Cards Side by Side -->
+          <div class="top-row">
+            <!-- Office Usage Summary -->
+            <div class="summary-card">
+              <h3>Summary</h3>
+              <div class="summary-content">
+                <div class="summary-item">
+                  <span class="summary-label">Office</span>
+                  <span class="summary-value office-name {{ status_class }}">{{ office.name }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Energy Usage</span>
+                  <span class="summary-value">{{ office_energy_usage }} kWh</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Cost</span>
+                  <span class="summary-value">₱{{ office_cost_predicted }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">CO2 Emission</span>
+                  <span class="summary-value">{{ office_co2_emission }} kg</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Status</span>
+                  <span class="summary-value {{ status_class }}">{{ energy_status }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Date</span>
+                  <span class="summary-value">{% if display_date %}{% if level == 'month' or level == 'year' %}{{ display_date }}{% else %}{{ display_date|date:"M j, Y" }}{% endif %}{% else %}{{ level|title }} View{% endif %}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Combined Usage Card -->
+            <div class="combined-usage-card">
+              <div class="usage-percentage">
+                <span class="percentage-value">{{ office_share_percentage }}%</span>
+                <span class="percentage-label">of Total Share</span>
+              </div>
+              
+              <div class="usage-ranking">
+                <span class="rank-number">{{ office_rank }}</span>
+                <span class="rank-text">out of <strong>{{ total_offices }}</strong> Offices</span>
+              </div>
+              
+              <div class="usage-trend">
+                <i class="fas fa-arrow-{% if rank_change_direction == 'increase' %}up{% else %}down{% endif %} trend-arrow"></i>
+                <span class="trend-text">{{ rank_change }}% {{ rank_change_direction|title }} {{ comparison_label }}</span>
+              </div>
+              
+              {% if is_over_limit %}
+              <div class="usage-alert">
+                <span class="alert-text">OVER-LIMIT</span>
+                <span class="alert-subtext">(Above Threshold)</span>
+              </div>
+              {% else %}
+              <div class="usage-normal">
+                <span class="normal-text">WITHIN LIMIT</span>
+                <span class="normal-subtext">(Below Threshold)</span>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Pie Chart Container -->
+            <div class="pie-chart-container">
+              <h4>OFFICE SHARE OF TOTAL ENERGY USAGE</h4>
+              <canvas id="pieChart" width="300" height="250"></canvas>
+            </div>
+          </div>
+
+          <!-- Bottom Row - Chart -->
+          <div class="chart-container">
+            <div class="chart-header">
+              <div class="chart-tabs">
+                <button class="tab active" data-chart="energy">Energy Usage (kWh)</button>
+                <button class="tab" data-chart="co2">CO2 Emission (kg)</button>
+              </div>
+              <select id="week-select" class="chart-period">
+                <option value="">Week</option>
+                {% for week in week_options %}
+                <option value="{{ week.value }}" {% if selected_week == week.value %}selected{% endif %}>{{ week.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <canvas id="usageChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+        
+        <!-- Energy Tip -->
+        <div class="energy-tip">
+          <p>
+            <span class="green-text">Energy Tip:</span> On warm days, setting a
+            programmable thermostat to a higher setting when you are not at home
+            can help reduce your energy costs by approximately 10 percent.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- JS Time Display and Date Filter -->
+    <script>
+      function updateTime() {
+        const now = new Date();
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        };
+        document.getElementById("live-time").textContent =
+          now.toLocaleDateString("en-US", options);
+      }
+      setInterval(updateTime, 1000);
+      updateTime();
+
+      // Handle filter dropdown changes
+      document.addEventListener('DOMContentLoaded', function() {
+        const daySelect = document.getElementById('day-select');
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+
+        function updateFilters() {
+          const params = new URLSearchParams();
+          const day = daySelect ? daySelect.value : '';
+          const month = monthSelect ? monthSelect.value : '';
+          const year = yearSelect ? yearSelect.value : '';
+          const weekSelect = document.getElementById('week-select');
+          const week = weekSelect ? weekSelect.value : '';
+
+          if (day) params.append('selected_day', day);
+          if (week) params.append('selected_week', week);
+          if (month) params.append('selected_month', month);
+          if (year) params.append('selected_year', year);
+
+          window.location.href = params.toString() ? '?' + params.toString() : window.location.pathname;
+        }
+
+        if (daySelect) {
+          daySelect.addEventListener('change', function() {
+            const selectedDay = daySelect.value;
+            if (selectedDay) {
+              const [month, day, year] = selectedDay.split('/');
+              const monthValue = parseInt(month).toString();
+              
+              // Set month - add option if it doesn't exist
+              if (monthSelect) {
+                let monthOption = monthSelect.querySelector(`option[value="${monthValue}"]`);
+                if (!monthOption) {
+                  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                    'July', 'August', 'September', 'October', 'November', 'December'];
+                  monthOption = document.createElement('option');
+                  monthOption.value = monthValue;
+                  monthOption.textContent = monthNames[parseInt(monthValue) - 1];
+                  monthSelect.appendChild(monthOption);
+                }
+                monthSelect.value = monthValue;
+              }
+              
+              // Set year - add option if it doesn't exist
+              if (yearSelect) {
+                let yearOption = yearSelect.querySelector(`option[value="${year}"]`);
+                if (!yearOption) {
+                  yearOption = document.createElement('option');
+                  yearOption.value = year;
+                  yearOption.textContent = year;
+                  yearSelect.appendChild(yearOption);
+                }
+                yearSelect.value = year;
+              }
+            } else {
+              if (monthSelect) monthSelect.value = '';
+              if (yearSelect) yearSelect.value = '';
+            }
+            updateFilters();
+          });
+        }
+        
+        if (monthSelect) {
+          monthSelect.addEventListener('change', function() {
+            if (daySelect) daySelect.value = '';
+            const selectedMonth = monthSelect.value;
+            const selectedYear = yearSelect ? yearSelect.value : '';
+            
+            if (selectedMonth) {
+              updateDayOptions(selectedMonth, selectedYear);
+              updateWeekOptions(selectedMonth, selectedYear);
+            } else {
+              resetDayOptions();
+              resetWeekOptions();
+            }
+            updateFilters();
+          });
+        }
+        
+        function updateDayOptions(month, year) {
+          fetch(`/get-user-days/?month=${month}&year=${year || new Date().getFullYear()}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && daySelect) {
+                const currentSelected = daySelect.value;
+                daySelect.innerHTML = '<option value="">Day</option>';
+                data.days.forEach(day => {
+                  const option = document.createElement('option');
+                  option.value = day;
+                  option.textContent = day;
+                  if (day === currentSelected) option.selected = true;
+                  daySelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching days:', error));
+        }
+        
+        function updateDaysByYear(year) {
+          if (!year) return;
+          fetch(`/get-user-days/?year=${year}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && daySelect) {
+                const currentSelected = daySelect.value;
+                daySelect.innerHTML = '<option value="">Day</option>';
+                data.days.forEach(day => {
+                  const option = document.createElement('option');
+                  option.value = day;
+                  option.textContent = day;
+                  if (day === currentSelected) option.selected = true;
+                  daySelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching days:', error));
+        }
+        
+        function resetDayOptions() {
+          if (daySelect) {
+            const allDays = {{ day_options|safe }};
+            daySelect.innerHTML = '<option value="">Day</option>';
+            allDays.forEach(day => {
+              const option = document.createElement('option');
+              option.value = day;
+              option.textContent = day;
+              daySelect.appendChild(option);
+            });
+          }
+        }
+        
+        if (yearSelect) {
+          yearSelect.addEventListener('change', function() {
+            if (daySelect) daySelect.value = '';
+            
+            // Update month options based on selected year
+            const selectedYear = yearSelect.value;
+            if (selectedYear) {
+              updateMonthOptions(selectedYear);
+              updateDaysByYear(selectedYear);
+            } else {
+              resetMonthOptions();
+            }
+            
+            const selectedMonth = monthSelect ? monthSelect.value : '';
+            
+            if (selectedMonth && selectedYear) {
+              updateDayOptions(selectedMonth, selectedYear);
+              updateWeekOptions(selectedMonth, selectedYear);
+            } else {
+              resetWeekOptions();
+            }
+            
+            updateFilters();
+          });
+        }
+        
+        function updateMonthOptions(year) {
+          fetch(`/get-user-months/?year=${year}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && monthSelect) {
+                const currentSelected = monthSelect.value;
+                monthSelect.innerHTML = '<option value="">Month</option>';
+                data.months.forEach(month => {
+                  const option = document.createElement('option');
+                  option.value = month.value;
+                  option.textContent = month.name;
+                  if (month.value === currentSelected) option.selected = true;
+                  monthSelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching months:', error));
+        }
+        
+        function resetMonthOptions() {
+          if (monthSelect) {
+            const allMonths = {{ month_options|safe }};
+            monthSelect.innerHTML = '<option value="">Month</option>';
+            allMonths.forEach(month => {
+              const option = document.createElement('option');
+              option.value = month.value;
+              option.textContent = month.name;
+              monthSelect.appendChild(option);
+            });
+          }
+        }
+        
+        function updateWeekOptions(month, year) {
+          const weekSelect = document.getElementById('week-select');
+          if (!weekSelect) return;
+          
+          fetch(`/get-user-weeks/?month=${month}&year=${year || new Date().getFullYear()}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                weekSelect.innerHTML = '<option value="">Week</option>';
+                data.weeks.forEach(week => {
+                  const option = document.createElement('option');
+                  option.value = week.value;
+                  option.textContent = week.name;
+                  weekSelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching weeks:', error));
+        }
+        
+        const weekSelect = document.getElementById('week-select');
+        if (weekSelect) {
+          weekSelect.addEventListener('change', function() {
+            if (daySelect) daySelect.value = '';
+            updateFilters();
+          });
+        }
+        
+        function resetWeekOptions() {
+          const weekSelect = document.getElementById('week-select');
+          if (weekSelect) {
+            weekSelect.innerHTML = '<option value="">Week</option>';
+          }
+        }
+        
+        const initialMonth = monthSelect ? monthSelect.value : '';
+        const initialYear = yearSelect ? yearSelect.value : '';
+        if (initialYear) {
+          updateMonthOptions(initialYear);
+          updateDaysByYear(initialYear);
+        }
+        if (initialMonth && initialYear) {
+          updateDayOptions(initialMonth, initialYear);
+          updateWeekOptions(initialMonth, initialYear);
+        } else {
+          resetWeekOptions();
+        }
+        
+
+      });
+
+      const ctx = document.getElementById('usageChart').getContext('2d');
+      const chartLabels = {{ chart_labels|safe }};
+      const chartDates = {{ chart_dates|safe }};
+      const chartPeakPower = {{ chart_peak_power|safe }};
+      const chartCO2Data = {{ chart_co2_data|safe }};
+      
+      let currentChartType = 'energy';
+      
+      const usageChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartLabels,
+          datasets: [{
+            label: 'Energy Usage (kWh)',
+            data: {{ chart_data|safe }},
+            borderColor: '#4285f4',
+            backgroundColor: 'rgba(66, 133, 244, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            yAxisID: 'y'
+          }, {
+            label: 'Peak Power (W)',
+            data: chartPeakPower,
+            borderColor: '#ff6b6b',
+            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.4,
+            yAxisID: 'y1'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            },
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  return chartDates[context[0].dataIndex];
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              beginAtZero: true,
+              grid: {
+                color: '#e0e0e0'
+              },
+              ticks: {
+                color: '#000'
+              },
+              title: {
+                display: true,
+                text: 'Energy (kWh)'
+              }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              beginAtZero: true,
+              grid: {
+                drawOnChartArea: false
+              },
+              ticks: {
+                color: '#000'
+              },
+              title: {
+                display: true,
+                text: 'Peak Power (W)'
+              }
+            },
+            x: {
+              grid: {
+                color: '#e0e0e0'
+              },
+              ticks: {
+                color: '#000',
+                font: {
+                  size: 12,
+                  weight: 'bold'
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      // Chart tab switching functionality
+      document.querySelectorAll('.chart-tabs .tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          // Remove active class from all tabs
+          document.querySelectorAll('.chart-tabs .tab').forEach(t => t.classList.remove('active'));
+          // Add active class to clicked tab
+          this.classList.add('active');
+          
+          const chartType = this.getAttribute('data-chart');
+          currentChartType = chartType;
+          
+          if (chartType === 'energy') {
+            // Show Energy Usage and Peak Power
+            usageChart.data.datasets[0].data = {{ chart_data|safe }};
+            usageChart.data.datasets[0].label = 'Energy Usage (kWh)';
+            usageChart.data.datasets[0].borderColor = '#4285f4';
+            usageChart.data.datasets[0].backgroundColor = 'rgba(66, 133, 244, 0.1)';
+            
+            usageChart.data.datasets[1].data = chartPeakPower;
+            usageChart.data.datasets[1].label = 'Peak Power (W)';
+            usageChart.data.datasets[1].borderColor = '#ff6b6b';
+            usageChart.data.datasets[1].backgroundColor = 'rgba(255, 107, 107, 0.1)';
+            usageChart.data.datasets[1].hidden = false;
+            
+            usageChart.options.scales.y.title.text = 'Energy (kWh)';
+            usageChart.options.scales.y1.title.text = 'Peak Power (W)';
+            usageChart.options.scales.y1.display = true;
+          } else if (chartType === 'co2') {
+            // Show CO2 Emission only
+            usageChart.data.datasets[0].data = chartCO2Data;
+            usageChart.data.datasets[0].label = 'CO2 Emission (kg)';
+            usageChart.data.datasets[0].borderColor = '#28a745';
+            usageChart.data.datasets[0].backgroundColor = 'rgba(40, 167, 69, 0.1)';
+            
+            // Hide second dataset completely
+            usageChart.data.datasets[1].hidden = true;
+            
+            usageChart.options.scales.y.title.text = 'CO2 Emission (kg)';
+            usageChart.options.scales.y1.display = false;
+          }
+          
+          usageChart.update();
+        });
+      });
+
+      // Pie Chart
+      const pieCtx = document.getElementById('pieChart').getContext('2d');
+      const pieLabels = {{ pie_chart_labels|safe }};
+      const pieData = {{ pie_chart_data|safe }};
+      
+      // Set colors based on share percentage
+      const maxShare = Math.max(...pieData);
+      const minShare = Math.min(...pieData);
+      
+      const pieColors = pieLabels.map((label, index) => {
+        if (pieData[index] === maxShare) {
+          return '#b33939'; // Highest share - red
+        } else if (pieData[index] === minShare) {
+          return '#2a763b'; // Lowest share - green
+        } else {
+          // Random colors for others
+          const colors = ['#1f77b4', '#ff7f0e', '#8b5cf6', '#f59e0b', '#6366f1'];
+          return colors[index % colors.length];
+        }
+      });
+      
+      const pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+          labels: pieLabels,
+          datasets: [{
+            data: pieData,
+            backgroundColor: pieColors,
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              align: 'center',
+              labels: {
+                color: '#000',
+                font: function(context) {
+                  const label = context.chart.data.labels[context.dataIndex];
+                  return {
+                    size: 10,
+                    weight: label === '{{ office.name }}' ? 'bold' : 'normal'
+                  };
+                },
+                padding: 8,
+                usePointStyle: true,
+                boxWidth: 12
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+
+
+    </script>
+    <script src="{% static 'userJs/sidebarToggle.js' %}"></script>
+  </body>
+</html>

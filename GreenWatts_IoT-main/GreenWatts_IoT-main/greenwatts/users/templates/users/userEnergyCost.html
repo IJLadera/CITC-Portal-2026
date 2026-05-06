@@ -1,0 +1,395 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GreenWatts | Energy Cost</title>
+    <link rel="icon" type="image/png" href="{% static 'browse-logo.png' %}" />
+    <!-- Static CSS -->
+    <link rel="stylesheet" href="{% static 'userCss/common.css' %}" />
+    <link rel="stylesheet" href="{% static 'userCss/userEnergyCost.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .filters select option {
+        color: white !important;
+        background-color: #2c3e50 !important;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img src="{% static 'logo2.png' %}" alt="GreenWatts" class="logo-sidebar" />
+      <div class="admin-section">
+        <div class="admin-icon"><i class="fas fa-user"></i></div>
+        <p>{{ office.username|upper }}</p>
+      </div>
+
+      <nav>
+        <a href="{% url 'users:dashboard' %}"
+          ><i class="fas fa-tachometer-alt"></i> Dashboard</a
+        >
+
+        <a href="{% url 'users:office_usage' %}"
+          ><i class="fas fa-building"></i> Office Usage</a
+        >
+        <a href="{% url 'users:user_reports' %}"
+          ><i class="fas fa-chart-bar"></i> Reports</a
+        >
+        <a href="{% url 'users:user_energy_cost' %}" class="active"
+          ><i class="fas fa-peso-sign"></i> Energy Cost</a
+        >
+        <a href="{% url 'users:user_emmision' %}"
+          ><i class="fas fa-leaf"></i> CO2 Emission</a
+        >
+        <a href="{% url 'users:logout' %}"
+          ><i class="fas fa-sign-out-alt"></i> Log Out</a
+        >
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <!-- Sidebar toggle button -->
+        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1>Energy Cost</h1>
+        <p class="note">
+          <span class="red-text">Note!</span> The accumulated data will be generated every 12:00am.
+        </p>
+        <div class="date-time">
+          <i class="fas fa-calendar" style="cursor: pointer"></i>
+          <span id="live-time"></span>
+        </div>
+      </header>
+
+      <!-- Filters -->
+      <div class="filters">
+        <select id="week-select">
+          <option value="">Week</option>
+          {% for option in week_options %}
+          <option value="{{ option.value }}" {% if option.value == selected_week %}selected{% endif %}>{{ option.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="month-select">
+          {% if not selected_month %}
+          <option value="">Month</option>
+          {% endif %}
+          {% for month in month_options %}
+          <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>{{ month.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="year-select">
+          {% if not selected_year %}
+          <option value="">Year</option>
+          {% endif %}
+          {% for year in year_options %}
+          <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Report Cards -->
+      <div class="report-cards">
+        <div class="card total">
+          <div class="card-icon">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Total Energy Use</div>
+            <div class="card-value">{{ total_energy }}</div>
+          </div>
+        </div>
+        <div class="card highest">
+          <div class="card-icon">
+            <i class="fas fa-peso-sign"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Total Cost</div>
+            <div class="card-value">{{ total_cost }}</div>
+          </div>
+        </div>
+        <div class="card inactive">
+          <div class="card-icon">
+            <i class="fas fa-calendar-day"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Average Daily Cost</div>
+            <div class="card-value">{{ avg_daily_cost }}</div>
+          </div>
+        </div>
+        <div class="card best">
+          <div class="card-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">{% if level == 'year' %}Month{% elif level == 'month' %}Week{% else %}Day{% endif %} with Highest Cost</div>
+            <div class="card-value">{{ highest_cost_day }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Section -->
+      <div class="bottom-section">
+        <!-- Chart Section -->
+        <div class="change-cost">
+          <div class="chart-header">
+            <div class="chart-info">
+              <div class="info-item">
+                <div class="info-label">{{ previous_label }}</div>
+                <div class="info-value">{{ prev_cost }}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">{{ so_far_label }}</div>
+                <div class="info-value">{{ so_far_cost }}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">{{ predicted_label }}</div>
+                <div class="info-value">{{ predicted_cost }}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">{{ savings_label }}</div>
+                <div class="info-value">{{ savings }}</div>
+              </div>
+            </div>
+          </div>
+          <canvas id="energyChart"></canvas>
+          <!-- Energy Tip -->
+          <div class="energy-tip">
+            <p>
+              <span class="green-text">Energy Tip:</span> On warm days, setting
+              a programmable thermostat to a higher setting when you are not at
+              home can help reduce your energy costs by approximately 10
+              percent.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Script -->
+    <script src="{% static 'userJs/cardColorManager.js' %}"></script>
+    <script>
+      // Initialize card colors
+      document.addEventListener('DOMContentLoaded', function() {
+        window.cardColorManager.initEnergyCostCards({
+          energy_status: '{{ energy_status }}',
+          cost_status: '{{ cost_status }}',
+          avg_status: '{{ avg_status }}',
+          highest_status: '{{ highest_status }}'
+        });
+      });
+
+      const ctx = document.getElementById("energyChart").getContext("2d");
+      const chartLabels = {{ chart_labels|safe }};
+      const chartData = {{ chart_data|safe }};
+      const maxValue = chartData.length > 0 ? Math.max(...chartData) + 20 : 150;
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: chartLabels,
+          datasets: [
+            {
+              label: "Cost",
+              data: chartData,
+              backgroundColor: "#4caf50",
+              borderRadius: 5,
+              barPercentage: 0.6,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: maxValue,
+              ticks: {
+                stepSize: Math.ceil(maxValue / 6),
+                color: "#fff",
+                callback: function (value) {
+                  return value + " kWh";
+                },
+              },
+              grid: {
+                color: "#444",
+                borderColor: "#444",
+              },
+            },
+            x: {
+              grid: {
+                display: false,
+              },
+              ticks: {
+                color: "#fff",
+                maxRotation: 0,
+                minRotation: 0,
+                callback: function(value, index, values) {
+                  const label = chartLabels[index];
+                  if (Array.isArray(label)) {
+                    return [label[0], label[1]];
+                  }
+                  return label;
+                },
+              },
+            },
+          },
+          plugins: {
+            legend: {
+              display: false,
+            },
+          },
+        },
+      });
+    </script>
+    <script>
+      function updateTime() {
+        const now = new Date();
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        };
+        const timeString = now.toLocaleDateString("en-US", options);
+        document.getElementById("live-time").textContent = timeString;
+      }
+      setInterval(updateTime, 1000);
+      updateTime(); // initial call
+
+      function filterEnergyCost() {
+        const params = new URLSearchParams();
+        const week = document.getElementById('week-select').value;
+        const month = document.getElementById('month-select').value;
+        const year = document.getElementById('year-select').value;
+        
+        if (week) params.set('selected_week', week);
+        if (month) params.set('selected_month', month);
+        if (year) params.set('selected_year', year);
+        
+        window.location.href = params.toString() ? '?' + params.toString() : window.location.pathname;
+      }
+      
+      function updateMonthOptions(year) {
+        return fetch(`/get-user-months/?year=${year}`)
+          .then(response => response.json())
+          .then(data => {
+            const monthSelect = document.getElementById('month-select');
+            const weekSelect = document.getElementById('week-select');
+            if (data.status === 'success' && monthSelect) {
+              const currentMonth = monthSelect.value;
+              monthSelect.innerHTML = '<option value="">Month</option>';
+              data.months.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month.value;
+                option.textContent = month.name;
+                if (month.value === currentMonth) {
+                  option.selected = true;
+                }
+                monthSelect.appendChild(option);
+              });
+              // Only clear week options when year changes if no week is currently selected
+              if (weekSelect && !weekSelect.value) {
+                weekSelect.innerHTML = '<option value="">Week</option>';
+              }
+            }
+          })
+          .catch(error => console.error('Error fetching months:', error));
+      }
+      
+      function resetMonthOptions() {
+        const monthSelect = document.getElementById('month-select');
+        if (monthSelect) {
+          const allMonths = {{ month_options|safe }};
+          monthSelect.innerHTML = '<option value="">Month</option>';
+          allMonths.forEach(month => {
+            const option = document.createElement('option');
+            option.value = month.value;
+            option.textContent = month.name;
+            monthSelect.appendChild(option);
+          });
+        }
+      }
+      
+      document.addEventListener('DOMContentLoaded', function() {
+        const weekSelect = document.getElementById('week-select');
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+        
+        weekSelect.addEventListener('change', filterEnergyCost);
+        monthSelect.addEventListener('change', function() {
+          // Clear week selection when month changes
+          const weekSelect = document.getElementById('week-select');
+          if (weekSelect) {
+            weekSelect.selectedIndex = 0; // Select first option (Week)
+          }
+          // Update week options for selected month
+          const selectedMonth = monthSelect.value;
+          const selectedYear = yearSelect.value;
+          if (selectedMonth && selectedYear) {
+            fetch(`/get-user-weeks/?month=${selectedMonth}&year=${selectedYear}`)
+              .then(response => response.json())
+              .then(data => {
+                if (data.status === 'success' && weekSelect) {
+                  weekSelect.innerHTML = '<option value="">Week</option>';
+                  data.weeks.forEach(week => {
+                    const option = document.createElement('option');
+                    option.value = week.value;
+                    option.textContent = week.name;
+                    weekSelect.appendChild(option);
+                  });
+                }
+              })
+              .catch(error => console.error('Error fetching weeks:', error));
+          }
+          filterEnergyCost();
+        });
+        yearSelect.addEventListener('change', function() {
+          const selectedYear = yearSelect.value;
+          if (selectedYear) {
+            updateMonthOptions(selectedYear).then(() => {
+              filterEnergyCost();
+            });
+          } else {
+            resetMonthOptions();
+            filterEnergyCost();
+          }
+        });
+        
+        // Filter months on page load if year is pre-selected
+        const initialYear = yearSelect.value;
+        const initialMonth = monthSelect.value;
+        if (initialYear) {
+          updateMonthOptions(initialYear);
+        }
+        if (initialMonth && initialYear) {
+          fetch(`/get-user-weeks/?month=${initialMonth}&year=${initialYear}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && weekSelect) {
+                weekSelect.innerHTML = '<option value="">Week</option>';
+                data.weeks.forEach(week => {
+                  const option = document.createElement('option');
+                  option.value = week.value;
+                  option.textContent = week.name;
+                  weekSelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching weeks:', error));
+        }
+      });
+    </script>
+    <script src="{% static 'userJs/sidebarToggle.js' %}"></script>
+  </body>
+</html>

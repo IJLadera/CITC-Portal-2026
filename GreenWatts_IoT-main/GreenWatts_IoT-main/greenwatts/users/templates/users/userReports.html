@@ -1,0 +1,560 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GreenWatts - User Reports</title>
+    <link rel="icon" type="image/png" href="{% static 'browse-logo.png' %}" />
+    <link rel="stylesheet" href="{% static 'userCss/common.css' %}" />
+    <link rel="stylesheet" href="{% static 'userCss/userReport.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .filters select option {
+        color: white !important;
+        background-color: #2c3e50 !important;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img src="{% static 'logo2.png' %}" alt="GreenWatts" class="logo-sidebar" />
+      <div class="admin-section">
+        <div class="admin-icon"><i class="fas fa-user"></i></div>
+        <p>{{ office.username|upper }}</p>
+      </div>
+
+      <nav>
+        <a href="{% url 'users:dashboard' %}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+
+        <a href="{% url 'users:office_usage' %}"><i class="fas fa-building"></i> Office Usage</a>
+        <a href="{% url 'users:user_reports' %}" class="active"><i class="fas fa-chart-bar"></i> Reports</a>
+        <a href="{% url 'users:user_energy_cost' %}"><i class="fas fa-peso-sign"></i> Energy Cost</a>
+        <a href="{% url 'users:user_emmision' %}"><i class="fas fa-leaf"></i> CO2 Emission</a>
+        <!-- logout goes to logout view -->
+        <a href="{% url 'users:logout' %}"><i class="fas fa-sign-out-alt"></i> Log Out</a>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <!-- Sidebar toggle button -->
+        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="header-left">
+          <h1>Reports</h1>
+          <p class="note">
+            <span class="red-text">Note!</span> The accumulated data will be generated every 12:00am.
+          </p>
+        </div>
+          <div class="date-time">
+            <i class="fas fa-calendar" style="cursor: pointer"></i>
+            <span id="live-time"></span>
+        </div>
+      </header>
+
+      <!-- Filters -->
+      <div class="filters">
+        <select id="week-select">
+          {% if not selected_week %}
+          <option value="">Week</option>
+          {% else %}
+          <option value="{{ selected_week }}">{{ selected_week_name|default:"Week" }}</option>
+          {% endif %}
+          {% for option in week_options %}
+          {% if option.value != selected_week %}
+          <option value="{{ option.value }}">{{ option.name }}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+        <select id="month-select">
+          {% if not selected_month %}
+          <option value="">Month</option>
+          {% endif %}
+          {% for month in month_options %}
+          <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>{{ month.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="year-select">
+          {% if not selected_year %}
+          <option value="">Year</option>
+          {% endif %}
+          {% for year in year_options %}
+          <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+          {% endfor %}
+        </select>
+
+        <button class="export-btn" id="export-btn"><i class="fas fa-download"></i> Export</button>
+      </div>
+
+      <!-- Top Report Cards -->
+      <div class="report-cards">
+        <div class="card energy">
+          <div class="card-icon">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Energy Usage</div>
+            <div class="card-value">{{ total_energy_usage }} kWh</div>
+          </div>
+        </div>
+        <div class="card cost">
+          <div class="card-icon">
+            <i class="fas fa-peso-sign"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Cost</div>
+            <div class="card-value">{{ cost_predicted }}</div>
+          </div>
+        </div>
+        <div class="card co2">
+          <div class="card-icon">
+            <i class="fas fa-leaf"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">CO2 Emission</div>
+            <div class="card-value">{{ co2_emission }} kg</div>
+          </div>
+        </div>
+        <div class="card status">
+          <div class="card-icon">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Status</div>
+            <div class="card-value">{{ office_status }}</div>
+          </div>
+        </div>
+        <div class="card highest">
+          <div class="card-icon">
+            <i class="fas fa-calendar-day"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Highest Day</div>
+            <div class="card-value">{{ highest_usage_day }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Section -->
+      <div class="chart-frame">
+        <div class="chart-calendar-layout">
+          <div class="chart-container">
+            <h2 class="chart-title">Energy Usage Trend{% if level == 'year' %} - {{ selected_year }}{% elif level == 'month' %} - {% for month in month_options %}{% if month.value == selected_month %}{{ month.name }} {{ selected_year }}{% endif %}{% endfor %}{% elif level == 'week' %} - Week{% elif selected_date %} - {{ selected_date|date:"F d, Y" }}{% endif %}</h2>
+            <div class="chart-inner">
+              <canvas id="energyChart" style="height: 400px; width: 100%;"></canvas>
+            </div>
+          </div>
+          <div class="chart-container">
+            <h2 class="calendar-title">Energy Usage Calendar</h2>
+            <div class="calendar-inner">
+              <div class="calendar-header">
+                <button class="calendar-nav" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                <span class="calendar-month-year" id="monthYear">July 2025</span>
+                <button class="calendar-nav" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+              </div>
+              <div class="calendar-grid">
+                <div class="calendar-weekdays">
+                  <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div class="calendar-days" id="calendarDays">
+                  <!-- Calendar days will be generated by JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="recommendation chart-recommendation">
+          <i class="fas fa-lightbulb" style="color: #ffc107; margin-right: 8px;"></i>
+          <strong>Recommendation:</strong> {{ recommendation }}
+        </div>
+        
+        <!-- Energy Tip Section -->
+        <div class="energy-tip">
+          <p>
+            <span class="green-text">Energy Tip:</span> On warm days, setting a
+            programmable thermostat to a higher setting when you are not at home
+            can help reduce your energy costs by approximately 10 percent.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Chart Script -->
+    <script src="{% static 'userJs/cardColorManager.js' %}"></script>
+    <script>
+      // Initialize card colors
+      document.addEventListener('DOMContentLoaded', function() {
+        window.cardColorManager.initReportsCards({
+          energy_status: '{{ energy_status }}',
+          cost_status: '{{ cost_status }}',
+          co2_status: '{{ co2_status }}',
+          status_status: '{{ status_status }}',
+          highest_status: '{{ highest_status }}'
+        });
+      });
+
+      const ctx = document.getElementById("energyChart").getContext("2d");
+      const chartLabels = {{ chart_labels|safe }};
+      const chartValues = {{ chart_values|safe }};
+      const chartPeakPower = {{ chart_peak_power|safe }};
+      
+      // Format labels based on data type
+      let formattedLabels = chartLabels;
+      if (chartLabels.length > 0 && Array.isArray(chartLabels[0])) {
+        // If labels are arrays (day view), use the first element
+        formattedLabels = chartLabels.map(label => label[0]);
+      }
+      const chartColors = {{ chart_colors|safe }};
+
+      const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: formattedLabels,
+          datasets: [
+            {
+              label: "Energy Usage",
+              data: chartValues,
+              backgroundColor: chartColors,
+              borderColor: chartColors,
+              borderWidth: 2,
+              fill: false,
+              pointBackgroundColor: chartColors,
+              pointBorderColor: chartColors
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                afterLabel: function(context) {
+                  const peakPower = chartPeakPower[context.dataIndex];
+                  return `Peak Power: ${peakPower} W`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: false
+              },
+              grid: {
+                color: '#e0e0e0'
+              }
+            },
+            x: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                maxRotation: 45,
+                minRotation: 0,
+                padding: 20,
+                font: {
+                  size: 12
+                },
+                callback: function(value, index, values) {
+                  const label = chartLabels[index];
+                  if (Array.isArray(label)) {
+                    return [label[0], label[1]];
+                  }
+                  return label;
+                }
+              }
+            }
+          }
+        },
+      });
+    </script>
+    <script>
+      function updateTime() {
+        const now = new Date();
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        };
+        const timeString = now.toLocaleDateString("en-US", options);
+        document.getElementById("live-time").textContent = timeString;
+      }
+      setInterval(updateTime, 1000);
+      updateTime();
+    </script>
+    <script>
+      function filterReports() {
+        const params = new URLSearchParams();
+        const week = document.getElementById('week-select').value;
+        const month = document.getElementById('month-select').value;
+        const year = document.getElementById('year-select').value;
+        
+        // If only year is selected, clear month and week
+        if (year && !month && !week) {
+          params.set('selected_year', year);
+        }
+        // If only month is selected, clear week and year
+        else if (month && !year && !week) {
+          params.set('selected_month', month);
+        }
+        else {
+          if (week) params.set('selected_week', week);
+          if (month) params.set('selected_month', month);
+          if (year) params.set('selected_year', year);
+        }
+        
+        window.location.href = params.toString() ? '?' + params.toString() : window.location.pathname;
+      }
+      
+      function updateMonthOptions(year) {
+        fetch(`/get-user-months/?year=${year}`)
+          .then(response => response.json())
+          .then(data => {
+            const monthSelect = document.getElementById('month-select');
+            const weekSelect = document.getElementById('week-select');
+            if (data.status === 'success' && monthSelect) {
+              const currentSelected = monthSelect.value;
+              monthSelect.innerHTML = '<option value="">Month</option>';
+              data.months.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month.value;
+                option.textContent = month.name;
+                if (month.value === currentSelected) {
+                  option.selected = true;
+                }
+                monthSelect.appendChild(option);
+              });
+              // Clear week options when year changes
+              if (weekSelect) {
+                weekSelect.innerHTML = '<option value="">Week</option>';
+              }
+            }
+          })
+          .catch(error => console.error('Error fetching months:', error));
+      }
+      
+      function updateWeekOptions(year, month) {
+        if (!year || !month) {
+          const weekSelect = document.getElementById('week-select');
+          if (weekSelect) {
+            weekSelect.innerHTML = '<option value="">Week</option>';
+          }
+          return;
+        }
+        
+        fetch(`/get-user-weeks/?year=${year}&month=${month}`)
+          .then(response => response.json())
+          .then(data => {
+            const weekSelect = document.getElementById('week-select');
+            if (data.status === 'success' && weekSelect) {
+              const currentSelected = weekSelect.value;
+              weekSelect.innerHTML = '<option value="">Week</option>';
+              data.weeks.forEach(week => {
+                const option = document.createElement('option');
+                option.value = week.value;
+                option.textContent = week.name;
+                weekSelect.appendChild(option);
+              });
+              
+              // Auto-select latest week if no week was previously selected
+              if (!currentSelected && data.weeks.length > 0) {
+                // Don't auto-select when filtering by month
+              } else if (currentSelected) {
+                // Try to restore previous selection
+                weekSelect.value = currentSelected;
+              }
+            }
+          })
+          .catch(error => console.error('Error fetching weeks:', error));
+      }
+      
+      function resetMonthOptions() {
+        const monthSelect = document.getElementById('month-select');
+        if (monthSelect) {
+          const currentSelected = monthSelect.value;
+          const allMonths = {{ month_options|safe }};
+          monthSelect.innerHTML = '<option value="">Month</option>';
+          allMonths.forEach(month => {
+            const option = document.createElement('option');
+            option.value = month.value;
+            option.textContent = month.name;
+            if (month.value === currentSelected) {
+              option.selected = true;
+            }
+            monthSelect.appendChild(option);
+          });
+        }
+      }
+      
+      document.addEventListener('DOMContentLoaded', function() {
+        const yearSelect = document.getElementById('year-select');
+        const monthSelect = document.getElementById('month-select');
+        
+        if (yearSelect) {
+          yearSelect.addEventListener('change', function() {
+            const selectedYear = yearSelect.value;
+            if (selectedYear) {
+              updateMonthOptions(selectedYear);
+              // Clear month and week selections when year changes
+              const monthSelect = document.getElementById('month-select');
+              const weekSelect = document.getElementById('week-select');
+              if (monthSelect) monthSelect.value = '';
+              if (weekSelect) weekSelect.value = '';
+              // Apply filter after clearing selections
+              filterReports();
+            } else {
+              resetMonthOptions();
+            }
+          });
+          
+          // Filter months on page load if year is pre-selected
+          const initialYear = yearSelect.value;
+          if (initialYear) {
+            updateMonthOptions(initialYear);
+          }
+        }
+        
+        if (monthSelect) {
+          monthSelect.addEventListener('change', function() {
+            const selectedYear = yearSelect ? yearSelect.value : '';
+            const selectedMonth = monthSelect.value;
+            
+            // Clear week when month changes
+            const weekSelect = document.getElementById('week-select');
+            if (weekSelect) {
+              weekSelect.value = '';
+            }
+            
+            // Apply filter after clearing week
+            if (selectedMonth) {
+              filterReports();
+            }
+            
+            updateWeekOptions(selectedYear, selectedMonth);
+          });
+          
+          // Update weeks on page load if month is pre-selected
+          const initialYear = yearSelect ? yearSelect.value : '';
+          const initialMonth = monthSelect.value;
+          if (initialYear && initialMonth) {
+            updateWeekOptions(initialYear, initialMonth);
+          }
+        }
+        
+        const weekSelect = document.getElementById('week-select');
+        if (weekSelect) {
+          weekSelect.addEventListener('change', function() {
+            // Apply filter immediately when week changes
+            filterReports();
+          });
+        }
+        
+        document.getElementById('export-btn').addEventListener('click', function() {
+          const params = new URLSearchParams();
+          const week = document.getElementById('week-select').value;
+          const month = document.getElementById('month-select').value;
+          const year = document.getElementById('year-select').value;
+          
+          // If only year is selected, clear month and week for export
+          if (year && !month && !week) {
+            params.append('selected_year', year);
+          }
+          // If only month is selected, clear week and year for export
+          else if (month && !year && !week) {
+            params.append('selected_month', month);
+          }
+          else {
+            if (week) params.append('selected_week', week);
+            if (month) params.append('selected_month', month);
+            if (year) params.append('selected_year', year);
+          }
+          
+          window.open('{% url "users:export_user_reports" %}' + (params.toString() ? '?' + params.toString() : ''), '_blank');
+        });
+      });
+    </script>
+    
+    <!-- Calendar Script -->
+    <script>
+      // Calendar functionality
+      const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+      
+      const calendarEnergy = {{ calendar_energy|safe }};
+      let currentDate = new Date({{ calendar_year }}, {{ calendar_month }} - 1);
+      
+      function generateCalendar(year, month) {
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const calendarDays = document.getElementById('calendarDays');
+        const monthYear = document.getElementById('monthYear');
+        
+        monthYear.textContent = `${monthNames[month]} ${year}`;
+        calendarDays.innerHTML = '';
+        
+        // Add empty cells for days before the first day of the month
+        for (let i = 0; i < firstDay; i++) {
+          const emptyDay = document.createElement('div');
+          emptyDay.className = 'calendar-day empty';
+          calendarDays.appendChild(emptyDay);
+        }
+        
+        // Add days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dayElement = document.createElement('div');
+          dayElement.className = 'calendar-day';
+          dayElement.textContent = day;
+          
+          // Get energy usage for this day
+          const energy = calendarEnergy[day] || 0;
+          
+          // Apply threshold-based colors (using real thresholds from database)
+          if (energy > {{ energy_moderate_max }}) {
+            dayElement.classList.add('high-usage');
+          } else if (energy > {{ energy_efficient_max }}) {
+            dayElement.classList.add('medium-usage');
+          } else if (energy > 0) {
+            dayElement.classList.add('low-usage');
+          }
+          
+          calendarDays.appendChild(dayElement);
+        }
+      }
+      
+      document.getElementById('prevMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        const newMonth = currentDate.getMonth() + 1;
+        const newYear = currentDate.getFullYear();
+        window.location.href = `?selected_month=${newMonth}&selected_year=${newYear}`;
+      });
+      
+      document.getElementById('nextMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        const newMonth = currentDate.getMonth() + 1;
+        const newYear = currentDate.getFullYear();
+        window.location.href = `?selected_month=${newMonth}&selected_year=${newYear}`;
+      });
+      
+      // Initialize calendar
+      generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+    </script>
+    
+    <script src="{% static 'userJs/sidebarToggle.js' %}"></script>
+  </body>
+</html>

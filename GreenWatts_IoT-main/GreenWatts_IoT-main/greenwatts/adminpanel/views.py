@@ -1,0 +1,2357 @@
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
+from django.views.decorators.cache import cache_control
+from functools import wraps
+from .models import Admin, EnergyThreshold, CO2Threshold, Notification, WiFiNetwork
+from ..sensors.models import CostSettings, CO2Settings, SystemLog, WeeklySpikeAnalysis
+from greenwatts.users.models import Office
+from ..sensors.models import Device, SensorReading, CostSettings, CO2Settings
+from django.db.models import Sum, F, Max, Q
+from django.utils import timezone
+from django.db.models.functions import ExtractYear, ExtractMonth, TruncMonth
+from datetime import datetime, timedelta, date
+from .utils import get_random_energy_tip, get_scaled_thresholds
+from ..sensors.utils import calculate_energy_metrics_with_historical_rates
+import json
+import csv
+
+# Constants
+MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+               'July', 'August', 'September', 'October', 'November', 'December']
+
+def get_threshold_for_date(target_date):
+    """Get the threshold that was active on a specific date"""
+    # Get active thresholds (ended_at is null)
+    energy_threshold = EnergyThreshold.objects.filter(ended_at__isnull=True).first()
+    co2_threshold = CO2Threshold.objects.filter(ended_at__isnull=True).first()
+    
+    # If no active threshold, get the latest one
+    if not energy_threshold:
+        energy_threshold = EnergyThreshold.objects.order_by('-created_at').first()
+    if not co2_threshold:
+        co2_threshold = CO2Threshold.objects.order_by('-created_at').first()
+    
+    return {
+        'energy_efficient_max': energy_threshold.efficient_max if energy_threshold else 50.0,
+        'energy_moderate_max': energy_threshold.moderate_max if energy_threshold else 100.0,
+        'co2_efficient_max': co2_threshold.efficient_max if co2_threshold else 8.0,
+        'co2_moderate_max': co2_threshold.moderate_max if co2_threshold else 13.0,
+    }
+
+def get_rates_for_date(target_date):
+    """Get the cost and CO2 rates that were active on a specific date"""
+    from django.utils import timezone
+    target_datetime = timezone.make_aware(timezone.datetime.combine(target_date, timezone.datetime.min.time()))
+    
+    cost_rate = CostSettings.objects.filter(
+        created_at__date__lte=target_date
+    ).filter(
+        Q(ended_at__isnull=True) | Q(ended_at__date__gt=target_date)
+    ).first()
+    
+    co2_rate = CO2Settings.objects.filter(
+        created_at__date__lte=target_date
+    ).filter(
+        Q(ended_at__isnull=True) | Q(ended_at__date__gt=target_date)
+    ).first()
+    
+    if not cost_rate:
+        cost_rate = CostSettings.get_current_rate()
+    if not co2_rate:
+        co2_rate = CO2Settings.get_current_rate()
+    
+    return {
+        'cost_per_kwh': cost_rate.cost_per_kwh if cost_rate else 12.0,
+        'co2_per_kwh': co2_rate.co2_emission_factor if co2_rate else 0.475
+    }
+
+def get_valid_office_ids():
+    """Get all valid office ids from Office table"""
+    return set(Office.objects.values_list('office_id', flat=True))
+
+def get_year_options(valid_office_ids):
+    """Get year options: all years with data (cached)"""
+    from django.core.cache import cache
+    cache_key = f"year_options_{hash(tuple(sorted(valid_office_ids)))}"
+    years = cache.get(cache_key)
+    if years is None:
+        years_with_data = SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).values_list('date__year', flat=True).distinct().order_by('date__year')
+        years = [str(y) for y in years_with_data]
+        cache.set(cache_key, years, 300)  # Cache for 5 minutes
+    return years
+
+def get_month_options(valid_office_ids, selected_year=None):
+    """Get month options: all months with data, or filtered by year if selected (cached)"""
+    from django.core.cache import cache
+    cache_key = f"month_options_{hash(tuple(sorted(valid_office_ids)))}_{selected_year or 'all'}"
+    months = cache.get(cache_key)
+    if months is None:
+        if selected_year:
+            months_with_data = SensorReading.objects.filter(
+                date__year=int(selected_year),
+                device__office__office_id__in=valid_office_ids
+            ).exclude(
+                device__office__name='DS'
+            ).values_list('date__month', flat=True).distinct().order_by('date__month')
+        else:
+            months_with_data = SensorReading.objects.filter(
+                device__office__office_id__in=valid_office_ids
+            ).exclude(
+                device__office__name='DS'
+            ).values_list('date__month', flat=True).distinct().order_by('date__month')
+        months = [{'value': str(m), 'name': MONTH_NAMES[m-1]} for m in months_with_data]
+        cache.set(cache_key, months, 300)  # Cache for 5 minutes
+    return months
+
+def get_day_options(valid_office_ids, selected_month=None, selected_year=None):
+    """Get day options: all days with data, or filtered by month/year if selected"""
+    if selected_month and selected_year:
+        days = SensorReading.objects.filter(
+            date__year=int(selected_year),
+            date__month=int(selected_month),
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')
+    else:
+        days = SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')
+    return [d.strftime('%m/%d/%Y') for d in days]
+
+def determine_filter_level(selected_day, selected_month, selected_year, selected_week):
+    """Determine filter kwargs and level based on selections"""
+    from datetime import timedelta
+    filter_kwargs = {}
+    selected_date = None
+    level = 'day'
+
+    if selected_day:
+        try:
+            month_str, day_str, year_str = selected_day.split('/')
+            selected_date = date(int(year_str), int(month_str), int(day_str))
+            filter_kwargs = {'date': selected_date}
+            level = 'day'
+            selected_month = month_str
+            selected_year = year_str
+        except ValueError:
+            selected_date = None
+    elif selected_week:
+        try:
+            week_start = date.fromisoformat(selected_week)
+            week_end = week_start + timedelta(days=6)
+            filter_kwargs = {'date__gte': week_start, 'date__lte': week_end}
+            level = 'week'
+            selected_month = str(week_start.month)
+            selected_year = str(week_start.year)
+        except ValueError:
+            selected_week = None
+    elif selected_month and selected_year:
+        filter_kwargs = {'date__year': int(selected_year), 'date__month': int(selected_month)}
+        level = 'month'
+    elif selected_year:
+        filter_kwargs = {'date__year': int(selected_year)}
+        level = 'year'
+    else:
+        # Default to latest date
+        latest_data = get_latest_date_filter()
+        filter_kwargs = latest_data['filter_kwargs']
+        if filter_kwargs:
+            selected_date = latest_data['selected_date']
+            selected_month = None  # Don't pre-select month when using latest date
+            selected_year = latest_data['selected_year']  # Show year for month filtering
+            level = 'day'
+
+    return filter_kwargs, selected_date, level, selected_month, selected_year
+
+def get_latest_date_filter():
+    """Get the latest date from SensorReading as default filter"""
+    latest_date_qs = SensorReading.objects.aggregate(latest_date=Max('date'))
+    latest_date = latest_date_qs['latest_date']
+    if latest_date:
+        return {
+            'filter_kwargs': {'date': latest_date},
+            'selected_date': latest_date,
+            'selected_day': latest_date.strftime('%m/%d/%Y'),
+            'selected_month': None,  # Don't pre-select month when using latest date
+            'selected_year': str(latest_date.year)  # Show year for month filtering
+        }
+    return {'filter_kwargs': {}}
+
+def admin_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.session.get('admin_id'):
+            response = redirect('adminpanel:admin_login')
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
+            return response
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+def get_week_options(valid_office_ids, selected_month=None, selected_year=None):
+    from datetime import date, timedelta
+    from django.db.models.functions import ExtractYear, ExtractMonth
+
+    if selected_month and selected_year:
+        year = int(selected_year)
+        month = int(selected_month)
+        
+        dates_in_month = SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids,
+            date__year=year,
+            date__month=month
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day')
+
+        if not dates_in_month:
+            return []
+
+        first_day = date(year, month, 1)
+        week_options = []
+        week_num = 1
+        current_start = first_day
+        
+        while current_start.month == month:
+            week_end = current_start + timedelta(days=6)
+            if any(d >= current_start and d <= week_end for d in dates_in_month):
+                week_options.append({
+                    'value': current_start.strftime('%Y-%m-%d'),
+                    'name': f"Week {week_num}"
+                })
+                week_num += 1
+            current_start += timedelta(days=7)
+            if current_start.month != month:
+                break
+
+        return week_options
+    else:
+        return []
+
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def index(request):
+    return HttpResponse("Hello from Admin app")
+
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def admin_login(request):
+    from .login_attempts import is_locked_out, record_failed_attempt, clear_attempts, get_lockout_time_remaining
+    
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        if is_locked_out(username, 'admin'):
+            messages.error(request, "Account locked. Try again in 5 minutes.")
+            return render(request, "adminLogin.html")
+
+        try:
+            admin = Admin.objects.get(username=username)
+            if admin.password == password:  # 
+                clear_attempts(username, 'admin')
+                request.session["admin_id"] = admin.admin_id
+                return redirect("adminpanel:admin_dashboard")  
+            else:
+                attempts = record_failed_attempt(username, 'admin')
+                if attempts >= 5:
+                    messages.error(request, "Account locked for 5 minutes due to multiple failed attempts.")
+                elif attempts >= 2:
+                    remaining = 5 - attempts
+                    messages.error(request, f"Invalid password. {remaining} attempts remaining.")
+                else:
+                    messages.error(request, "Invalid password")
+        except Admin.DoesNotExist:
+            attempts = record_failed_attempt(username, 'admin')
+            if attempts >= 5:
+                messages.error(request, "Account locked for 5 minutes due to multiple failed attempts.")
+            elif attempts >= 2:
+                remaining = 5 - attempts
+                messages.error(request, f"Invalid password. {remaining} attempts remaining.")
+            else:
+                messages.error(request, "Invalid password")
+
+    return render(request, "adminLogin.html")
+
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def admin_dashboard(request):
+    from django.db.models import Max
+    from django.db.models.functions import TruncDate, ExtractYear, ExtractMonth
+    from datetime import date
+    from datetime import datetime as dt
+
+    # Get selected day, month, year, week from request
+    selected_day = request.GET.get('selected_day')
+    selected_month = request.GET.get('selected_month')
+    selected_year = request.GET.get('selected_year')
+    selected_week = request.GET.get('selected_week')
+
+    # Force month filtering when month is selected
+    if selected_month and not selected_day and not selected_week:
+        if not selected_year:
+            selected_year = str(dt.now().year)
+
+    # Get all valid office ids from Office table
+    valid_office_ids = get_valid_office_ids()
+
+    # Year options: all years with data
+    year_options = get_year_options(valid_office_ids)
+
+    # Month options: filtered by year if selected
+    month_options = get_month_options(valid_office_ids, selected_year)
+
+    # Day options: all days with data, or filtered by month/year if selected
+    day_options = get_day_options(valid_office_ids, selected_month, selected_year)
+
+    # Week options: filtered by selected month/year if available
+    week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+
+    # Determine filter date range
+    filter_kwargs, selected_date, level, selected_month, selected_year = determine_filter_level(selected_day, selected_month, selected_year, selected_week)
+    
+    # Auto-select latest day if no filters provided
+    if not selected_day and selected_date:
+        selected_day = selected_date.strftime('%m/%d/%Y')
+        # Don't pre-select month but show year when auto-selecting latest day
+        if not request.GET.get('selected_month') and not request.GET.get('selected_year'):
+            selected_month = None
+            selected_year = str(selected_date.year)
+
+    # Get sensor readings for historical rate calculations
+    sensor_readings = SensorReading.objects.filter(
+        **filter_kwargs,
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    )
+    
+    # Calculate metrics using historical rates
+    historical_metrics = calculate_energy_metrics_with_historical_rates(sensor_readings)
+    
+    total_energy = sensor_readings.aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+    aggregates = {
+        'total_energy_usage': total_energy,
+        'total_cost_predicted': historical_metrics['total_cost'],
+        'total_co2_emission': historical_metrics['total_co2']
+    }
+
+    # Calculate predicted CO2 emission based on filter level
+    if level == 'year':
+        # For year: predict based on current year's monthly average
+        current_year = int(selected_year)
+        
+        # Get months with data so far in the year
+        months_with_data = SensorReading.objects.filter(
+            date__year=current_year,
+            device__office__office_id__in=valid_office_ids
+        ).exclude(device__office__name='DS').dates('date', 'month').count()
+        
+        if months_with_data > 0:
+            monthly_avg = (aggregates['total_co2_emission'] or 0) / months_with_data
+            predicted_co2_emission = monthly_avg * 12
+        else:
+            predicted_co2_emission = aggregates['total_co2_emission'] or 0
+    elif level == 'month':
+        # For month: predict based on current month's daily average
+        current_year = int(selected_year)
+        current_month = int(selected_month)
+        from calendar import monthrange
+        _, days_in_month = monthrange(current_year, current_month)
+        
+        # Get days with data so far in the month
+        days_with_data = SensorReading.objects.filter(
+            date__year=current_year, date__month=current_month,
+            device__office__office_id__in=valid_office_ids
+        ).exclude(device__office__name='DS').dates('date', 'day').count()
+        
+        if days_with_data > 0:
+            daily_avg = (aggregates['total_co2_emission'] or 0) / days_with_data
+            predicted_co2_emission = daily_avg * days_in_month
+        else:
+            predicted_co2_emission = aggregates['total_co2_emission'] or 0
+    else:
+        # Default prediction for other levels
+        predicted_co2_emission = (aggregates['total_co2_emission'] or 0) * 2
+
+    # Prepare dates for display based on filter level
+    if level == 'year':
+        current_year = int(selected_year)
+        current_date = f"{current_year}"
+        predicted_date = f"End of {current_year}"
+    elif level == 'month':
+        current_year = int(selected_year)
+        current_month = int(selected_month)
+        current_date = date(current_year, current_month, 1).strftime("%B %Y")
+        from calendar import monthrange
+        _, last_day = monthrange(current_year, current_month)
+        predicted_date = date(current_year, current_month, last_day).strftime("%B %d, %Y")
+    elif selected_date:
+        current_date = selected_date.strftime("%B %d, %Y")
+        predicted_date = (dt.combine(selected_date, dt.min.time()) + timedelta(days=7)).strftime("%B %d, %Y")
+    else:
+        current_date = datetime.now().strftime("%B %d, %Y")
+        predicted_date = (datetime.now() + timedelta(days=7)).strftime("%B %d, %Y")
+
+    # Aggregate energy usage per office from sensor readings
+    from django.db.models import F
+
+    office_energy_qs = SensorReading.objects.filter(
+        **filter_kwargs,
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    ).values(
+        office_id=F('device__office__office_id'),
+        office_name=F('device__office__name')
+    ).annotate(
+        total_energy=Sum('total_energy_kwh')
+    ).order_by('-total_energy')
+
+    # Get thresholds for the selected date and scale based on level
+    base_thresholds = get_threshold_for_date(selected_date or datetime.now().date())
+    threshold_values = get_scaled_thresholds(base_thresholds, level)
+    energy_efficient_max = threshold_values['energy_efficient_max']
+    energy_moderate_max = threshold_values['energy_moderate_max']
+
+    # Determine status based on total_energy thresholds
+    active_alerts = []
+    for record in office_energy_qs:
+        # Skip office with name exactly 'DS' or empty to remove duplicate entry
+        if record['office_name'] == 'DS' or not record['office_name']:
+            continue
+        energy = record['total_energy'] or 0
+        if energy > energy_moderate_max:
+            status = 'High'
+        elif energy > energy_efficient_max:
+            status = 'Moderate'
+        else:
+            status = 'Efficient'
+        active_alerts.append({
+            'office_name': record['office_name'],
+            'energy_usage': energy,
+            'status': status
+        })
+
+    # Calculate progress percentage for CO2 emission bar
+    co2_emission_progress = 0
+    if predicted_co2_emission > 0:
+        co2_emission_progress = min(100, (aggregates['total_co2_emission'] or 0) / predicted_co2_emission * 100)
+
+    # Change in cost data - filter consistently based on level
+    if level == 'year':
+        # Compare current year with previous year
+        current_year = int(selected_year)
+        prev_year = current_year - 1
+        
+        current_readings = SensorReading.objects.filter(
+            date__year=current_year,
+            device__office__office_id__in=valid_office_ids
+        ).exclude(device__office__name='DS')
+        current_metrics = calculate_energy_metrics_with_historical_rates(current_readings)
+        current_cost = current_metrics['total_cost']
+        
+        prev_readings = SensorReading.objects.filter(
+            date__year=prev_year,
+            device__office__office_id__in=valid_office_ids
+        ).exclude(device__office__name='DS')
+        prev_metrics = calculate_energy_metrics_with_historical_rates(prev_readings)
+        prev_cost = prev_metrics['total_cost']
+        
+        change_costs = [prev_cost, current_cost]
+        change_dates = [date(prev_year, 1, 1), date(current_year, 1, 1)]
+    elif level == 'month':
+        # Compare current month with previous month
+        current_year = int(selected_year)
+        current_month = int(selected_month)
+        prev_year = current_year
+        prev_month = current_month - 1
+        if prev_month == 0:
+            prev_month = 12
+            prev_year -= 1
+        
+        current_readings = SensorReading.objects.filter(
+            date__year=current_year, date__month=current_month,
+            device__office__office_id__in=valid_office_ids
+        ).exclude(device__office__name='DS')
+        current_metrics = calculate_energy_metrics_with_historical_rates(current_readings)
+        current_cost = current_metrics['total_cost']
+        
+        prev_readings = SensorReading.objects.filter(
+            date__year=prev_year, date__month=prev_month,
+            device__office__office_id__in=valid_office_ids
+        ).exclude(device__office__name='DS')
+        prev_metrics = calculate_energy_metrics_with_historical_rates(prev_readings)
+        prev_cost = prev_metrics['total_cost']
+        
+        change_costs = [prev_cost, current_cost]
+        change_dates = [date(prev_year, prev_month, 1), date(current_year, current_month, 1)]
+    elif selected_date:
+        # Compare selected_date and previous day
+        previous_date = selected_date - timedelta(days=1)
+        change_dates = [previous_date, selected_date]
+        change_costs = []
+        for d in change_dates:
+            daily_readings = SensorReading.objects.filter(
+                date=d, device__office__office_id__in=valid_office_ids
+            ).exclude(device__office__name='DS')
+            daily_metrics = calculate_energy_metrics_with_historical_rates(daily_readings)
+            change_costs.append(daily_metrics['total_cost'])
+    else:
+        # Default to last two days with data
+        change_dates_qs = SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids
+        ).exclude(device__office__name='DS').dates('date', 'day').distinct().order_by('-date')[:2]
+        change_dates = list(change_dates_qs)
+        change_costs = []
+        for d in change_dates:
+            daily_readings = SensorReading.objects.filter(
+                date=d, device__office__office_id__in=valid_office_ids
+            ).exclude(device__office__name='DS')
+            daily_metrics = calculate_energy_metrics_with_historical_rates(daily_readings)
+            change_costs.append(daily_metrics['total_cost'])
+
+    if len(change_costs) >= 2:
+        latest_cost = change_costs[1]  # selected_date or latest
+        prev_cost = change_costs[0]  # previous
+        if prev_cost > 0:
+            change_percent = ((latest_cost - prev_cost) / prev_cost) * 100
+        else:
+            change_percent = 0
+        is_decrease = change_percent < 0
+        change_percent_abs = abs(change_percent)
+        
+        # Heights: proportional to actual cost values
+        if prev_cost == 0 and latest_cost == 0:
+            heights = [50, 50]  # Equal heights when both are zero
+        elif prev_cost == 0:
+            heights = [20, 100]  # Latest is much higher
+        elif latest_cost == 0:
+            heights = [100, 20]  # Previous is much higher
+        else:
+            # Scale heights proportionally to cost values
+            max_cost = max(prev_cost, latest_cost)
+            min_height = 30  # Minimum height for visibility
+            heights = [
+                max(min_height, (prev_cost / max_cost) * 100),
+                max(min_height, (latest_cost / max_cost) * 100)
+            ]
+        
+        if level == 'year':
+            bar1_label = str(change_dates[0].year)  # previous year
+            bar2_label = str(change_dates[1].year)  # current year
+        elif level == 'month':
+            bar1_label = change_dates[0].strftime('%B %Y')  # previous month
+            bar2_label = change_dates[1].strftime('%B %Y')  # current month
+        else:
+            bar1_label = change_dates[0].strftime('%B %d')  # previous day
+            bar2_label = change_dates[1].strftime('%B %d')  # current day
+            
+        change_data = {
+            'bar1_label': bar1_label,
+            'bar1_height': heights[0],
+            'bar2_label': bar2_label,
+            'bar2_height': heights[1],
+            'percent': change_percent_abs,
+            'type': 'DECREASE' if is_decrease else 'INCREASE',
+            'arrow': 'down' if is_decrease else 'up',
+            'color_class': 'decrease' if is_decrease else 'increase'
+        }
+    else:
+        change_data = None
+
+    # Determine efficiency levels for cards
+    total_energy = aggregates['total_energy_usage'] or 0
+    if total_energy > energy_moderate_max:
+        energy_efficiency = 'high'
+    elif total_energy > energy_efficient_max:
+        energy_efficiency = 'moderate'
+    else:
+        energy_efficiency = 'efficient'
+
+    context = {
+        'total_energy_usage': aggregates['total_energy_usage'] or 0,
+        'total_cost_predicted': aggregates['total_cost_predicted'] or 0,
+        'total_co2_emission': aggregates['total_co2_emission'] or 0,
+        'predicted_co2_emission': predicted_co2_emission,
+        'current_date': current_date,
+        'predicted_date': predicted_date,
+        'co2_emission_progress': co2_emission_progress,
+        'active_alerts': active_alerts,
+        'change_data': change_data,
+        'day_options': day_options,
+        'month_options': month_options,
+        'year_options': year_options,
+        'week_options': week_options,
+        'selected_day': selected_day,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
+        'selected_week': selected_week,
+        'level': level,
+        'energy_efficiency': energy_efficiency,
+        'random_energy_tip': get_random_energy_tip(),
+    }
+    return render(request, 'adminDashboard.html', context)
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def admin_setting(request):
+    from .models import WiFiNetwork
+    
+    offices = Office.objects.all()
+    devices = Device.objects.select_related('office').all().order_by('device_id')
+    wifi_networks = WiFiNetwork.objects.all().order_by('priority', 'ssid')
+    
+    energy_threshold = EnergyThreshold.objects.filter(ended_at__isnull=True).first()
+    co2_threshold = CO2Threshold.objects.filter(ended_at__isnull=True).first()
+    cost_settings = CostSettings.get_current_rate()
+    co2_settings = CO2Settings.get_current_rate()
+    
+    class ThresholdData:
+        def __init__(self, energy, co2, cost, co2_rate):
+            self.energy_efficient_max = energy.efficient_max if energy else 10.0
+            self.energy_moderate_max = energy.moderate_max if energy else 20.0
+            self.energy_high_max = energy.high_max if energy else 30.0
+            self.co2_efficient_max = co2.efficient_max if co2 else 8.0
+            self.co2_moderate_max = co2.moderate_max if co2 else 13.0
+            self.co2_high_max = co2.high_max if co2 else 18.0
+            self.cost_per_kwh = cost.cost_per_kwh if cost else 12.0
+            self.co2_per_kwh = co2_rate.co2_emission_factor if co2_rate else 0.475
+    
+    threshold = ThresholdData(energy_threshold, co2_threshold, cost_settings, co2_settings)
+    energy_history = EnergyThreshold.objects.all().order_by('-created_at')[:10]
+    co2_history = CO2Threshold.objects.all().order_by('-created_at')[:10]
+    cost_history = CostSettings.objects.all().order_by('-created_at')[:10]
+    co2_settings_history = CO2Settings.objects.all().order_by('-created_at')[:10]
+    
+    return render(request, 'adminSetting.html', {
+        'offices': offices, 
+        'devices': devices, 
+        'wifi_networks': wifi_networks,
+        'threshold': threshold,
+        'energy_history': energy_history,
+        'co2_history': co2_history,
+        'cost_history': cost_history,
+        'co2_settings_history': co2_settings_history,
+        'random_energy_tip': get_random_energy_tip(),
+    })
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def office_usage(request):
+    from django.db.models import Max, Min
+    from django.db.models.functions import TruncDay, ExtractYear, ExtractMonth
+    from django.utils import timezone
+    from datetime import timedelta, date
+    from datetime import datetime as dt
+
+    # Get selected day, month, year, week from request
+    selected_day = request.GET.get('selected_day')
+    selected_month = request.GET.get('selected_month')
+    selected_year = request.GET.get('selected_year')
+    selected_week = request.GET.get('selected_week')
+    
+    # Force month filtering when month is selected
+    if selected_month and not selected_day and not selected_week:
+        if not selected_year:
+            selected_year = str(dt.now().year)
+
+    # Get all valid office ids from Office table
+    valid_office_ids = set(Office.objects.values_list('office_id', flat=True))
+
+    # Year options: all years with data
+    years_with_data = SensorReading.objects.filter(
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    ).annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct().order_by('year')
+    year_options = [str(y) for y in years_with_data]
+
+    # Month options: filtered by year if selected
+    month_options = get_month_options(valid_office_ids, selected_year)
+
+    # Day options: all days with data, or filtered by month/year if selected
+    if selected_month and selected_year:
+        day_options = [d.strftime('%m/%d/%Y') for d in SensorReading.objects.filter(
+            date__year=int(selected_year),
+            date__month=int(selected_month),
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')]
+    else:
+        day_options = [d.strftime('%m/%d/%Y') for d in SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')]
+
+    # Week options: filtered by selected month/year if available
+    week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+
+    # Determine filter date range
+    filter_kwargs, selected_date, level, selected_month, selected_year = determine_filter_level(selected_day, selected_month, selected_year, selected_week)
+    
+    # Auto-select latest day if no filters provided
+    if not selected_day and selected_date:
+        selected_day = selected_date.strftime('%m/%d/%Y')
+        # Don't pre-select month but show year when auto-selecting latest day
+        if not request.GET.get('selected_month') and not request.GET.get('selected_year'):
+            selected_month = None
+            selected_year = str(selected_date.year)
+
+    # Week options: show week containing selected day, or filtered by month/year
+    if selected_day and not selected_week:
+        try:
+            month_str, day_str, year_str = selected_day.split('/')
+            selected_date_obj = date(int(year_str), int(month_str), int(day_str))
+            first_day_of_month = date(int(year_str), int(month_str), 1)
+            days_diff = (selected_date_obj - first_day_of_month).days
+            week_num = (days_diff // 7) + 1
+            week_start = first_day_of_month + timedelta(days=(week_num - 1) * 7)
+            week_options = [{
+                'value': week_start.strftime('%Y-%m-%d'),
+                'name': f"Week {week_num}"
+            }]
+            # Auto-select this week for the chart
+            selected_week = week_start.strftime('%Y-%m-%d')
+            # Re-determine filter with the auto-selected week
+            filter_kwargs, selected_date, level, selected_month, selected_year = determine_filter_level(selected_day, selected_month, selected_year, selected_week)
+        except ValueError:
+            week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+    else:
+        week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+
+    # Get office data aggregated by office name
+    office_data_qs = SensorReading.objects.filter(**filter_kwargs).filter(
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    ).values(
+        'device__office__name'
+    ).annotate(
+        total_energy=Sum('total_energy_kwh')
+    ).order_by('-total_energy')
+    
+    office_data = []
+    for record in office_data_qs:
+        office_name = record['device__office__name']
+        energy = record['total_energy'] or 0
+        
+        office_readings = SensorReading.objects.filter(
+            **filter_kwargs,
+            device__office__name=office_name,
+            device__office__office_id__in=valid_office_ids
+        ).exclude(device__office__name='DS')
+        
+        metrics = calculate_energy_metrics_with_historical_rates(office_readings)
+        peak_power = office_readings.aggregate(peak=Max('peak_power_w'))['peak'] or 0
+        
+        office_data.append({
+            'office_name': office_name,
+            'total_energy': energy,
+            'peak_power': peak_power,
+            'total_cost': metrics['total_cost'],
+            'total_co2': metrics['total_co2']
+        })
+
+    # Get thresholds for the selected date and scale based on level
+    base_thresholds = get_threshold_for_date(selected_date or datetime.now().date())
+    threshold_values = get_scaled_thresholds(base_thresholds, level)
+    energy_efficient_max = threshold_values['energy_efficient_max']
+    energy_moderate_max = threshold_values['energy_moderate_max']
+
+    table_data = []
+    for record in office_data:
+        energy = record['total_energy'] or 0
+        if energy > energy_moderate_max:
+            status = 'HIGH'
+            status_class = 'high'
+        elif energy > energy_efficient_max:
+            status = 'MODERATE'
+            status_class = 'moderate'
+        else:
+            status = 'EFFICIENT'
+            status_class = 'efficient'
+
+        table_data.append({
+            'office': record['office_name'],
+            'energy': f"{energy:.1f} kWh",
+            'peak_power': f"{record['peak_power']:.0f} W",
+            'cost': f"₱{record['total_cost']:.2f}" if record['total_cost'] else '₱0.00',
+            'co2': f"{record['total_co2']:.1f} kg" if record['total_co2'] else '0.0 kg',
+            'status': status,
+            'status_class': status_class
+        })
+
+    # Prepare data for pie chart (filtered by selected date)
+    pie_labels = [record['office_name'] for record in office_data]
+    pie_values = [record['total_energy'] or 0 for record in office_data]
+
+    # Prepare data for line chart (filtered by selected period)
+    import calendar
+    if selected_week or (selected_day and not selected_month):
+        # Show week view when week is selected or day is selected without month filter
+        if selected_week:
+            week_date = date.fromisoformat(selected_week)
+        else:
+            # Calculate week from selected day
+            month_str, day_str, year_str = selected_day.split('/')
+            selected_date_obj = date(int(year_str), int(month_str), int(day_str))
+            first_day_of_month = date(int(year_str), int(month_str), 1)
+            days_diff = (selected_date_obj - first_day_of_month).days
+            week_start = first_day_of_month + timedelta(days=(days_diff // 7) * 7)
+            week_date = week_start
+        
+        start_date = week_date
+        end_date = start_date + timedelta(days=6)
+    elif level == 'day':
+        start_date = selected_date
+        end_date = selected_date
+    elif level == 'year':
+        start_date = date(int(selected_year), 1, 1)
+        end_date = date(int(selected_year), 12, 31)
+    elif level == 'month':
+        start_date = date(int(selected_year), int(selected_month), 1)
+        end_date = date(int(selected_year), int(selected_month), calendar.monthrange(int(selected_year), int(selected_month))[1])
+    elif level == 'week':
+        week_date = date.fromisoformat(selected_week)
+        start_date = week_date
+        end_date = start_date + timedelta(days=6)
+    else:
+        # Default to latest date
+        start_date = selected_date
+        end_date = selected_date
+
+    line_data = SensorReading.objects.filter(
+        date__gte=start_date,
+        date__lte=end_date,
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    )
+    
+    if level == 'year':
+        # For yearly view, aggregate by month
+        line_data = line_data.annotate(
+            month_date=TruncMonth('date')
+        ).values(
+            'month_date',
+            office_name=F('device__office__name')
+        ).annotate(
+            total_energy=Sum('total_energy_kwh')
+        ).order_by('month_date', 'office_name')
+    else:
+        # For other views, aggregate by day
+        line_data = line_data.annotate(
+            day_date=TruncDay('date')
+        ).values(
+            'day_date',
+            office_name=F('device__office__name')
+        ).annotate(
+            total_energy=Sum('total_energy_kwh')
+        ).order_by('day_date', 'office_name')
+
+    # Group data by date and office
+    date_dict = {}
+    for item in line_data:
+        if level == 'year':
+            date_key = item['month_date'].strftime('%Y-%m')
+        else:
+            date_key = item['day_date'].strftime('%Y-%m-%d')
+        office = item['office_name']
+        energy = item['total_energy'] or 0
+        if date_key not in date_dict:
+            date_dict[date_key] = {}
+        date_dict[date_key][office] = energy
+
+    # Generate dates for the range
+    full_dates = []
+    if level == 'year':
+        # Generate months for the year
+        for month in range(1, 13):
+            date_str = f"{selected_year}-{month:02d}"
+            full_dates.append(date_str)
+    else:
+        # Generate days for the range
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = current_date.strftime('%Y-%m-%d')
+            full_dates.append(date_str)
+            current_date += timedelta(days=1)
+    dates = sorted(full_dates)
+
+    # Get offices from line_data or fallback to office_data
+    line_offices = set(item['office_name'] for item in line_data)
+    if not line_offices:
+        line_offices = set(record['office_name'] for record in office_data)
+    offices = sorted(line_offices)
+
+    # Prepare labels (day and date) for the range
+    line_labels = []
+    for date_str in dates:
+        if level == 'year':
+            # For yearly view, show month names
+            year, month = date_str.split('-')
+            month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            month_name = month_names[int(month) - 1]
+            line_labels.append({'day': month_name, 'date': f"{month_name} {year}"})
+        else:
+            # For other views, show day abbreviation and full date
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            day_abbr = date_obj.strftime('%a')
+            full_date = date_obj.strftime('%B %d, %Y')
+            line_labels.append({'day': day_abbr, 'date': full_date})
+
+    # Prepare datasets
+    line_datasets = []
+    colors = ["#3b82f6", "#f97316", "#8b5cf6", "#22c55e", "#ef4444"]
+    color_index = 0
+    for office in offices:
+        data_points = []
+        for date_str in dates:
+            data_points.append(date_dict.get(date_str, {}).get(office, 0))
+        line_datasets.append({
+            'label': office,
+            'data': data_points,
+            'borderColor': colors[color_index % len(colors)],
+            'fill': False
+        })
+        color_index += 1
+
+    # Determine efficiency levels for cards based on total energy usage
+    total_energy_usage = sum(record['total_energy'] for record in office_data)
+    if total_energy_usage > energy_moderate_max:
+        energy_efficiency = 'high'
+    elif total_energy_usage > energy_efficient_max:
+        energy_efficiency = 'moderate'
+    else:
+        energy_efficiency = 'efficient'
+
+    context = {
+        'table_data': table_data,
+        'pie_labels': json.dumps(pie_labels),
+        'pie_values': json.dumps(pie_values),
+        'line_labels': json.dumps(line_labels),
+        'line_datasets': json.dumps(line_datasets),
+        'day_options': day_options,
+        'month_options': month_options,
+        'year_options': year_options,
+        'week_options': week_options,
+        'selected_day': selected_day,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
+        'selected_week': selected_week,
+        'energy_efficiency': energy_efficiency,
+        'random_energy_tip': get_random_energy_tip(),
+    }
+    return render(request, 'officeUsage.html', context)
+
+def generate_recommendation(office_data, energy_moderate_max, energy_efficient_max, filter_kwargs, valid_office_ids):
+    """Generate summary recommendation for all offices"""
+    high_usage_offices = [r for r in office_data if (r['total_energy'] or 0) > energy_moderate_max]
+    moderate_usage_offices = [r for r in office_data if energy_efficient_max < (r['total_energy'] or 0) <= energy_moderate_max]
+    efficient_offices = [r for r in office_data if (r['total_energy'] or 0) <= energy_efficient_max]
+    
+    if high_usage_offices:
+        count = len(high_usage_offices)
+        names = ', '.join([r['office_name'] for r in high_usage_offices[:3]])
+        if count > 3:
+            names += f" and {count - 3} more"
+        return f"{count} office(s) exceeded threshold: {names}. Immediate action required: reduce peak loads, implement automated shutdowns, and conduct energy audits."
+    
+    if moderate_usage_offices:
+        count = len(moderate_usage_offices)
+        names = ', '.join([r['office_name'] for r in moderate_usage_offices[:3]])
+        if count > 3:
+            names += f" and {count - 3} more"
+        return f"{count} office(s) approaching threshold: {names}. Implement preventive measures: optimize AC settings (24-26°C), turn off unused equipment during breaks."
+    
+    if efficient_offices:
+        return f"All {len(efficient_offices)} office(s) operating efficiently. Continue current energy-saving practices and maintain regular monitoring."
+    
+    return "No data available for the selected period. Ensure devices are connected and transmitting data properly."
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def admin_reports(request):
+    from django.db.models import Max, Min, Sum
+    from django.db.models.functions import TruncDay, ExtractYear, ExtractMonth
+    from django.utils import timezone
+    from datetime import timedelta, date
+    from datetime import datetime as dt
+    from django.db.models import F
+
+    # Get selected day, month, year, week from request
+    selected_day = request.GET.get('selected_day')
+    selected_month = request.GET.get('selected_month')
+    selected_year = request.GET.get('selected_year')
+    selected_week = request.GET.get('selected_week')
+
+    # Force month filtering when month is selected
+    if selected_month and not selected_day and not selected_week:
+        if not selected_year:
+            selected_year = str(dt.now().year)
+
+    # Get all valid office ids from Office table
+    valid_office_ids = set(Office.objects.values_list('office_id', flat=True))
+
+    # Year options: all years with data
+    years_with_data = SensorReading.objects.filter(
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    ).annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct().order_by('year')
+    year_options = [str(y) for y in years_with_data]
+
+    # Month options: filtered by year if selected
+    month_options = get_month_options(valid_office_ids, selected_year)
+
+    # Day options: all days with data, or filtered by month/year if selected
+    if selected_month and selected_year:
+        day_options = [d.strftime('%m/%d/%Y') for d in SensorReading.objects.filter(
+            date__year=int(selected_year),
+            date__month=int(selected_month),
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')]
+    else:
+        day_options = [d.strftime('%m/%d/%Y') for d in SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')]
+
+    # Week options: filtered by selected month/year if available
+    week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+
+    # Determine filter date range
+    filter_kwargs, selected_date, level, selected_month, selected_year = determine_filter_level(selected_day, selected_month, selected_year, selected_week)
+    
+    # Auto-select latest day if no filters provided
+    if not selected_day and selected_date:
+        selected_day = selected_date.strftime('%m/%d/%Y')
+        # Don't pre-select month but show year when auto-selecting latest day
+        if not request.GET.get('selected_month') and not request.GET.get('selected_year'):
+            selected_month = None
+            selected_year = str(selected_date.year)
+
+    # Get current settings
+    cost_settings = CostSettings.get_current_rate()
+    co2_settings = CO2Settings.get_current_rate()
+    
+    # Filter data for selected filter from sensor readings
+    office_data = SensorReading.objects.filter(**filter_kwargs).filter(
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    ).values(
+        office_name=F('device__office__name')
+    ).annotate(
+        total_energy=Sum('total_energy_kwh')
+    ).order_by('-total_energy')
+
+    # Total Energy Usage
+    total_energy_usage = sum(record['total_energy'] or 0 for record in office_data)
+
+    # Highest Usage Office
+    highest_office = office_data.first()
+    highest_usage_office = highest_office['office_name'] if highest_office and (highest_office['total_energy'] or 0) > 0 else 'NONE'
+
+    # Inactive Offices (energy == 0)
+    all_offices = set(Office.objects.filter(office_id__in=valid_office_ids).exclude(name='DS').values_list('name', flat=True))
+    active_offices = set(record['office_name'] for record in office_data if record['total_energy'] and record['total_energy'] > 0)
+    inactive_offices = list(all_offices - active_offices)
+    inactive_offices_str = ', '.join(inactive_offices) if inactive_offices else 'NONE'
+
+    # Get thresholds for the selected date and scale based on level
+    base_thresholds = get_threshold_for_date(selected_date or datetime.now().date())
+    threshold_values = get_scaled_thresholds(base_thresholds, level)
+    energy_efficient_max = threshold_values['energy_efficient_max']
+    energy_moderate_max = threshold_values['energy_moderate_max']
+
+    # Best Performing Office (lowest energy, assuming Efficient < energy_efficient_max)
+    best_office = None
+    min_energy = float('inf')
+    for record in office_data:
+        energy = record['total_energy'] or 0
+        if energy < min_energy and energy <= energy_efficient_max:
+            min_energy = energy
+            best_office = record['office_name']
+    best_performing_office = best_office if best_office else 'NONE'
+
+    # Chart data: labels and values for bar chart
+    chart_labels = [record['office_name'] for record in office_data]
+    chart_values = [record['total_energy'] or 0 for record in office_data]
+    # Colors based on status (High red, Moderate yellow, Efficient green)
+    colors = []
+    statuses = []
+    recommendations = []
+    for record in office_data:
+        energy = record['total_energy'] or 0
+        office_name = record['office_name']
+        if energy > energy_moderate_max:
+            colors.append('#d9534f')  # red
+            statuses.append('Above Threshold')
+            # Get peak power for this office
+            office_records = SensorReading.objects.filter(
+                **filter_kwargs,
+                device__office__name=office_name,
+                device__office__office_id__in=valid_office_ids
+            )
+            peak_power = office_records.aggregate(peak=Max('peak_power_w'))['peak'] or 0
+            excess_pct = ((energy - energy_moderate_max) / energy_moderate_max * 100) if energy_moderate_max > 0 else 0
+            recommendations.append(f"{office_name} exceeded threshold by {excess_pct:.1f}% ({energy:.1f} kWh). Peak: {peak_power:.0f}W. Reduce peak load by staggering equipment usage.")
+        elif energy > energy_efficient_max:
+            colors.append('#f0ad4e')  # yellow
+            statuses.append('Within Threshold')
+            recommendations.append(f"{office_name} is approaching threshold with {energy:.1f} kWh. Implement energy-saving measures: turn off unused equipment, optimize AC (24-26°C).")
+        else:
+            colors.append('#5cb85c')  # green
+            statuses.append('Below Threshold')
+            recommendations.append(f"{office_name} is operating efficiently with {energy:.1f} kWh. Continue current practices and maintain regular monitoring.")
+
+    # Generate dynamic recommendation
+    recommendation = generate_recommendation(office_data, energy_moderate_max, energy_efficient_max, filter_kwargs, valid_office_ids)
+
+    # Determine efficiency levels for cards
+    if total_energy_usage > energy_moderate_max:
+        energy_efficiency = 'high'
+    elif total_energy_usage > energy_efficient_max:
+        energy_efficiency = 'moderate'
+    else:
+        energy_efficiency = 'efficient'
+
+    context = {
+        'total_energy_usage': total_energy_usage,
+        'highest_usage_office': highest_usage_office,
+        'inactive_offices': inactive_offices_str,
+        'best_performing_office': best_performing_office,
+        'chart_labels': json.dumps(chart_labels),
+        'chart_values': json.dumps(chart_values),
+        'chart_colors': json.dumps(colors),
+        'statuses': json.dumps(statuses),
+        'recommendations': json.dumps(recommendations),
+        'energy_efficient_max': energy_efficient_max,
+        'energy_moderate_max': energy_moderate_max,
+        'day_options': day_options,
+        'month_options': month_options,
+        'year_options': year_options,
+        'selected_day': selected_day,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
+        'energy_efficiency': energy_efficiency,
+        'random_energy_tip': get_random_energy_tip(),
+        'recommendation': recommendation,
+        'offices': Office.objects.all(),
+    }
+    return render(request, 'adminReports.html', context)
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def admin_costs(request):
+    from django.db.models import Sum, Max, Count
+    from django.db.models.functions import TruncDate, ExtractYear, ExtractMonth
+    from datetime import datetime, timedelta, date
+    from django.utils import timezone
+
+    # Get selected day, month, year, week from request
+    selected_day = request.GET.get('selected_day')
+    selected_month = request.GET.get('selected_month')
+    selected_year = request.GET.get('selected_year')
+    selected_week = request.GET.get('selected_week')
+    
+    # Force month filtering when month is selected
+    if selected_month and not selected_day and not selected_week:
+        if not selected_year:
+            selected_year = str(datetime.now().year)
+
+    # Get all valid office ids from Office table
+    valid_office_ids = set(Office.objects.values_list('office_id', flat=True))
+
+    # Year options: all years with data
+    years_with_data = SensorReading.objects.filter(
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    ).annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct().order_by('year')
+    year_options = [str(y) for y in years_with_data]
+
+    # Month options: filtered by year if selected
+    month_options = get_month_options(valid_office_ids, selected_year)
+
+    # Day options: all days with data, or filtered by month/year if selected
+    if selected_month and selected_year:
+        day_options = [d.strftime('%m/%d/%Y') for d in SensorReading.objects.filter(
+            date__year=int(selected_year),
+            date__month=int(selected_month),
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')]
+    else:
+        day_options = [d.strftime('%m/%d/%Y') for d in SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')]
+
+    # Determine filter date range
+    filter_kwargs, selected_date, level, selected_month, selected_year = determine_filter_level(selected_day, selected_month, selected_year, selected_week)
+
+    # Week options: filtered by selected month/year if available
+    week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+
+    # Auto-select latest day and week if no filters provided
+    if not selected_day and selected_date and not any([request.GET.get('selected_day'), request.GET.get('selected_month'), request.GET.get('selected_year'), request.GET.get('selected_week')]):
+        selected_day = selected_date.strftime('%m/%d/%Y')
+        selected_month = str(selected_date.month)
+        selected_year = str(selected_date.year)
+        # Generate week options for the latest date's month/year
+        week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+        # Auto-select latest week for energy costs page
+        if week_options:
+            selected_week = week_options[-1]['value']
+
+    # Week options: filtered by selected month/year if available
+    week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+
+    # Get cost settings
+    cost_settings = CostSettings.get_current_rate()
+
+    # Get readings and calculate with historical rates
+    filtered_readings = SensorReading.objects.filter(**filter_kwargs).filter(
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    )
+
+    num_days = filtered_readings.dates('date', 'day').distinct().count() or 1
+    total_energy = filtered_readings.aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+    
+    metrics = calculate_energy_metrics_with_historical_rates(filtered_readings)
+    total_cost = metrics['total_cost']
+    avg_daily_cost = total_cost / num_days if num_days > 0 else 0
+
+    # Highest cost office using historical rates
+    office_names = filtered_readings.values_list('device__office__name', flat=True).distinct()
+    highest_office = 'NONE'
+    highest_cost = 0
+    
+    for office_name in office_names:
+        office_readings = filtered_readings.filter(device__office__name=office_name)
+        office_metrics = calculate_energy_metrics_with_historical_rates(office_readings)
+        if office_metrics['total_cost'] > highest_cost:
+            highest_cost = office_metrics['total_cost']
+            highest_office = office_name
+
+    # Calculate period start and end based on level
+    now = timezone.now().date()
+    if level == 'year':
+        period_start = date(int(selected_year), 1, 1)
+        period_end = date(int(selected_year), 12, 31)
+    elif level == 'week':
+        if selected_week:
+            period_start = date.fromisoformat(selected_week)
+        else:
+            # Default to current week
+            period_start = now - timedelta(days=now.weekday())
+        period_end = period_start + timedelta(days=6)
+    elif level == 'month':
+        year = int(selected_year) if selected_year else datetime.now().year
+        month = int(selected_month) if selected_month else datetime.now().month
+        period_start = date(year, month, 1)
+        from calendar import monthrange
+        _, last_day = monthrange(year, month)
+        period_end = date(year, month, last_day)
+    elif level == 'year':
+        period_start = date(int(selected_year), 1, 1)
+        period_end = date(int(selected_year), 12, 31)
+    else:  # day
+        period_start = selected_date
+        period_end = selected_date
+
+    # Calculate previous period
+    if level == 'year':
+        prev_start = date(int(selected_year) - 1, 1, 1)
+        prev_end = date(int(selected_year) - 1, 12, 31)
+    elif level == 'week':
+        prev_start = period_start - timedelta(days=7)
+        prev_end = period_end - timedelta(days=7)
+    elif level == 'month':
+        year = int(selected_year) if selected_year else datetime.now().year
+        month = int(selected_month) if selected_month else datetime.now().month
+        prev_year = year
+        prev_month = month - 1
+        if prev_month == 0:
+            prev_month = 12
+            prev_year -= 1
+        prev_start = date(prev_year, prev_month, 1)
+        _, last_day = monthrange(prev_year, prev_month)
+        prev_end = date(prev_year, prev_month, last_day)
+    else:  # day
+        prev_start = period_start - timedelta(days=1)
+        prev_end = period_end - timedelta(days=1)
+
+    # Previous cost with historical rates
+    prev_readings = SensorReading.objects.filter(
+        date__gte=prev_start,
+        date__lte=prev_end,
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    )
+    prev_metrics = calculate_energy_metrics_with_historical_rates(prev_readings)
+    prev_cost = prev_metrics['total_cost']
+
+    # So far cost with historical rates
+    so_far_end = min(period_end, now)
+    so_far_readings = SensorReading.objects.filter(
+        date__gte=period_start,
+        date__lte=so_far_end,
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    )
+    so_far_metrics = calculate_energy_metrics_with_historical_rates(so_far_readings)
+    so_far_cost = so_far_metrics['total_cost']
+
+    # Predicted cost
+    total_days = (period_end - period_start).days + 1
+    days_so_far = (so_far_end - period_start).days + 1 if so_far_end >= period_start else 0
+    if days_so_far > 0 and period_end > now:
+        avg_daily = so_far_cost / days_so_far
+        predicted_cost = avg_daily * total_days
+    else:
+        predicted_cost = so_far_cost
+
+    # Savings
+    savings = prev_cost - predicted_cost if prev_cost > predicted_cost else 0
+
+    # Chart data: based on selected filter
+    from calendar import monthrange
+    from django.db.models.functions import ExtractMonth
+
+    if level == 'week':
+        week_date = date.fromisoformat(selected_week)
+        start_date = week_date
+        end_date = start_date + timedelta(days=6)
+        chart_dates = [start_date + timedelta(days=i) for i in range(7)]
+        chart_labels = [f"{d.strftime('%a')}\n{d.strftime('%B %d')}" for d in chart_dates]
+        chart_data = []
+        for d in chart_dates:
+            daily_readings = SensorReading.objects.filter(
+                date=d,
+                device__office__office_id__in=valid_office_ids
+            ).exclude(
+                device__office__name='DS'
+            )
+            energy = daily_readings.aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+            chart_data.append(energy)
+    elif level == 'month':
+        year = int(selected_year) if selected_year else datetime.now().year
+        month = int(selected_month) if selected_month else datetime.now().month
+        start_date = date(year, month, 1)
+        _, last_day = monthrange(year, month)
+        end_date = date(year, month, last_day)
+        chart_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+        chart_labels = [f"{d.strftime('%a')}\n{d.strftime('%d')}" for d in chart_dates]  # Day name and day number
+        chart_data = []
+        for d in chart_dates:
+            daily_readings = SensorReading.objects.filter(
+                date=d,
+                device__office__office_id__in=valid_office_ids
+            ).exclude(
+                device__office__name='DS'
+            )
+            energy = daily_readings.aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+            chart_data.append(energy)
+    elif level == 'year':
+        # Aggregate by month
+        monthly_data = SensorReading.objects.filter(
+            date__year=int(selected_year),
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).annotate(
+            month=ExtractMonth('date')
+        ).values('month').annotate(
+            total_energy=Sum('total_energy_kwh')
+        ).order_by('month')
+        chart_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        chart_data = [0] * 12
+        for item in monthly_data:
+            chart_data[item['month'] - 1] = (item['total_energy'] or 0)
+    else:  # day or default
+        # Default to last 7 days costs
+        chart_dates_desc = SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').distinct().order_by('-date')[:7]
+        chart_dates = list(reversed(chart_dates_desc))
+        chart_labels = [f"{d.strftime('%a')}\n{d.strftime('%B %d')}" for d in chart_dates]
+        chart_data = []
+        for d in chart_dates:
+            daily_readings = SensorReading.objects.filter(
+                date=d,
+                device__office__office_id__in=valid_office_ids
+            ).exclude(
+                device__office__name='DS'
+            )
+            energy = daily_readings.aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+            chart_data.append(energy)
+
+    # Labels for chart header
+    if level == 'year':
+        previous_label = f"{prev_start.year} Total"
+        period_label = f"{selected_year}"
+    elif level == 'week':
+        previous_label = f"Previous Week ({prev_start.strftime('%B %d')} - {prev_end.strftime('%d, %Y')})"
+        period_label = f"Week ({period_start.strftime('%B %d')} - {period_end.strftime('%d, %Y')})"
+    elif level == 'month':
+        previous_label = f"{prev_start.strftime('%B %Y')} Total"
+        period_label = f"{period_start.strftime('%B %Y')}"
+    else:  # day
+        previous_label = f"{prev_start.strftime('%B %d, %Y')} Total"
+        period_label = f"{period_start.strftime('%B %d, %Y')}"
+
+    so_far_label = f"So Far This {level.capitalize()} ({period_label})"
+    if level == 'week':
+        predicted_label = f"Predicted This {level.capitalize()}"
+    else:
+        predicted_label = f"Predicted This {level.capitalize()} ({period_label})"
+    savings_label = "Estimated Savings"
+
+    # Determine efficiency levels for cards based on energy usage
+    base_thresholds = get_threshold_for_date(selected_date or datetime.now().date())
+    threshold_values = get_scaled_thresholds(base_thresholds, level)
+    energy_efficient_max = threshold_values['energy_efficient_max']
+    energy_moderate_max = threshold_values['energy_moderate_max']
+    
+    if total_energy > energy_moderate_max:
+        energy_efficiency = 'high'
+    elif total_energy > energy_efficient_max:
+        energy_efficiency = 'moderate'
+    else:
+        energy_efficiency = 'efficient'
+
+    context = {
+        'total_energy': total_energy,
+        'total_cost': total_cost,
+        'avg_daily_cost': avg_daily_cost,
+        'highest_office': highest_office,
+        'previous_label': previous_label,
+        'prev_cost': prev_cost,
+        'so_far_label': so_far_label,
+        'so_far_cost': so_far_cost,
+        'predicted_label': predicted_label,
+        'predicted_cost': predicted_cost,
+        'savings_label': savings_label,
+        'savings': savings,
+        'chart_labels': json.dumps(chart_labels),
+        'chart_data': json.dumps(chart_data),
+        'cost_per_kwh': cost_settings.cost_per_kwh,
+        'day_options': day_options,
+        'month_options': month_options,
+        'year_options': year_options,
+        'week_options': week_options,
+        'selected_day': selected_day,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
+        'selected_week': selected_week,
+        'level': level,
+        'energy_efficiency': energy_efficiency,
+        'random_energy_tip': get_random_energy_tip(),
+    }
+    return render(request, 'adminCosts.html', context)
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def carbon_emission(request):
+    from django.db.models import Sum, Max
+    from django.db.models.functions import TruncDate, ExtractYear, ExtractMonth
+    from datetime import datetime, timedelta, date
+    from calendar import monthrange
+    from django.utils import timezone
+    import json
+
+    # Get selected day, month, year, week from request
+    selected_day = request.GET.get('selected_day')
+    selected_month = request.GET.get('selected_month')
+    selected_year = request.GET.get('selected_year')
+    selected_week = request.GET.get('selected_week')
+    
+    # Force month filtering when month is selected
+    if selected_month and not selected_day and not selected_week:
+        if not selected_year:
+            selected_year = str(datetime.now().year)
+
+    # Get all valid office ids from Office table
+    from greenwatts.users.models import Office
+    valid_office_ids = set(Office.objects.values_list('office_id', flat=True))
+
+    # Year options: all years with data
+    years_with_data = SensorReading.objects.filter(
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    ).annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct().order_by('year')
+    year_options = [str(y) for y in years_with_data]
+
+    # Month options: filtered by year if selected
+    month_options = get_month_options(valid_office_ids, selected_year)
+
+    # Day options: all days with data, or filtered by month/year if selected
+    if selected_month and selected_year:
+        day_options = [d.strftime('%m/%d/%Y') for d in SensorReading.objects.filter(
+            date__year=int(selected_year),
+            date__month=int(selected_month),
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')]
+    else:
+        day_options = [d.strftime('%m/%d/%Y') for d in SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').order_by('-date')]
+
+    # Determine filter date range
+    filter_kwargs, selected_date, level, selected_month, selected_year = determine_filter_level(selected_day, selected_month, selected_year, selected_week)
+    
+    # Week options: filtered by selected month/year if available
+    week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+
+    # Auto-select latest day and week if no filters provided
+    if not selected_day and selected_date and not any([request.GET.get('selected_day'), request.GET.get('selected_month'), request.GET.get('selected_year'), request.GET.get('selected_week')]):
+        selected_day = selected_date.strftime('%m/%d/%Y')
+        selected_month = str(selected_date.month)
+        selected_year = str(selected_date.year)
+        # Generate week options for the latest date's month/year
+        week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+        # Auto-select latest week for CO2 emission page
+        if week_options:
+            selected_week = week_options[-1]['value']
+    
+    # Get current date for calculations
+    now = timezone.now().date()
+    
+    # Week options: filtered by selected month/year if available
+    week_options = get_week_options(valid_office_ids, selected_month, selected_year)
+
+    # Get CO2 settings
+    co2_settings = CO2Settings.get_current_rate()
+
+    # Get readings and calculate with historical rates
+    filtered_readings = SensorReading.objects.filter(**filter_kwargs).filter(
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    )
+
+    num_days = filtered_readings.dates('date', 'day').distinct().count() or 1
+    total_energy_kwh = filtered_readings.aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+    
+    metrics = calculate_energy_metrics_with_historical_rates(filtered_readings)
+    total_cost = metrics['total_cost']
+    total_co2 = metrics['total_co2']
+    avg_daily_cost = total_cost / num_days if num_days > 0 else 0
+
+    # Highest CO2 emission office using historical rates
+    office_names = filtered_readings.values_list('device__office__name', flat=True).distinct()
+    highest_co2_office = 'NONE'
+    highest_co2 = 0
+    
+    for office_name in office_names:
+        office_readings = filtered_readings.filter(device__office__name=office_name)
+        office_metrics = calculate_energy_metrics_with_historical_rates(office_readings)
+        if office_metrics['total_co2'] > highest_co2:
+            highest_co2 = office_metrics['total_co2']
+            highest_co2_office = office_name
+
+    # Determine previous period for comparison
+    if level == 'year':
+        period_start = date(int(selected_year or now.year), 1, 1)
+        period_end = date(int(selected_year or now.year), 12, 31)
+        prev_start = date(int(selected_year or now.year) - 1, 1, 1)
+        prev_end = date(int(selected_year or now.year) - 1, 12, 31)
+        previous_label = f"{prev_start.year} Total"
+        period_label = f"{selected_year or now.year}"
+    elif level == 'week':
+        if selected_week:
+            period_start = date.fromisoformat(selected_week)
+        else:
+            period_start = now - timedelta(days=now.weekday())
+        period_end = period_start + timedelta(days=6)
+        prev_start = period_start - timedelta(days=7)
+        prev_end = period_end - timedelta(days=7)
+        previous_label = f"Previous Week ({prev_start.strftime('%B %d')} - {prev_end.strftime('%d, %Y')})"
+        period_label = f"{period_start.strftime('%B %d')} - {period_end.strftime('%d, %Y')}"
+    elif level == 'month':
+        period_start = date(int(selected_year or now.year), int(selected_month or now.month), 1)
+        _, last_day = monthrange(int(selected_year or now.year), int(selected_month or now.month))
+        period_end = date(int(selected_year or now.year), int(selected_month or now.month), last_day)
+        prev_year = int(selected_year or now.year)
+        prev_month = int(selected_month or now.month) - 1
+        if prev_month == 0:
+            prev_month = 12
+            prev_year -= 1
+        prev_start = date(prev_year, prev_month, 1)
+        _, last_day_prev = monthrange(prev_year, prev_month)
+        prev_end = date(prev_year, prev_month, last_day_prev)
+        previous_label = f"{prev_start.strftime('%B %Y')} Total"
+        period_label = f"{period_start.strftime('%B %Y')}"
+    else:  # day
+        period_start = selected_date or now
+        period_end = selected_date or now
+        prev_start = period_start - timedelta(days=1)
+        prev_end = period_end - timedelta(days=1)
+        prev_month = prev_start.month
+        prev_year = prev_start.year
+        previous_label = f"{prev_start.strftime('%B %d, %Y')} Total"
+        period_label = f"{period_start.strftime('%B %d, %Y')}"
+
+    # Previous CO2 with historical rates
+    prev_readings = SensorReading.objects.filter(
+        date__gte=prev_start,
+        date__lte=prev_end,
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    )
+    prev_metrics = calculate_energy_metrics_with_historical_rates(prev_readings)
+    prev_co2 = prev_metrics['total_co2']
+
+    # So far CO2 with historical rates
+    so_far_end = min(period_end, now)
+    so_far_readings = SensorReading.objects.filter(
+        date__gte=period_start,
+        date__lte=so_far_end,
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    )
+    so_far_metrics = calculate_energy_metrics_with_historical_rates(so_far_readings)
+    so_far_co2 = so_far_metrics['total_co2']
+
+    # Predicted CO2
+    total_days = (period_end - period_start).days + 1
+    days_so_far = (so_far_end - period_start).days + 1 if so_far_end >= period_start else 0
+    if days_so_far > 0 and period_end > now:
+        avg_daily_co2 = so_far_co2 / days_so_far
+        predicted_co2 = avg_daily_co2 * total_days
+    else:
+        predicted_co2 = so_far_co2
+
+    # Change in emissions
+    if prev_co2 > 0:
+        change_percent = ((so_far_co2 - prev_co2) / prev_co2) * 100
+    else:
+        change_percent = 0
+    change_direction = '▲' if change_percent > 0 else '▼'
+    change_class = 'red-arrow' if change_percent > 0 else 'green-arrow'
+
+    # Chart data based on level
+    if level == 'year':
+        # Aggregate by month for yearly view
+        monthly_data = SensorReading.objects.filter(
+            date__year=int(selected_year or now.year),
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).annotate(
+            month=ExtractMonth('date')
+        ).values('month').annotate(
+            total_energy=Sum('total_energy_kwh')
+        ).order_by('month')
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        prev_month_data = [0] * 12
+        current_month_data = [0] * 12
+        for item in monthly_data:
+            current_month_data[item['month'] - 1] = (item['total_energy'] or 0) * co2_settings.co2_emission_factor
+        # For year, prev is previous year
+        prev_year_data = SensorReading.objects.filter(
+            date__year=int(selected_year or now.year) - 1,
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).annotate(
+            month=ExtractMonth('date')
+        ).values('month').annotate(
+            total_energy=Sum('total_energy_kwh')
+        ).order_by('month')
+        for item in prev_year_data:
+            prev_month_data[item['month'] - 1] = (item['total_energy'] or 0) * co2_settings.co2_emission_factor
+    elif level == 'week':
+        week_date = date.fromisoformat(selected_week)
+        start_date = week_date
+        end_date = start_date + timedelta(days=6)
+        chart_dates = [start_date + timedelta(days=i) for i in range(7)]
+        labels = [f"{d.strftime('%a')}\n{d.strftime('%B %d')}" for d in chart_dates]
+        prev_month_data = []
+        current_month_data = []
+        for d in chart_dates:
+            energy = SensorReading.objects.filter(
+                date=d,
+                device__office__office_id__in=valid_office_ids
+            ).exclude(
+                device__office__name='DS'
+            ).aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+            co2 = energy * co2_settings.co2_emission_factor
+            # For week, assume current is the selected week, prev is previous week
+            if d >= prev_start and d <= prev_end:
+                prev_month_data.append(co2)
+                current_month_data.append(0)
+            else:
+                prev_month_data.append(0)
+                current_month_data.append(co2)
+    elif level == 'month':
+        start_date = date(int(selected_year or now.year), int(selected_month or now.month), 1)
+        _, last_day = monthrange(int(selected_year or now.year), int(selected_month or now.month))
+        end_date = date(int(selected_year or now.year), int(selected_month or now.month), last_day)
+        chart_dates = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+        labels = [d.strftime('%d') for d in chart_dates]
+        current_month_data = []
+        for d in chart_dates:
+            energy = SensorReading.objects.filter(
+                date=d,
+                device__office__office_id__in=valid_office_ids
+            ).exclude(
+                device__office__name='DS'
+            ).aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+            current_month_data.append(energy * co2_settings.co2_emission_factor)
+        prev_month_data = [0] * len(chart_dates)
+    else:  # day
+        # Default to last 12 days
+        chart_dates_desc = SensorReading.objects.filter(
+            device__office__office_id__in=valid_office_ids
+        ).exclude(
+            device__office__name='DS'
+        ).dates('date', 'day').distinct().order_by('-date')[:12]
+        chart_dates = list(reversed(chart_dates_desc))
+        labels = [d.strftime('%B %d') for d in chart_dates]
+        prev_month_data = []
+        current_month_data = []
+        for d in chart_dates:
+            energy = SensorReading.objects.filter(
+                date=d,
+                device__office__office_id__in=valid_office_ids
+            ).exclude(
+                device__office__name='DS'
+            ).aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+            co2 = energy * co2_settings.co2_emission_factor
+            if d.month == prev_month and d.year == prev_year:
+                prev_month_data.append(co2)
+                current_month_data.append(0)
+            else:
+                prev_month_data.append(0)
+                current_month_data.append(co2)
+
+    # Get CO2 threshold - use BASE (daily) thresholds for chart since we show daily data points
+    base_thresholds = get_threshold_for_date(selected_date or datetime.now().date())
+    co2_efficient_max = base_thresholds['co2_efficient_max']
+    co2_moderate_max = base_thresholds['co2_moderate_max']
+    co2_high_max = co2_moderate_max * 1.5
+    threshold = co2_high_max
+
+    avg_daily_co2 = total_co2 / num_days if num_days > 0 else 0
+
+    so_far_label = f"So Far This {level.capitalize()} ({period_label})"
+    if level == 'week':
+        predicted_label = f"Predicted This {level.capitalize()}"
+    else:
+        predicted_label = f"Predicted This {level.capitalize()} ({period_label})"
+
+    # Determine efficiency levels for cards based on energy usage
+    base_thresholds = get_threshold_for_date(selected_date or datetime.now().date())
+    threshold_values = get_scaled_thresholds(base_thresholds, level)
+    energy_efficient_max = threshold_values['energy_efficient_max']
+    energy_moderate_max = threshold_values['energy_moderate_max']
+    
+    if total_energy_kwh > energy_moderate_max:
+        energy_efficiency = 'high'
+    elif total_energy_kwh > energy_efficient_max:
+        energy_efficiency = 'moderate'
+    else:
+        energy_efficiency = 'efficient'
+
+    context = {
+        'total_energy_kwh': round(total_energy_kwh, 1),
+        'total_co2': f"{total_co2:.1f}",
+        'avg_daily_co2': f"{avg_daily_co2:.1f}",
+        'highest_co2_office': highest_co2_office,
+        'previous_label': previous_label,
+        'prev_co2': f"{prev_co2:.1f}",
+        'so_far_label': so_far_label,
+        'so_far_co2': f"{so_far_co2:.1f}",
+        'predicted_label': predicted_label,
+        'predicted_co2': f"{predicted_co2:.0f}",
+        'change_percent': f"{abs(change_percent):.2f}%",
+        'change_direction': change_direction,
+        'change_class': change_class,
+        'chart_labels': json.dumps(labels),
+        'prev_month_data': json.dumps(prev_month_data),
+        'current_month_data': json.dumps(current_month_data),
+        'threshold': threshold,
+        'co2_efficient_max': co2_efficient_max,
+        'co2_moderate_max': co2_moderate_max,
+        'co2_high_max': co2_high_max,
+        'week_options': week_options,
+        'month_options': month_options,
+        'year_options': year_options,
+        'day_options': day_options,
+        'selected_day': selected_day,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
+        'selected_week': selected_week,
+        'energy_efficiency': energy_efficiency,
+        'random_energy_tip': get_random_energy_tip(),
+    }
+    return render(request, 'carbonEmission.html', context)
+
+@admin_required
+@csrf_exempt
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def create_office(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            name = data.get("name")
+            location = data.get("location")
+            email = data.get("email")
+            username = data.get("username")
+            password = data.get("password")
+            department = data.get("department")
+
+            # For simplicity, assign admin as the first admin in DB (adjust as needed)
+            admin = Admin.objects.first()
+
+            office = Office.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                name=name,
+                location=location,
+                department=department,
+                admin=admin
+            )
+            return JsonResponse({"status": "success", "message": "Office created successfully"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+@admin_required
+@csrf_exempt
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def create_device(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            installed_date = data.get("installed_date")
+            status = data.get("status")
+            office_id = data.get("office_id")
+            appliance_type = data.get("appliance_type")
+
+            from greenwatts.users.models import Office
+            from ..sensors.models import Device
+
+            office = Office.objects.get(office_id=office_id)
+
+            device = Device(
+                installed_date=installed_date,
+                status=status,
+                office=office,
+                appliance_type=appliance_type
+            )
+            device.save()
+            return JsonResponse({"status": "success", "message": "Device created successfully"})
+        except Office.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Office not found"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+@admin_required
+@csrf_exempt
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def edit_device(request, id):
+    try:
+        device = Device.objects.get(device_id=id)
+    except Device.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Device not found"})
+
+    if request.method == "GET":
+        device_data = {
+            "id": device.device_id,
+            "installed_date": device.installed_date.strftime('%Y-%m-%d') if device.installed_date else '',
+            "status": device.status,
+            "office_id": device.office.office_id if device.office else None,
+            "appliance_type": device.appliance_type
+        }
+        return JsonResponse({"status": "success", "device": device_data})
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            device.installed_date = data.get("installed_date", device.installed_date)
+            device.status = data.get("status", device.status)
+            device.appliance_type = data.get("appliance_type", device.appliance_type)
+            
+            office_id = data.get("office_id")
+            if office_id:
+                from greenwatts.users.models import Office
+                device.office = Office.objects.get(office_id=office_id)
+            
+            device.save()
+            return JsonResponse({"status": "success", "message": "Device updated successfully"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+@admin_required
+@csrf_exempt
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def edit_office(request, id):
+    try:
+        office = Office.objects.get(office_id=id)
+    except Office.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Office not found"})
+
+    if request.method == "GET":
+        office_data = {
+            "id": office.office_id,
+            "name": office.name,
+            "location": office.location,
+            "email": office.email,
+            "username": office.username,
+            # Do not return password in GET response for security
+            "department": office.department,
+        }
+        return JsonResponse({"status": "success", "office": office_data})
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            office.name = data.get("name", office.name)
+            office.location = data.get("location", office.location)
+            office.email = data.get("email", office.email)
+            office.username = data.get("username", office.username)
+            new_password = data.get("password", "")
+            if new_password:
+                office.set_password(new_password)
+            office.department = data.get("department", office.department)
+            office.save()
+            return JsonResponse({"status": "success", "message": "Office updated successfully"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+@admin_required
+@csrf_exempt
+def save_thresholds(request):
+    if request.method == 'GET':
+        try:
+            energy_threshold = EnergyThreshold.objects.filter(ended_at__isnull=True).first()
+            co2_threshold = CO2Threshold.objects.filter(ended_at__isnull=True).first()
+            
+            return JsonResponse({
+                'status': 'success',
+                'threshold': {
+                    'energy_efficient_max': energy_threshold.efficient_max if energy_threshold else 10.0,
+                    'energy_moderate_max': energy_threshold.moderate_max if energy_threshold else 20.0,
+                    'energy_high_max': energy_threshold.high_max if energy_threshold else 30.0,
+                    'co2_efficient_max': co2_threshold.efficient_max if co2_threshold else 8.0,
+                    'co2_moderate_max': co2_threshold.moderate_max if co2_threshold else 13.0,
+                    'co2_high_max': co2_threshold.high_max if co2_threshold else 18.0,
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    elif request.method == 'POST':
+        try:
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                data = request.POST.dict()
+
+            # Handle energy threshold
+            if 'energy_efficient_max' in data or 'energy_moderate_max' in data or 'energy_high_max' in data:
+                energy_efficient = float(data.get('energy_efficient_max', 10.0))
+                energy_moderate = float(data.get('energy_moderate_max', 20.0))
+                energy_high = float(data.get('energy_high_max', 30.0))
+                
+                # Mark previous records as ended
+                EnergyThreshold.objects.filter(ended_at__isnull=True).update(ended_at=timezone.now())
+                EnergyThreshold.objects.create(
+                    efficient_max=energy_efficient,
+                    moderate_max=energy_moderate,
+                    high_max=energy_high
+                )
+
+            # Handle CO2 threshold
+            if 'co2_efficient_max' in data or 'co2_moderate_max' in data or 'co2_high_max' in data:
+                co2_efficient = float(data.get('co2_efficient_max', 8.0))
+                co2_moderate = float(data.get('co2_moderate_max', 13.0))
+                co2_high = float(data.get('co2_high_max', 18.0))
+                
+                # Mark previous records as ended
+                CO2Threshold.objects.filter(ended_at__isnull=True).update(ended_at=timezone.now())
+                CO2Threshold.objects.create(
+                    efficient_max=co2_efficient,
+                    moderate_max=co2_moderate,
+                    high_max=co2_high
+                )
+
+            return JsonResponse({'status': 'success', 'message': 'Thresholds updated successfully'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+@admin_required
+def get_days(request):
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    
+    if not month or not year:
+        return JsonResponse({'status': 'error', 'message': 'Month and year required'})
+    
+    try:
+        from django.core.cache import cache
+        valid_office_ids = get_valid_office_ids()
+        cache_key = f"day_options_{month}_{year}_{hash(tuple(sorted(valid_office_ids)))}"
+        day_options = cache.get(cache_key)
+        
+        if day_options is None:
+            days = SensorReading.objects.filter(
+                date__year=int(year),
+                date__month=int(month),
+                device__office__office_id__in=valid_office_ids
+            ).exclude(
+                device__office__name='DS'
+            ).values_list('date', flat=True).distinct().order_by('-date')
+            
+            day_options = [d.strftime('%m/%d/%Y') for d in days]
+            cache.set(cache_key, day_options, 300)  # Cache for 5 minutes
+        
+        return JsonResponse({
+            'status': 'success',
+            'days': day_options
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def threshold_history(request):
+    energy_history = EnergyThreshold.objects.all().order_by('-created_at')
+    co2_history = CO2Threshold.objects.all().order_by('-created_at')
+    return JsonResponse({
+        'status': 'success',
+        'energy_history': list(energy_history.values(
+            'threshold_id',
+            'efficient_max',
+            'moderate_max',
+            'high_max',
+            'created_at',
+            'ended_at'
+        )),
+        'co2_history': list(co2_history.values(
+            'threshold_id',
+            'efficient_max',
+            'moderate_max',
+            'high_max',
+            'created_at',
+            'ended_at'
+        ))
+    })
+
+@admin_required
+@csrf_exempt
+def save_cost_settings(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            cost_per_kwh = float(data.get('cost_per_kwh', 12.0))
+            
+            # Mark previous records as ended
+            CostSettings.objects.filter(ended_at__isnull=True).update(ended_at=timezone.now())
+            # Create new record
+            CostSettings.objects.create(cost_per_kwh=cost_per_kwh)
+            return JsonResponse({'status': 'success', 'message': 'Cost settings saved successfully'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+@admin_required
+@csrf_exempt
+def save_co2_settings(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            co2_emission_factor = float(data.get('co2_emission_factor', 0.475))
+            
+            # Mark previous records as ended
+            CO2Settings.objects.filter(ended_at__isnull=True).update(ended_at=timezone.now())
+            # Create new record
+            CO2Settings.objects.create(co2_emission_factor=co2_emission_factor)
+            return JsonResponse({'status': 'success', 'message': 'CO2 settings saved successfully'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+@admin_required
+def get_weeks(request):
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    
+    try:
+        valid_office_ids = get_valid_office_ids()
+        week_options = get_week_options(valid_office_ids, month, year)
+        
+        return JsonResponse({
+            'status': 'success',
+            'weeks': week_options
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+@admin_required
+def get_months(request):
+    year = request.GET.get('year')
+    if not year:
+        return JsonResponse({'status': 'error', 'message': 'Year required'})
+    
+    try:
+        valid_office_ids = get_valid_office_ids()
+        month_options = get_month_options(valid_office_ids, year)
+        return JsonResponse({
+            'status': 'success',
+            'months': month_options
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def export_reports(request):
+    selected_day = request.GET.get('selected_day')
+    selected_month = request.GET.get('selected_month')
+    selected_year = request.GET.get('selected_year')
+    
+    valid_office_ids = get_valid_office_ids()
+    filter_kwargs, selected_date, level, selected_month, selected_year = determine_filter_level(selected_day, selected_month, selected_year, None)
+    
+    # Get rates that were active on the filtered date
+    target_date = selected_date or datetime.now().date()
+    rates = get_rates_for_date(target_date)
+    
+    # Get office data with historical rates
+    office_names = SensorReading.objects.filter(**filter_kwargs).filter(
+        device__office__office_id__in=valid_office_ids
+    ).exclude(
+        device__office__name='DS'
+    ).values_list('device__office__name', flat=True).distinct()
+    
+    office_data = []
+    for office_name in office_names:
+        office_readings = SensorReading.objects.filter(
+            **filter_kwargs,
+            device__office__name=office_name,
+            device__office__office_id__in=valid_office_ids
+        ).exclude(device__office__name='DS')
+        
+        energy = office_readings.aggregate(total=Sum('total_energy_kwh'))['total'] or 0
+        metrics = calculate_energy_metrics_with_historical_rates(office_readings)
+        
+        office_data.append({
+            'office_name': office_name,
+            'total_energy': energy,
+            'total_cost': metrics['total_cost'],
+            'total_co2': metrics['total_co2']
+        })
+    
+    office_data.sort(key=lambda x: x['total_energy'], reverse=True)
+    
+    response = HttpResponse(content_type='text/csv')
+    filename = f"energy_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    writer = csv.writer(response)
+    # Add header with rates information
+    writer.writerow(['GreenWatts Energy Report'])
+    writer.writerow([f'Report Date: {target_date.strftime("%B %d, %Y")}'])
+    writer.writerow([f'Cost Rate: ₱{rates["cost_per_kwh"]:.2f} per kWh'])
+    writer.writerow([f'CO2 Emission Factor: {rates["co2_per_kwh"]:.3f} kg CO2 per kWh'])
+    writer.writerow([])  # Empty row for spacing
+    writer.writerow(['Office Name', 'Energy Usage (kWh)', 'Cost Estimate (PHP)', 'CO2 Emission (kg)'])
+    
+    for record in office_data:
+        writer.writerow([
+            record['office_name'],
+            f"{record['total_energy']:.2f}" if record['total_energy'] else '0.00',
+            f"{record['total_cost']:.2f}" if record['total_cost'] else '0.00',
+            f"{record['total_co2']:.2f}" if record['total_co2'] else '0.00'
+        ])
+    
+    return response
+
+@admin_required
+@csrf_exempt
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def create_wifi(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            ssid = data.get("ssid")
+            password = data.get("password")
+            priority = int(data.get("priority", 1))
+            is_active = data.get("is_active") == "true"
+
+            wifi = WiFiNetwork.objects.create(
+                ssid=ssid,
+                password=password,
+                priority=priority,
+                is_active=is_active
+            )
+            return JsonResponse({"status": "success", "message": "WiFi network created successfully"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+@admin_required
+@csrf_exempt
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def edit_wifi(request, id):
+    try:
+        wifi = WiFiNetwork.objects.get(wifi_id=id)
+    except WiFiNetwork.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "WiFi network not found"})
+
+    if request.method == "GET":
+        wifi_data = {
+            "id": wifi.wifi_id,
+            "ssid": wifi.ssid,
+            "password": wifi.password,
+            "priority": wifi.priority,
+            "is_active": wifi.is_active
+        }
+        return JsonResponse({"status": "success", "wifi": wifi_data})
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            wifi.ssid = data.get("ssid", wifi.ssid)
+            wifi.password = data.get("password", wifi.password)
+            wifi.priority = int(data.get("priority", wifi.priority))
+            wifi.is_active = data.get("is_active") == "true"
+            wifi.save()
+            return JsonResponse({"status": "success", "message": "WiFi network updated successfully"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def send_notification(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        message = request.POST.get('message')
+        notification_type = request.POST.get('notification_type')
+        target_office_id = request.POST.get('target_office')
+        
+        if target_office_id == 'all':
+            Notification.objects.create(
+                title=title,
+                message=message,
+                notification_type=notification_type,
+                is_global=True
+            )
+        elif target_office_id:
+            target_office = Office.objects.get(office_id=target_office_id)
+            Notification.objects.create(
+                title=title,
+                message=message,
+                notification_type=notification_type,
+                target_office=target_office
+            )
+        
+        return redirect('adminpanel:admin_reports')
+    
+    return redirect('adminpanel:admin_reports')
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def api_system_logs(request):
+    from datetime import timedelta
+    
+    time_threshold = timezone.now() - timedelta(hours=24)
+    logs = SystemLog.objects.filter(
+        timestamp__gte=time_threshold,
+        device__device_id__in=[1,2,3,4,5,6,7,8,9]
+    ).select_related('device').order_by('-timestamp')[:20]
+    
+    logs_data = []
+    for log in logs:
+        logs_data.append({
+            'timestamp': log.timestamp.isoformat(),
+            'log_type': log.log_type,
+            'device_id': log.device.device_id if log.device else None,
+            'message': log.message
+        })
+    
+    return JsonResponse({
+        'status': 'success',
+        'logs': logs_data
+    })
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def api_weekly_analysis(request):
+    analyses = WeeklySpikeAnalysis.objects.select_related('device').order_by('-week_start')[:10]
+    
+    analyses_data = []
+    for analysis in analyses:
+        analyses_data.append({
+            'device_id': analysis.device.device_id,
+            'week_start': analysis.week_start.strftime('%m/%d'),
+            'week_end': analysis.week_end.strftime('%m/%d'),
+            'spike_count': analysis.spike_count,
+            'max_spike_power': f"{analysis.max_spike_power:.1f}",
+            'interpretation': analysis.interpretation
+        })
+    
+    return JsonResponse({
+        'status': 'success',
+        'analyses': analyses_data
+    })
+
+def admin_logout(request):
+    request.session.flush()  # Clear the session
+    response = redirect('users:index')  # Redirect to the landing page
+    # Add cache control headers to prevent caching and back button navigation
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response

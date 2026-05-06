@@ -1,0 +1,584 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link rel="icon" type="image/png" href="{% static 'browse-logo.png' %}" />
+    <!-- correct relative path -->
+    <link rel="stylesheet" href="{% static 'userCss/common.css' %}" />
+    <link rel="stylesheet" href="{% static 'userCss/userDashboard.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+
+  </head>
+
+  <body>
+    {% csrf_token %}
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img src="{% static 'logo2.png' %}" alt="GreenWatts" class="logo-sidebar" />
+      <div class="admin-section">
+        <div class="admin-icon"><i class="fas fa-user"></i></div>
+        <p>{{ office.username|upper }}</p>  <!-- Display username -->
+      </div>
+
+      <nav>
+        <a href="{% url 'users:dashboard' %}" class="active"
+          ><i class="fas fa-tachometer-alt"></i> Dashboard</a
+        >
+
+        <a href="{% url 'users:office_usage' %}"
+          ><i class="fas fa-building"></i> Office Usage</a
+        >
+        <a href="{% url 'users:user_reports' %}"
+          ><i class="fas fa-chart-bar"></i> Reports</a
+        >
+        <a href="{% url 'users:user_energy_cost' %}"
+          ><i class="fas fa-peso-sign"></i> Energy Cost</a
+        >
+        <a href="{% url 'users:user_emmision' %}"
+          ><i class="fas fa-leaf"></i> CO2 Emission</a
+        >
+        <!-- logout goes to logout view -->
+        <a href="{% url 'users:logout' %}"
+          ><i class="fas fa-sign-out-alt"></i> Log Out</a
+        >
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header>
+        <!-- Sidebar toggle button -->
+        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1>Dashboard</h1>
+        <p class="note">
+          <span class="red-text">Note!</span> The accumulated data will be generated every 12:00am.
+        </p>
+        <div class="date-time">
+          <i class="fas fa-calendar" style="cursor: pointer"></i>
+          <span id="live-time"></span>
+        </div>
+      </header>
+
+      <!-- Filters -->
+      <div class="filters">
+        <div>
+          <select id="day-select">
+            <option value="">{% if selected_day %}{{ selected_day }}{% else %}Day{% endif %}</option>
+            {% for day in day_options %}
+            <option value="{{ day }}" {% if selected_day == day %}selected{% endif %}>{{ day }}</option>
+            {% endfor %}
+          </select>
+          <select id="month-select">
+            <option value="">Month</option>
+            {% for month in month_options %}
+            <option value="{{ month.value }}" {% if selected_month == month.value %}selected{% endif %}>{{ month.name }}</option>
+            {% endfor %}
+          </select>
+          <select id="year-select">
+            <option value="">Year</option>
+            {% for year in year_options %}
+            <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button id="notificationsBtn">
+          <i class="fas fa-bell"></i> Notifications
+          {% if unread_notifications_count > 0 %}
+            <span class="notification-indicator">!</span>
+          {% endif %}
+        </button>
+      </div>
+
+      <!-- Top Cards -->
+      <div class="report-cards">
+        <div class="card total">
+          <div class="card-icon">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Energy Usage</div>
+            <div class="card-value">{{ energy_usage }} kWh</div>
+          </div>
+        </div>
+        <div class="card inactive">
+          <div class="card-icon">
+            <i class="fas fa-peso-sign"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Cost</div>
+            <div class="card-value">{{ cost_predicted }}</div>
+          </div>
+        </div>
+        <div class="card highest">
+          <div class="card-icon">
+            <i class="fas fa-leaf"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">CO2 Emissions</div>
+            <div class="card-value">{{ co2_emissions }} kg</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Section -->
+      <div class="custom-container">
+        <div class="bottom-section">
+          <!-- Active Alerts -->
+          <div class="active-alerts">
+            <h3 class="alerts">Active Alerts</h3>
+            <table>
+              <tr>
+                <th>Device ID</th>
+                <th>Appliance Type</th>
+                <th>Energy Usage</th>
+                <th>Peak Power</th>
+                <th>Status</th>
+              </tr>
+              {% for alert in active_alerts %}
+                <tr class="{% if alert.status == 'High' %}high{% elif alert.status == 'Moderate' %}moderate{% else %}efficient{% endif %}">
+                  <td>{{ alert.device_id }}</td>
+                  <td>{{ alert.appliance_type }}</td>
+                  <td>{{ alert.energy_usage }} kWh</td>
+                  <td>{{ alert.peak_power }} W<br><small>at {{ alert.peak_time }}</small></td>
+                  <td>{{ alert.status }}</td>
+                </tr>
+              {% endfor %}
+            </table>
+          </div>
+
+          <!-- Change in Cost -->
+          <div class="change-cost">
+            <h3>CHANGE IN COST</h3>
+            <hr class="change-cost-line" />
+            <div class="change-cost-content">
+              {% if change_data %}
+              <div class="bars">
+                <div class="bar">
+                  <div class="bar-fill" style="height: {{ change_data.bar1_height }}%"></div>
+                  <div class="bar-label">{{ change_data.bar1_label }}</div>
+                </div>
+                <div class="bar">
+                  <div class="bar-fill" style="height: {{ change_data.bar2_height }}%"></div>
+                  <div class="bar-label">{{ change_data.bar2_label }}</div>
+                </div>
+              </div>
+              <div class="change-info">
+                <div class="arrow-{{ change_data.arrow }}"></div>
+                <span class="percentage-text" style="color: {% if change_data.arrow == 'up' %}#dc3545{% else %}#28a745{% endif %};">{{ change_data.percent }}%</span>
+                <p class="change-text">{{ change_data.type }} IN COST</p>
+              </div>
+              {% else %}
+              <p>No data available for change in cost.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Carbon Footprint -->
+        <div class="carbon-footprint">
+          <h3>Carbon Footprint</h3>
+          <div class="carbon-footprint-header">
+            <span class="left-label"
+              ><strong>Emission</strong> Till Date{% if selected_date %} (as of {{ selected_date|date:"F j, Y" }}){% endif %}</span>
+            <span class="right-label">Predicted (by {{ predicted_date|date:"F j, Y" }})</span>
+          </div>
+          <div class="carbon-footprint-content">
+            <div class="carbon-footprint-bar">
+              <div class="progress-bar-fill" style="width: {{ progress_percentage }}%"></div>  <!-- Updated: Dynamic width -->
+            </div>
+          </div>
+          <div class="carbon-footprint-values">
+            <span class="left-value"><b>{{ month_so_far_co2 }}kg</b> of CO2</span>  <!-- Updated: Dynamic value -->
+            <span class="right-value"><b>{{ predicted_co2 }}kg</b> of CO2</span>  <!-- Updated: Dynamic value -->
+          </div>
+        </div>
+
+        <!-- System Logs and Analysis Section -->
+        <div class="monitoring-section">
+          <!-- System Logs -->
+          <div class="system-logs">
+            <h3>System Activity (24 Hours)</h3>
+            <div class="logs-container">
+              <div id="system-logs-list">
+                {% if system_logs %}
+                  {% for log in system_logs %}
+                    <div class="log-item {{ log.log_type }}">
+                      <div class="log-time">{{ log.timestamp|date:"M d, g:i A" }}</div>
+                      <div class="log-message">{{ log.message }}</div>
+                      <div class="log-device">Device {{ log.device_id|default:"System" }}</div>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="no-data">No recent system activity</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Weekly Spike Analysis -->
+          <div class="spike-analysis">
+            <h3>Weekly Power Analysis</h3>
+            <div class="analysis-container">
+              <div id="weekly-analysis-list">
+                {% if weekly_analysis %}
+                  {% for analysis in weekly_analysis %}
+                    <div class="analysis-item">
+                      <div class="analysis-header">
+                        <span class="device-id">Device {{ analysis.device_id }}</span>
+                        <span class="week-range">{{ analysis.week_start }} to {{ analysis.week_end }}</span>
+                      </div>
+                      <div class="analysis-stats">
+                        <span class="spike-count">{{ analysis.spike_count }} spikes</span>
+                        <span class="max-power">{{ analysis.max_spike_power }}W peak</span>
+                      </div>
+                      <div class="analysis-interpretation">{{ analysis.interpretation }}</div>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="no-data">No analysis data available</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Energy Tip Bottom -->
+        <div class="energy-tip">
+          <p>
+            <span class="green-text">Energy Tip:</span> Turn off computers and
+            servers when not in use to reduce energy consumption in the IT
+            Office.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Notifications</h2>
+          <span class="close">&times;</span>
+        </div>
+        <div class="notifications-list">
+          {% for notification in notifications %}
+          <div class="notification-item {{ notification.type }}">
+            <div class="notification-content">
+              <div class="notification-text">
+                <h4>{{ notification.title }}</h4>
+                <p>{{ notification.message }}</p>
+                <small>{{ notification.timestamp|date:"M d, Y H:i" }}</small>
+              </div>
+              <div class="notification-icon {{ notification.type }}">
+                <i class="fas {% if notification.type == 'alert' %}fa-exclamation-triangle{% elif notification.type == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}" style="font-size: 20px;"></i>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="no-notifications">
+            <i class="fas fa-bell-slash"></i>
+            <h3>No notifications</h3>
+            <p>You're all caught up! No new notifications at this time.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <script src="{% static 'userJs/cardColorManager.js' %}"></script>
+    <script>
+      // Initialize card colors
+      document.addEventListener('DOMContentLoaded', function() {
+        window.cardColorManager.initDashboardCards({
+          energy_status: '{{ energy_status }}',
+          cost_status: '{{ cost_status }}',
+          co2_status: '{{ co2_status }}'
+        });
+      });
+
+      function updateTime() {
+        const now = new Date();
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        };
+        const timeString = now.toLocaleDateString("en-US", options);
+        document.getElementById("live-time").textContent = timeString;
+      }
+      setInterval(updateTime, 1000);
+      updateTime(); // initial call
+
+      // Handle filter dropdown changes
+      document.addEventListener('DOMContentLoaded', function() {
+        const daySelect = document.getElementById('day-select');
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+
+        function updateFilters() {
+          const params = new URLSearchParams();
+          const day = daySelect ? daySelect.value : '';
+          const month = monthSelect ? monthSelect.value : '';
+          const year = yearSelect ? yearSelect.value : '';
+
+          if (day) params.append('selected_day', day);
+          if (month) params.append('selected_month', month);
+          if (year) params.append('selected_year', year);
+
+          window.location.href = params.toString() ? '?' + params.toString() : window.location.pathname;
+        }
+
+        // Add event listeners only if elements exist
+        if (daySelect) {
+          daySelect.addEventListener('change', function() {
+            const selectedDay = daySelect.value;
+            if (selectedDay) {
+              const [month, day, year] = selectedDay.split('/');
+              const monthValue = parseInt(month).toString();
+              
+              // Set month - add option if it doesn't exist
+              if (monthSelect) {
+                let monthOption = monthSelect.querySelector(`option[value="${monthValue}"]`);
+                if (!monthOption) {
+                  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                    'July', 'August', 'September', 'October', 'November', 'December'];
+                  monthOption = document.createElement('option');
+                  monthOption.value = monthValue;
+                  monthOption.textContent = monthNames[parseInt(monthValue) - 1];
+                  monthSelect.appendChild(monthOption);
+                }
+                monthSelect.value = monthValue;
+              }
+              
+              // Set year - add option if it doesn't exist
+              if (yearSelect) {
+                let yearOption = yearSelect.querySelector(`option[value="${year}"]`);
+                if (!yearOption) {
+                  yearOption = document.createElement('option');
+                  yearOption.value = year;
+                  yearOption.textContent = year;
+                  yearSelect.appendChild(yearOption);
+                }
+                yearSelect.value = year;
+              }
+            } else {
+              if (monthSelect) monthSelect.value = '';
+              if (yearSelect) yearSelect.value = '';
+            }
+            updateFilters();
+          });
+        }
+        
+        if (monthSelect) {
+          monthSelect.addEventListener('change', function() {
+            // Clear day when month is selected
+            if (daySelect) daySelect.value = '';
+            
+            // Update day options based on selected month
+            const selectedMonth = monthSelect.value;
+            const selectedYear = yearSelect ? yearSelect.value : '';
+            
+            if (selectedMonth) {
+              updateDayOptions(selectedMonth, selectedYear);
+            } else {
+              // Reset to all days if no month selected
+              resetDayOptions();
+            }
+            // Always call updateFilters to apply the change
+            updateFilters();
+          });
+        }
+        
+        function updateDayOptions(month, year) {
+          console.log('Fetching days for month:', month, 'year:', year);
+          fetch(`/get-user-days/?month=${month}&year=${year || new Date().getFullYear()}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log('Response data:', data);
+              if (data.status === 'success' && daySelect) {
+                const currentSelected = daySelect.value;
+                daySelect.innerHTML = '<option value="">Day</option>';
+                data.days.forEach(day => {
+                  const option = document.createElement('option');
+                  option.value = day;
+                  option.textContent = day;
+                  if (day === currentSelected) option.selected = true;
+                  daySelect.appendChild(option);
+                });
+                console.log('Updated day options:', data.days.length, 'days');
+              }
+            })
+            .catch(error => console.error('Error fetching days:', error));
+        }
+        
+        function updateDaysByYear(year) {
+          if (!year) return;
+          fetch(`/get-user-days/?year=${year}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && daySelect) {
+                const currentSelected = daySelect.value;
+                daySelect.innerHTML = '<option value="">Day</option>';
+                data.days.forEach(day => {
+                  const option = document.createElement('option');
+                  option.value = day;
+                  option.textContent = day;
+                  if (day === currentSelected) option.selected = true;
+                  daySelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching days:', error));
+        }
+        
+        function resetDayOptions() {
+          if (daySelect) {
+            const allDays = {{ day_options|safe }};
+            daySelect.innerHTML = '<option value="">Day</option>';
+            allDays.forEach(day => {
+              const option = document.createElement('option');
+              option.value = day;
+              option.textContent = day;
+              daySelect.appendChild(option);
+            });
+          }
+        }
+        
+        if (yearSelect) {
+          yearSelect.addEventListener('change', function() {
+            // Clear day when year is selected
+            if (daySelect) daySelect.value = '';
+            
+            // Update month options based on selected year
+            const selectedYear = yearSelect.value;
+            if (selectedYear) {
+              updateMonthOptions(selectedYear);
+              updateDaysByYear(selectedYear);
+            } else {
+              resetMonthOptions();
+            }
+            
+            // Update day options if month is also selected
+            const selectedMonth = monthSelect ? monthSelect.value : '';
+            
+            if (selectedMonth && selectedYear) {
+              updateDayOptions(selectedMonth, selectedYear);
+            }
+            
+            updateFilters();
+          });
+        }
+        
+        function updateMonthOptions(year) {
+          fetch(`/get-user-months/?year=${year}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && monthSelect) {
+                const currentSelected = monthSelect.value;
+                monthSelect.innerHTML = '<option value="">Month</option>';
+                data.months.forEach(month => {
+                  const option = document.createElement('option');
+                  option.value = month.value;
+                  option.textContent = month.name;
+                  if (month.value === currentSelected) option.selected = true;
+                  monthSelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching months:', error));
+        }
+        
+        function resetMonthOptions() {
+          if (monthSelect) {
+            const allMonths = {{ month_options|safe }};
+            monthSelect.innerHTML = '<option value="">Month</option>';
+            allMonths.forEach(month => {
+              const option = document.createElement('option');
+              option.value = month.value;
+              option.textContent = month.name;
+              monthSelect.appendChild(option);
+            });
+          }
+        }
+        
+        // Check if year is pre-selected on page load and filter months
+        const initialYear = yearSelect ? yearSelect.value : '';
+        if (initialYear) {
+          updateMonthOptions(initialYear);
+          updateDaysByYear(initialYear);
+        }
+        
+
+      });
+
+      // Notifications modal functionality
+      const notificationsModal = document.getElementById('notificationsModal');
+      const notificationsBtn = document.getElementById('notificationsBtn');
+      const closeBtn = document.querySelector('.close');
+
+      notificationsBtn.addEventListener('click', function() {
+        notificationsModal.style.display = 'block';
+        // Mark notifications as read
+        fetch('/mark-notifications-read/', { method: 'POST', headers: { 'X-CSrfToken': document.querySelector('[name=csrfmiddlewaretoken]').value } });
+        // Hide indicator and mark notifications as read visually
+        const indicator = document.querySelector('.notification-indicator');
+        if (indicator) indicator.style.display = 'none';
+        // Add read class to all notification items
+        document.querySelectorAll('.notification-item').forEach(item => {
+          item.classList.add('read');
+        });
+      });
+
+      closeBtn.addEventListener('click', function() {
+        notificationsModal.style.display = 'none';
+      });
+
+      window.addEventListener('click', function(event) {
+        if (event.target === notificationsModal) {
+          notificationsModal.style.display = 'none';
+        }
+      });
+
+      // Load system logs and analysis
+      function loadSystemLogs() {
+        fetch('/api/system-logs/')
+          .then(response => response.json())
+          .then(data => {
+            const container = document.getElementById('system-logs-list');
+            if (data.status === 'success' && data.logs.length > 0) {
+              container.innerHTML = data.logs.slice(0, 5).map(log => `
+                <div class="log-item ${log.log_type}">
+                  <div class="log-time">${new Date(log.timestamp).toLocaleString()}</div>
+                  <div class="log-message">${log.message}</div>
+                  <div class="log-device">Device ${log.device_id || 'System'}</div>
+                </div>
+              `).join('');
+            } else {
+              container.innerHTML = '<div class="no-data">No recent system activity</div>';
+            }
+          })
+          .catch(error => {
+            document.getElementById('system-logs-list').innerHTML = '<div class="error">Error loading logs</div>';
+          });
+      }
+
+      // Load data on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        // Weekly analysis is now loaded directly from Django context
+      });
+    </script>
+    <script src="{% static 'userJs/sidebarToggle.js' %}"></script>
+  </body>
+</html>

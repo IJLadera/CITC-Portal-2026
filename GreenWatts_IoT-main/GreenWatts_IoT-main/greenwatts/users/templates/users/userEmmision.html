@@ -1,0 +1,417 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GreenWatts User - CO2 Emissions</title>
+    <link rel="icon" type="image/png" href="{% static 'browse-logo.png' %}" />
+    <link rel="stylesheet" href="{% static 'userCss/common.css' %}" />
+    <link rel="stylesheet" href="{% static 'userCss/userEmmision.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .filters select option {
+        color: white !important;
+        background-color: #2c3e50 !important;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <img src="{% static 'logo2.png' %}" alt="GreenWatts" class="logo-sidebar" />
+      <div class="admin-section">
+        <div class="admin-icon"><i class="fas fa-user"></i></div>
+        <p>{{ office.username|upper }}</p>
+      </div>
+
+      <nav>
+        <a href="{% url 'users:dashboard' %}"
+          ><i class="fas fa-tachometer-alt"></i> Dashboard</a
+        >
+
+        <a href="{% url 'users:office_usage' %}"
+          ><i class="fas fa-building"></i> Office Usage</a
+        >
+        <a href="{% url 'users:user_reports' %}"
+          ><i class="fas fa-chart-bar"></i> Reports</a
+        >
+        <a href="{% url 'users:user_energy_cost' %}"
+          ><i class="fas fa-peso-sign"></i> Energy Cost</a
+        >
+        <a href="{% url 'users:user_emmision' %}" class="active"
+          ><i class="fas fa-leaf"></i> CO2 Emission</a
+        >
+        <a href="{% url 'users:logout' %}"
+          ><i class="fas fa-sign-out-alt"></i> Log Out</a
+        >
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content carbon-emission-content">
+      <header class="carbon-header">
+        <!-- Sidebar toggle button -->
+        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1>CO2 Emissions</h1>
+        <div class="date-time">
+          <i class="fas fa-calendar"></i>
+          <span id="live-time"></span>
+        </div>
+      </header>
+
+      <p class="note">
+        <strong class="red-text">Note!</strong> The accumulated data will be generated every 12:00am.
+      </p>
+
+      <!-- Filters -->
+      <div class="filters">
+        <select id="week-select">
+          <option value="">Week</option>
+          {% for option in week_options %}
+          <option value="{{ option.value }}" {% if option.value == selected_week %}selected{% endif %}>{{ option.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="month-select">
+          {% if not selected_month %}
+          <option value="">Month</option>
+          {% endif %}
+          {% for option in month_options %}
+          <option value="{{ option.value }}" {% if option.value == selected_month %}selected{% endif %}>{{ option.name }}</option>
+          {% endfor %}
+        </select>
+        <select id="year-select">
+          {% if not selected_year %}
+          <option value="">Year</option>
+          {% endif %}
+          {% for option in year_options %}
+          <option value="{{ option }}" {% if option == selected_year %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- CO2 Emission Cards -->
+      <div class="co2-cards">
+        <div class="co2-card">
+          <div class="card-icon">
+            <i class="fas fa-leaf"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Current {% if level == 'month' %}Month{% elif level == 'year' %}Year{% else %}Week{% endif %} CO2</div>
+            <div class="card-value">{{ current_week_so_far_co2 }} kg</div>
+          </div>
+        </div>
+        <div class="co2-card">
+          <div class="card-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Predicted {% if level == 'month' %}Month{% elif level == 'year' %}Year{% else %}Week{% endif %} CO2</div>
+            <div class="card-value">{{ predicted_week_co2 }} kg</div>
+          </div>
+        </div>
+        <div class="co2-card">
+          <div class="card-icon">
+            <i class="fas fa-exchange-alt"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Change from Last {% if level == 'month' %}Month{% elif level == 'year' %}Year{% else %}Week{% endif %}</div>
+            <div class="card-value {{ change_class }}">{{ change_percent }} {{ change_direction }}</div>
+          </div>
+        </div>
+        <div class="co2-card">
+          <div class="card-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="card-content">
+            <div class="card-label">Threshold Limit</div>
+            <div class="card-value">{{ threshold }} kg</div>
+          </div>
+        </div>
+      </div>
+
+      <section class="chart-section">
+        <p>CARBON FOOTPRINT EMISSION</p>
+        <div class="chart-header">
+          <div class="chart-info">
+            <div class="info-item">
+              <div class="info-label">{{ previous_week_name }}</div>
+              <div class="info-value">{{ last_week_co2 }} kg</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">SO FAR THIS {% if level == 'month' %}MONTH{% elif level == 'year' %}YEAR{% else %}WEEK{% endif %}</div>
+              <div class="info-value">{{ current_week_so_far_co2 }} kg</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">PREDICTED THIS {% if level == 'month' %}MONTH{% elif level == 'year' %}YEAR{% else %}WEEK{% endif %}</div>
+              <div class="info-value">{{ predicted_week_co2 }} kg</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">CHANGE IN EMISSIONS</div>
+              <div class="info-value">
+                {{ change_percent }}
+                <span class="{{ change_class }}">{{ change_direction }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <canvas id="co2Chart"></canvas>
+        <p class="energy-tip">
+          <strong>Energy Tip:</strong> On warm days, setting a programmable
+          thermostat to a higher setting when you are not at home can help
+          reduce your energy costs by approximately 10 percent.
+        </p>
+      </section>
+    </div>
+
+    <script src="{% static 'userJs/cardColorManager.js' %}"></script>
+    <script>
+      // Initialize card colors
+      document.addEventListener('DOMContentLoaded', function() {
+        window.cardColorManager.initCO2Cards({
+          current_status: '{{ current_status }}',
+          predicted_status: '{{ predicted_status }}',
+          change_status: '{{ change_status }}',
+          threshold_status: '{{ threshold_status }}'
+        });
+      });
+
+      const ctx = document.getElementById("co2Chart").getContext("2d");
+      const co2Chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: {{ chart_labels|safe }},
+          datasets: [
+            {
+              label: "CO2 Emission",
+              data: {{ week_data|safe }},
+              borderColor: "#3b82f6",
+              borderWidth: 2,
+              fill: false,
+              tension: 0.1,
+            },
+            {
+              label: "Within Threshold",
+              data: Array({{ chart_labels|length }}).fill({{ threshold }}),
+              borderColor: "#d9534f",
+              borderWidth: 2,
+              borderDash: [10, 5],
+              fill: false,
+              pointRadius: 0,
+              tension: 0,
+            },
+            {
+              label: "Below Threshold",
+              data: Array({{ chart_labels|length }}).fill({{ co2_efficient_max }}),
+              borderColor: "#5cb85c",
+              borderWidth: 2,
+              borderDash: [10, 5],
+              fill: false,
+              pointRadius: 0,
+              tension: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+          },
+          layout: {
+            padding: {
+              right: 120
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function (value) {
+                  return value + " kg";
+                },
+              },
+              grid: {
+                color: "#555",
+                borderColor: "#555",
+              },
+            },
+            x: {
+              grid: {
+                display: false,
+              },
+            },
+          },
+        },
+        plugins: [{
+          afterDatasetsDraw: function(chart) {
+            const ctx = chart.ctx;
+            const yAxis = chart.scales.y;
+            const xAxis = chart.scales.x;
+            const lastLabelX = xAxis.getPixelForValue(chart.data.labels.length - 1);
+            
+            ctx.save();
+            ctx.font = "bold 11px Arial";
+            ctx.textAlign = "left";
+            
+            const moderateY = yAxis.getPixelForValue({{ threshold }});
+            ctx.fillStyle = "#d9534f";
+            ctx.fillText("Above Threshold", lastLabelX + 15, moderateY + 4);
+            
+            const efficientY = yAxis.getPixelForValue({{ co2_efficient_max }});
+            ctx.fillStyle = "#5cb85c";
+            ctx.fillText("Below Threshold", lastLabelX + 15, efficientY + 4);
+            
+            ctx.restore();
+          }
+        }]
+      });
+    </script>
+    <script>
+      function updateTime() {
+        const now = new Date();
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        };
+        const timeString = now.toLocaleDateString("en-US", options);
+        document.getElementById("live-time").textContent = timeString;
+      }
+      setInterval(updateTime, 1000);
+      updateTime(); // initial call
+
+      // Handle dropdown changes
+      document.addEventListener('DOMContentLoaded', function() {
+        const weekSelect = document.getElementById('week-select');
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+        
+        function updateFilters() {
+          const params = new URLSearchParams();
+          
+          if (weekSelect.value) params.set('selected_week', weekSelect.value);
+          if (monthSelect.value) params.set('selected_month', monthSelect.value);
+          if (yearSelect.value) params.set('selected_year', yearSelect.value);
+          
+          window.location.href = params.toString() ? '?' + params.toString() : window.location.pathname;
+        }
+        
+        function updateMonthOptions(year) {
+          return fetch(`/get-user-months/?year=${year}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && monthSelect) {
+                const currentMonth = monthSelect.value;
+                monthSelect.innerHTML = '<option value="">Month</option>';
+                data.months.forEach(month => {
+                  const option = document.createElement('option');
+                  option.value = month.value;
+                  option.textContent = month.name;
+                  if (month.value === currentMonth) {
+                    option.selected = true;
+                  }
+                  monthSelect.appendChild(option);
+                });
+                // Only clear week options when year changes if no week is currently selected
+                if (weekSelect && !weekSelect.value) {
+                  weekSelect.innerHTML = '<option value="">Week</option>';
+                }
+              }
+            })
+            .catch(error => console.error('Error fetching months:', error));
+        }
+        
+        function resetMonthOptions() {
+          if (monthSelect) {
+            const allMonths = {{ month_options|safe }};
+            monthSelect.innerHTML = '<option value="">Month</option>';
+            allMonths.forEach(month => {
+              const option = document.createElement('option');
+              option.value = month.value;
+              option.textContent = month.name;
+              monthSelect.appendChild(option);
+            });
+          }
+        }
+        
+        weekSelect.addEventListener('change', updateFilters);
+        monthSelect.addEventListener('change', function() {
+          // Clear week selection when month changes
+          const weekSelect = document.getElementById('week-select');
+          if (weekSelect) {
+            weekSelect.selectedIndex = 0; // Select first option (Week)
+          }
+          // Update week options for selected month
+          const selectedMonth = monthSelect.value;
+          const selectedYear = yearSelect.value;
+          if (selectedMonth && selectedYear) {
+            fetch(`/get-user-weeks/?month=${selectedMonth}&year=${selectedYear}`)
+              .then(response => response.json())
+              .then(data => {
+                if (data.status === 'success' && weekSelect) {
+                  weekSelect.innerHTML = '<option value="">Week</option>';
+                  data.weeks.forEach(week => {
+                    const option = document.createElement('option');
+                    option.value = week.value;
+                    option.textContent = week.name;
+                    weekSelect.appendChild(option);
+                  });
+                }
+              })
+              .catch(error => console.error('Error fetching weeks:', error));
+          }
+          updateFilters();
+        });
+        yearSelect.addEventListener('change', function() {
+          const selectedYear = yearSelect.value;
+          if (selectedYear) {
+            updateMonthOptions(selectedYear).then(() => {
+              updateFilters();
+            });
+          } else {
+            resetMonthOptions();
+            updateFilters();
+          }
+        });
+        
+        // Filter months on page load if year is pre-selected
+        const initialYear = yearSelect.value;
+        const initialMonth = monthSelect.value;
+        if (initialYear) {
+          updateMonthOptions(initialYear);
+        }
+        if (initialMonth && initialYear) {
+          fetch(`/get-user-weeks/?month=${initialMonth}&year=${initialYear}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success' && weekSelect) {
+                weekSelect.innerHTML = '<option value="">Week</option>';
+                data.weeks.forEach(week => {
+                  const option = document.createElement('option');
+                  option.value = week.value;
+                  option.textContent = week.name;
+                  weekSelect.appendChild(option);
+                });
+              }
+            })
+            .catch(error => console.error('Error fetching weeks:', error));
+        }
+      });
+    </script>
+    <script src="{% static 'userJs/sidebarToggle.js' %}"></script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "files": {
+    "main.css": "/static/css/main.f4bb5700.css",
+    "main.js": "/static/js/main.fa8e3541.js",
+    "static/js/206.249fb29e.chunk.js": "/static/js/206.249fb29e.chunk.js",
+    "static/js/52.7a799667.chunk.js": "/static/js/52.7a799667.chunk.js",
+    "static/js/760.26770f69.chunk.js": "/static/js/760.26770f69.chunk.js",
+    "static/js/337.35321dbc.chunk.js": "/static/js/337.35321dbc.chunk.js",
+    "static/media/bgimage.jpg": "/static/media/bgimage.e804bc49f54facaa26b3.jpg",
+    "static/media/logo.png": "/static/media/logo.a817bb7ca22f12eb4439.png",
+    "static/media/unieventify.png": "/static/media/unieventify.a817bb7ca22f12eb4439.png",
+    "static/media/syllabease.png": "/static/media/syllabease.89fe9fe7bd600bc68c60.png",
+    "index.html": "/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.f4bb5700.css",
+    "static/js/main.fa8e3541.js"
+  ]
+}

@@ -35,6 +35,7 @@ import ForgotPassword from './pages/authentication/Forgot';
 import UserManagement from "./pages/Application/pages/user-management";
 import Dashboard from "./pages/Application/pages/dashboard";
 import AdminApps from "./pages/Application/pages/admin-apps";
+import GreenWattsRedirect from "./pages/Application/pages/greenwatts";
 
 const router = createBrowserRouter([
     {
@@ -88,6 +89,10 @@ const router = createBrowserRouter([
                         element: <Syllabi />
                     }
                 ]
+            },
+            {
+                path: "greenwatts/",
+                element: <GreenWattsRedirect />,
             },
             {
                 path: "adduser/",

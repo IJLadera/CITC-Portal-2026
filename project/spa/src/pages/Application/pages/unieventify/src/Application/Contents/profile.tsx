@@ -51,15 +51,10 @@ function timeAgo(dateStr: string | number): string {
   }
 }
 
-/**
- * Safely extract a display string from a value that may be
- * a plain string OR an object like { uuid, name, rank }.
- */
 function resolveString(value: any): string {
   if (!value) return "";
   if (typeof value === "string") return value;
   if (typeof value === "object") {
-    // Try common string-like keys in order of preference
     return (
       value.name ??
       value.label ??
@@ -331,18 +326,79 @@ export default function Profile() {
   const userRole = useAppSelector((state) => state.unieventify.userRole);
   const collegeData = useAppSelector((state) => state.unieventify.colleges);
 
-  // ── Safely resolve userRole name (may be a plain string OR {uuid,name,rank}) ──
   const roleName = resolveString(userRole?.name);
 
   // ── Fetch profile & colleges ───────────────────────────────────────────────
   useEffect(() => {
     dispatch(fetchCurrentUser())
-      .then(() => setLoading(false))
-      .catch((err: any) => {
-        setError(err);
+      .then((action: any) => {
+        const currentUser = action.payload;
+        setLoading(false);
+
+        if (!currentUser) return;
+
+        setPostsLoading(true);
+        getPosts()
+          .then((response: any) => {
+            const data = response.data?.results ?? response.data;
+            const all: any[] = Array.isArray(data) ? data : [];
+
+            console.log("FULL currentUser:", JSON.stringify(currentUser, null, 2));
+            console.log("POST SAMPLE:", JSON.stringify(all[0], null, 2));
+
+            const profileId =
+              currentUser.uuid ??
+              currentUser.id ??
+              currentUser.pk ??
+              null;
+
+            const mine = all.filter((post: any) => {
+              const postUserId =
+                post.created_by?.uuid ??
+                post.user?.uuid ??
+                post.created_by?.id ??
+                post.user?.id ??
+                post.author?.uuid ??
+                post.author?.id ??
+                post.user_id ??
+                null;
+
+              if (postUserId === null || profileId === null) return false;
+              return String(postUserId) === String(profileId);
+            });
+
+            console.log("FILTERED mine:", mine.length, "of", all.length);
+
+            const normalised = mine.map((post: any) => ({
+              ...post,
+              authorName:
+                post.user?.first_name && post.user?.last_name
+                  ? `${post.user.first_name} ${post.user.last_name}`
+                  : post.created_by?.first_name
+                  ? `${post.created_by.first_name} ${post.created_by.last_name}`
+                  : currentUser?.first_name
+                  ? `${currentUser.first_name} ${currentUser.last_name}`
+                  : "You",
+              description: parseDraftContent(post.description || post.content || ""),
+            }));
+
+            normalised.sort(
+              (a: any, b: any) =>
+                new Date(b.timestamp || b.created_at || b.createdAt).getTime() -
+                new Date(a.timestamp || a.created_at || a.createdAt).getTime()
+            );
+
+            setPosts(normalised);
+          })
+          .catch((err: any) => {
+            console.error("getPosts error:", err);
+            setPosts([]);
+          })
+          .finally(() => setPostsLoading(false));
+      })
+      .catch(() => {
         setLoading(false);
       });
-    dispatch(fetchCollegeses());
   }, []);
 
   useEffect(() => {
@@ -362,65 +418,9 @@ export default function Profile() {
 
     fetchYearLevelsData();
   }, [editProfile, dispatch]);
+  
 
-  // ── Fetch posts — filtered to current user ────────────────────────────────
-  useEffect(() => {
-    if (!profile) return;
-
-    setPostsLoading(true);
-    getPosts()
-      .then((response: any) => {
-        const data = response.data?.results ?? response.data;
-        const all: any[] = Array.isArray(data) ? data : [];
-
-        console.log("profile.id:", profile.id);
-        console.log("ALL POSTS SAMPLE:", all.slice(0, 2));
-
-        const mine = all.filter((post: any) => {
-          const postUserId =
-            post.user?.id ??
-            post.created_by?.id ??
-            post.author?.id ??
-            post.user_id ??
-            post.userId ??
-            null;
-
-          if (postUserId === null) return true;
-          return String(postUserId) === String(profile.id);
-        });
-
-        console.log("FILTERED mine:", mine.length, "of", all.length);
-
-        const normalised = mine.map((post: any) => ({
-          ...post,
-          authorName:
-            post.user?.first_name && post.user?.last_name
-              ? `${post.user.first_name} ${post.user.last_name}`
-              : post.created_by?.first_name
-              ? `${post.created_by.first_name} ${post.created_by.last_name}`
-              : profile?.first_name
-              ? `${profile.first_name} ${profile.last_name}`
-              : "You",
-          description: parseDraftContent(
-            post.description || post.content || ""
-          ),
-        }));
-
-        normalised.sort(
-          (a: any, b: any) =>
-            new Date(b.timestamp || b.created_at || b.createdAt).getTime() -
-            new Date(a.timestamp || a.created_at || a.createdAt).getTime()
-        );
-
-        setPosts(normalised);
-      })
-      .catch((err: any) => {
-        console.error("getPosts error:", err);
-        setPosts([]);
-      })
-      .finally(() => setPostsLoading(false));
-  }, [profile]);
-
+  // ── Fetch posts — filtered to current user only ───────────────────────────
   const handleDeletePost = useCallback(
     async (postId: string) => {
       try {
@@ -498,19 +498,39 @@ export default function Profile() {
   return (
     <Box
       sx={{
-        flexGrow: 1,
-        px: { xs: 2, md: 4 },
-        py: { xs: 2, md: 3 },
-        bgcolor: "#F7F7F5",
-        minHeight: "100vh",
-        overflow: "auto",
+        bgcolor: "white",
+        border: "0.5px solid #e8e8e8",
+        borderRadius: "14px",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        height: { md: "calc(100vh - 48px)" }, // ← change maxHeight to height
+        position: { md: "sticky" },
+        top: { md: 24 },
       }}
     >
       <Grid container spacing={3} alignItems="flex-start">
         {/* ── Left Sidebar ── */}
         <Grid item xs={12} md={4} lg={3}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-
+          {/* ✅ Sticky sidebar that scrolls independently on desktop */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              position: { md: "sticky" },
+              top: { md: 24 },
+              maxHeight: { md: "calc(100vh - 48px)" },
+              overflowY: { md: "auto" },
+              // Hide scrollbar visually but keep it functional
+              "&::-webkit-scrollbar": { width: "4px" },
+              "&::-webkit-scrollbar-thumb": {
+                bgcolor: "#e0e0e0",
+                borderRadius: "4px",
+              },
+              "&::-webkit-scrollbar-track": { bgcolor: "transparent" },
+            }}
+          >
             {/* Avatar + identity card */}
             <Box
               sx={{
@@ -551,7 +571,6 @@ export default function Profile() {
                 </Typography>
               </Box>
 
-              {/* ✅ FIX: use resolved roleName string instead of userRole?.name directly */}
               {roleName && (
                 <Box
                   sx={{
@@ -735,14 +754,21 @@ export default function Profile() {
               border: "0.5px solid #e8e8e8",
               borderRadius: "14px",
               overflow: "hidden",
+              // ✅ Right panel: fixed height with internal scroll on desktop
+              display: "flex",
+              flexDirection: "column",
+              maxHeight: { md: "calc(100vh - 48px)" },
+              position: { md: "sticky" },
+              top: { md: 24 },
             }}
           >
-            {/* Tab bar */}
+            {/* Tab bar — pinned at top, never scrolls away */}
             <Box
               sx={{
                 display: "flex",
                 borderBottom: "0.5px solid #e8e8e8",
                 px: 2,
+                flexShrink: 0,
               }}
             >
               {(["posts", "events"] as const).map((tab) => (
@@ -767,47 +793,62 @@ export default function Profile() {
               ))}
             </Box>
 
-            {/* Posts panel */}
-            {activeTab === "posts" && (
-              <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-                {postsLoading ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-                    <CircularProgress size={28} />
-                  </Box>
-                ) : posts.length === 0 ? (
-                  <Box sx={{ textAlign: "center", py: 7, color: "#bbb" }}>
-                    <Typography sx={{ fontSize: 32, mb: 1.5 }}>✏️</Typography>
-                    <Typography sx={{ fontSize: 15, fontWeight: 500, color: "#aaa" }}>
-                      No posts yet
-                    </Typography>
-                    <Typography sx={{ fontSize: 13, color: "#ccc", mt: 0.5 }}>
-                      Posts you create will appear here.
-                    </Typography>
-                  </Box>
-                ) : (
-                  posts.map((post) => (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                      onDelete={handleDeletePost}
-                    />
-                  ))
-                )}
-              </Box>
-            )}
+            {/* ✅ Scrollable content area inside the right panel */}
+            <Box
+              sx={{
+                flex: 1,
+                overflowY: "auto",
+                // Thin, tasteful scrollbar
+                "&::-webkit-scrollbar": { width: "4px" },
+                "&::-webkit-scrollbar-thumb": {
+                  bgcolor: "#e0e0e0",
+                  borderRadius: "4px",
+                },
+                "&::-webkit-scrollbar-track": { bgcolor: "transparent" },
+              }}
+            >
+              {/* Posts panel */}
+              {activeTab === "posts" && (
+                <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                  {postsLoading ? (
+                    <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+                      <CircularProgress size={28} />
+                    </Box>
+                  ) : posts.length === 0 ? (
+                    <Box sx={{ textAlign: "center", py: 7, color: "#bbb" }}>
+                      <Typography sx={{ fontSize: 32, mb: 1.5 }}>✏️</Typography>
+                      <Typography sx={{ fontSize: 15, fontWeight: 500, color: "#aaa" }}>
+                        No posts yet
+                      </Typography>
+                      <Typography sx={{ fontSize: 13, color: "#ccc", mt: 0.5 }}>
+                        Posts you create will appear here.
+                      </Typography>
+                    </Box>
+                  ) : (
+                    posts.map((post) => (
+                      <PostCard
+                        key={post.id}
+                        post={post}
+                        onDelete={handleDeletePost}
+                      />
+                    ))
+                  )}
+                </Box>
+              )}
 
-            {/* Events panel */}
-            {activeTab === "events" && (
-              <Box sx={{ textAlign: "center", py: 7, color: "#bbb" }}>
-                <Typography sx={{ fontSize: 32, mb: 1.5 }}>🗓</Typography>
-                <Typography sx={{ fontSize: 15, fontWeight: 500, color: "#aaa" }}>
-                  No events yet
-                </Typography>
-                <Typography sx={{ fontSize: 13, color: "#ccc", mt: 0.5 }}>
-                  Events you attend will show up here.
-                </Typography>
-              </Box>
-            )}
+              {/* Events panel */}
+              {activeTab === "events" && (
+                <Box sx={{ textAlign: "center", py: 7, color: "#bbb" }}>
+                  <Typography sx={{ fontSize: 32, mb: 1.5 }}>🗓</Typography>
+                  <Typography sx={{ fontSize: 15, fontWeight: 500, color: "#aaa" }}>
+                    No events yet
+                  </Typography>
+                  <Typography sx={{ fontSize: 13, color: "#ccc", mt: 0.5 }}>
+                    Events you attend will show up here.
+                  </Typography>
+                </Box>
+              )}
+            </Box>
           </Box>
         </Grid>
       </Grid>

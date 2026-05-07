@@ -407,7 +407,8 @@ export default function Dashboard() {
         if (app.url.startsWith('http://') || app.url.startsWith('https://')) {
             window.open(app.url, '_blank');
         } else {
-            navigate(app.url);
+            const normalizedUrl = app.url.startsWith('/') ? app.url : `/${app.url}`;
+            navigate(normalizedUrl);
         }
     };
 
